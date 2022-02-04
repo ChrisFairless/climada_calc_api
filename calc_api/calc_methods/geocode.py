@@ -1,7 +1,6 @@
 import requests
 
 from climada_calc.settings import GEOCODE_URL
-from calc_api.calc_methods.util import Bbox
 from calc_api.db import GeocodeAutocompleteResponse
 
 
@@ -22,10 +21,10 @@ def get_place(s, exact=True):
     exact_response = [r for r in response if r['display_name'] == s]
     if exact_response:
         return dict(name=exact_response[0]['display_name'],
-                    bbox=Bbox(exact_response[0]['boundingbox']))
+                    bbox=exact_response[0]['boundingbox'])
     elif not exact:
         return dict(name=response[0]['display_name'],
-                    bbox=Bbox(response[0]['boundingbox']))
+                    bbox=response[0]['boundingbox'])
     else:
         return {}
 

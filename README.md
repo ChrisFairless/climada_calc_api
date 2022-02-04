@@ -19,7 +19,7 @@ The Django web server expects to mount a volume located on the host machine at `
 
 ## Usage
 
-All endpoints are available at [localhost:8000/rest/vtest/](localhost:8000/rest/vtest/) (assuming you're running on your local machine). At the moment only these test endpoints are functioning (and even then, not all of them).
+All endpoints are available through [localhost:8000/rest/vtest/](localhost:8000/rest/vtest/) (assuming you're running on your local machine). At the moment only these test endpoints are functioning (and even then, not all of them).
 
 Documentation is generated at [127.0.0.1:8000/rest/vtest/docs/](localhost:8000/rest/vtest/docs)
 (assuming you're running on a local host). This is the best way to find out what's available to you!
@@ -27,6 +27,9 @@ Documentation is generated at [127.0.0.1:8000/rest/vtest/docs/](localhost:8000/r
 In particular
 - the `/rest/vtest/map/hazard/climate`, `/rest/vtest/map/exposure`, `/rest/vtest/map/impact/climate` endpoints will return sample data for mapping different elements of risk (always for Haiti - change the country by editing the file `scripts/generate_sample_data.py` in the repository and deleting any existing outputs in the mounted volume)
 - the `rest/vtest/geocoding/autocomplete` endpoint returns location suggestions for a user-entered string.
+
+Note: since this is a test endpoint, it will ignore all the parameters you pass to it. That is, it requires them to be set, but makes no difference to the returned values.
+
 
 ## Structure
 
