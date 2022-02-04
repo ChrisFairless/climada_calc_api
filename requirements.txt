@@ -1,0 +1,5 @@
+celery[redis]
+Django==4.0
+django-ninja==0.16.1
+flower
+colorcet

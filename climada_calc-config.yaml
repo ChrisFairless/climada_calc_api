@@ -1,0 +1,25 @@
+log_level: DEBUG
+data:
+  path-root: /path/to/data
+  url-root: http://localhost:8000/data/
+rest:
+  url-root: http://localhost:8000/
+chunk-size: 1k
+climada-logo:
+  link: https://wcr.ethz.ch/research/climada.html
+  img-src: /static/CLIMADA_logo_QR.png
+test:
+  file: /path/to/test/file
+  format: jpg
+  tmp: /path/to/tmp/file
+datasets:
+  tropical_cyclone: True
+  extreme_heat: False
+defaults:
+   api_parameters:
+     scenario_name: "hist"
+     scenario_year: 2020
+     n_tracks: 10
+     min_dist_to_centroids: 20
+   data-license: "Attribution 4.0 International (CC BY 4.0)"
+lock-timeout: 10  # minutes

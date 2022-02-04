@@ -1,0 +1,39 @@
+version: '3'
+
+services:
+  redis:
+    image: "redis:alpine"
+    networks:
+      - calc_network
+  web:
+    build: .
+    command: bash -c "python static/generate_sample_data.py /climada_calc_api/static/sample_data/ && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+      - geocode_api
+    restart: on-failure
+    env_file:
+      - .env
+    volumes:
+      - ./static/climada/data:/climada/data
+      - ./static/sample_data:/climada_calc_api/static/sample_data
+    networks:
+      - calc_network
+  celery:
+    build: .
+    command: celery -A calc_api worker -l info
+    depends_on:
+      - redis
+    networks:
+      - calc_network
+  geocode_api:
+    image: "klokantech/osmnames-sphinxsearch:latest"
+    ports:
+      - "80:80"
+    networks:
+      - calc_network
+
+networks:
+  calc_network:

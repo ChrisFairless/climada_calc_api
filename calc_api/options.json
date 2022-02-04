@@ -1,0 +1,588 @@
+{
+  "data": {
+    "filters": [
+      {
+        "name": "Extreme Heat",
+        "value": "extreme_heat",
+        "options": {
+          "years": [
+            2020,
+            2040,
+            2060,
+            2080
+          ],
+          "scenarios": [
+            "historical",
+            "SSP1 2.6",
+            "SSP2 4.5",
+            "SSP5 8.5"
+          ],
+          "impacts": [
+            "people affected"
+          ],
+          "discount_rate": [
+            0,
+            0.5,
+            1.0,
+            1.5,
+            2.0,
+            2.5,
+            3.0,
+            3.5,
+            4.0,
+            4.5,
+            5.0,
+            5.5,
+            6.0,
+            6.5,
+            7.0,
+            7.5,
+            8.0,
+            8.5,
+            9.0,
+            9.5,
+            10.0
+          ],
+          "units": {
+            "currency": [
+              "dollars"
+            ],
+            "distance": [
+              "miles",
+              "kilometers"
+            ],
+            "area": [
+              "square miles",
+              "square kilometers",
+              "acres",
+              "hectares"
+            ],
+            "speed": [
+              "miles per hour",
+              "kilometers per hour",
+              "meters per second",
+              "knots"
+            ],
+            "temperature": [
+              "Celsius",
+              "Fahrenheit"
+            ]
+          },
+          "adaptation_measures": {
+            "name": "",
+            "description": "",
+            "co_benefits": [
+              "Water quality and sediment management",
+              "Coastal flood risk reduction",
+              "Pluvial flood risk reduction",
+              "Riverine flood risk reduction",
+              "Resources production",
+              "Tourism and recreation",
+              "Carbon storage and sequestration",
+              "Stimulate local economies and job creation",
+              "Human health",
+              "Education",
+              "Biodiversity",
+              "Cultural",
+              "Social interaction"
+            ],
+            "cost_type": [
+              "whole project",
+              "per unit area",
+              "per person"
+            ],
+            "setup_cost_lower_bound": [
+              0,
+              "unlimited"
+            ],
+            "setup_cost_upper_bound": [
+              0,
+              "unlimited"
+            ],
+            "annual_upkeep_cost_lower_bound": [
+              0,
+              "unlimited"
+            ],
+            "annual_upkeep_cost_upper_bound": [
+              0,
+              "unlimited"
+            ],
+            "priority": [
+              "even coverage",
+              "most vulnerable",
+              "cost-benefit"
+            ],
+            "percentage_coverage": [
+              0,
+              100
+            ],
+            "percentage effectiveness": [
+              0,
+              100
+            ],
+            "max_distance_from_coast": [
+              0,
+              200
+            ],
+            "hazard_cutoff": [
+              0,
+              60
+            ],
+            "return_period_cutoff": [
+              0,
+              250
+            ],
+            "intensity_change_multiplier": [
+              0,
+              1
+            ],
+            "intensity_change_constant": [
+              -10,
+              0
+            ],
+            "risk_transfer": {
+              "attach": [
+                0,
+                "unlimited"
+              ],
+              "cover": [
+                0,
+                "unlimited"
+              ],
+              "cost_factor": [
+                0,
+                "unlimited"
+              ]
+            },
+            "enabled": [
+              true,
+              false
+            ]
+          },
+          "map_layers": {
+            "hazard": [
+              {
+                "layer_name": "historical events",
+                "values": [
+                  "test"
+                ]
+              },
+              {
+                "layer_name": "by return period",
+                "values": [
+                  10,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ]
+              }
+            ],
+            "exposure": [
+              "people",
+              "social vulnerability",
+              "biodiversity"
+            ],
+            "impact": [
+              {
+                "layer_name": "historical events",
+                "values": [
+                  "test"
+                ]
+              },
+              {
+                "layer_name": "average annual impact"
+              },
+              {
+                "layer": "by return period",
+                "values": [
+                  10,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ]
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "Tropical Cyclones",
+        "value": "tropical_cyclone",
+        "options": {
+          "years": [
+            2020,
+            2040,
+            2060,
+            2080
+          ],
+          "scenarios": [
+            "historical",
+            "SSP1 2.6",
+            "SSP2 4.5",
+            "SSP5 8.5"
+          ],
+          "impacts": [
+            "people affected",
+            "economic assets affected",
+            "economic loss"
+          ],
+          "discount_rate": [
+            0,
+            0,
+            5,
+            1.0,
+            1.5,
+            2.0,
+            2.5,
+            3.0,
+            3.5,
+            4.0,
+            4.5,
+            5.0,
+            5.5,
+            6.0,
+            6.5,
+            7.0,
+            7.5,
+            8.0,
+            8.5,
+            9.0,
+            9.5,
+            10.0
+          ],
+          "units": {
+            "currency": [
+              "dollars"
+            ],
+            "distance": [
+              "miles",
+              "kilometers"
+            ],
+            "area": [
+              "square miles",
+              "square kilometers",
+              "acres",
+              "hectares"
+            ],
+            "speed": [
+              "miles per hour",
+              "kilometers per hour",
+              "meters per second",
+              "knots"
+            ],
+            "temperature": [
+              "Celsius",
+              "Fahrenheit"
+            ]
+          },
+          "adaptation_measures": {
+            "name": "",
+            "description": "",
+            "co_benefits": [
+              "Water quality and sediment management",
+              "Coastal flood risk reduction",
+              "Pluvial flood risk reduction",
+              "Riverine flood risk reduction",
+              "Heat stress reduction",
+              "Resources production",
+              "Tourism and recreation",
+              "Carbon storage and sequestration",
+              "Stimulate local economies and job creation",
+              "Human health",
+              "Education",
+              "Biodiversity",
+              "Cultural",
+              "Social interaction"
+            ],
+            "cost_type": [
+              "whole project",
+              "per unit area",
+              "per unit asset"
+            ],
+            "setup_cost_lower_bound": [
+              0,
+              "unlimited"
+            ],
+            "setup_cost_upper_bound": [
+              0,
+              "unlimited"
+            ],
+            "annual_upkeep_cost_lower_bound": [
+              0,
+              "unlimited"
+            ],
+            "annual_upkeep_cost_upper_bound": [
+              0,
+              "unlimited"
+            ],
+            "priority": [
+              "even coverage",
+              "most vulnerable",
+              "cost-benefit"
+            ],
+            "percentage_coverage": [
+              0,
+              100
+            ],
+            "percentage effectiveness": [
+              0,
+              100
+            ],
+            "max_distance_from_coast": [
+              0,
+              200
+            ],
+            "hazard_cutoff": [
+              0,
+              60
+            ],
+            "return_period_cutoff": [
+              0,
+              250
+            ],
+            "intensity_change_multiplier": [
+              0,
+              1
+            ],
+            "intensity_change_constant": [
+              -10,
+              0
+            ],
+            "risk_transfer": {
+              "attach": [
+                0,
+                "unlimited"
+              ],
+              "cover": [
+                0,
+                "unlimited"
+              ],
+              "cost_factor": [
+                0,
+                "unlimited"
+              ]
+            },
+            "enabled": [
+              true,
+              false
+            ]
+          },
+          "map_layers": {
+            "hazard": [
+              {
+                "layer_name": "historical events",
+                "values": [
+                  "test"
+                ]
+              },
+              {
+                "layer_name": "by return period",
+                "values": [
+                  10,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ]
+              }
+            ],
+            "exposure": [
+              "people",
+              "economic assets",
+              "social vulnerability",
+              "biodiversity"
+            ],
+            "impact": [
+              {
+                "layer_name": "historical events",
+                "values": [
+                  "test"
+                ]
+              },
+              {
+                "layer_name": "average annual impact"
+              },
+              {
+                "layer": "by return period",
+                "values": [
+                  10,
+                  50,
+                  100,
+                  150,
+                  200,
+                  250
+                ]
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "defaults": {
+      "extreme_heat": {
+        "years": 2080,
+        "scenarios": "SSP2 4.5",
+        "impacts": "people affected",
+        "discount_rate": 2.0,
+        "units": {
+          "currency": "dollars",
+          "distance": "miles",
+          "area": "hectare",
+          "speed": "knots",
+          "temperature": "Fahrenheit"
+        },
+        "adaptation_measures": [
+          {
+            "name": "Urban forests",
+            "description": "Urban forests have a great potential to mitigate the urban heat island effect and air pollution, and to retain stormwater. They protect rivers by intercepting rainfall, increasing infiltration, and reducing flooding. In addition, they clean soils, sequester carbon, and regulate water cycles through retention, infiltration and evapotranspiration; improve air and water quality; provide critical habitat for a variety of species, and decrease ambient temperatures. Urban forests make positive contribution to the physical, mental, social, and economic wellbeing of urban societies. Their preservation and maintenance are a critical opportunity to make cities and communities resilient to climate change.",
+            "co_benefits": [
+              "Water quality and sediment management",
+              "Pluvial flood risk reduction",
+              "Riverine flood risk reduction",
+              "Resources production",
+              "Tourism and recreation",
+              "Carbon storage and sequestration",
+              "Stimulate local economies and job creation",
+              "Human health",
+              "Education",
+              "Biodiversity",
+              "Cultural"
+            ],
+            "cost_type": [
+              "per unit area"
+            ],
+            "setup_cost_lower_bound": 3000,
+            "setup_cost_upper_bound": 19000,
+            "annual_upkeep_cost_lower_bound": 3600,
+            "annual_upkeep_cost_upper_bound": 8000,
+            "priority": "most vulnerable",
+            "percentage_coverage": 30,
+            "percentage effectiveness": 100,
+            "max_distance_from_coast": 0,
+            "hazard_cutoff": 0,
+            "return_period_cutoff": 0,
+            "intensity_change_multiplier": 0,
+            "intensity_change_constant": -1.5,
+            "risk_transfer": {
+              "attach": 0,
+              "cover": 0,
+              "cost_factor": 0
+            },
+            "enabled": false
+          },
+          {
+            "name": "Custom measure",
+            "description": "",
+            "co_benefits": [],
+            "cost_type": "whole project",
+            "setup_cost_lower_bound": 0,
+            "setup_cost_upper_bound": 0,
+            "annual_upkeep_cost_lower_bound": 0,
+            "annual_upkeep_cost_upper_bound": 0,
+            "priority": "even coverage",
+            "percentage_coverage": 100,
+            "percentage effectiveness": 100,
+            "max_distance_from_coast": 0,
+            "hazard_cutoff": 0,
+            "return_period_cutoff": 0,
+            "intensity_change_multiplier": 1,
+            "intensity_change_constant": 0,
+            "risk_transfer": {
+              "attach": 0,
+              "cover": 0,
+              "cost_factor": 0
+            },
+            "enabled": false
+          }
+        ],
+        "map_layers": {
+          "impact": {
+            "layer": "by return period",
+            "values": 100
+          }
+        }
+      },
+      "tropical_cyclone": {
+        "years": 2080,
+        "scenarios": "SSP2 4.5",
+        "impacts": "people affected",
+        "discount_rate": 2.0,
+        "units": {
+          "currency": "dollars",
+          "distance": "miles",
+          "area": "hectare",
+          "speed": "knots",
+          "temperature": "Fahrenheit"
+        },
+        "adaptation_measures": [
+          {
+            "name": "Mangroves",
+            "description": "Mangroves act as a coastal barrier, reducing the impacts of winds, waves and storm surge. They create thriving ecosystems and sequester carbon, making them a valuable, nature-based protection in the right location",
+            "co_benefits": [
+              "Water quality and sediment management",
+              "Coastal flood risk reduction",
+              "Carbon storage and sequestration",
+              "Biodiversity"
+            ],
+            "cost_type": [
+              "per unit area"
+            ],
+            "setup_cost_lower_bound": 2500,
+            "setup_cost_upper_bound": 150000,
+            "annual_upkeep_cost_lower_bound": 0,
+            "annual_upkeep_cost_upper_bound": 1000,
+            "priority": "even coverage",
+            "percentage_coverage": 100,
+            "percentage effectiveness": 100,
+            "max_distance_from_coast": 10,
+            "hazard_cutoff": 0,
+            "return_period_cutoff": 0,
+            "intensity_change_multiplier": 0,
+            "intensity_change_constant": -2.5,
+            "risk_transfer": {
+              "attach": 0,
+              "cover": 0,
+              "cost_factor": 0
+            },
+            "enabled": false
+          },
+          {
+            "name": "Custom measure",
+            "description": "",
+            "co_benefits": [],
+            "cost_type": "whole project",
+            "setup_cost_lower_bound": 0,
+            "setup_cost_upper_bound": 0,
+            "annual_upkeep_cost_lower_bound": 0,
+            "annual_upkeep_cost_upper_bound": 0,
+            "priority": "even coverage",
+            "percentage_coverage": 100,
+            "percentage effectiveness": 100,
+            "max_distance_from_coast": 0,
+            "hazard_cutoff": 0,
+            "return_period_cutoff": 0,
+            "intensity_change_multiplier": 1,
+            "intensity_change_constant": 0,
+            "risk_transfer": {
+              "attach": 0,
+              "cover": 0,
+              "cost_factor": 0
+            },
+            "enabled": false
+          }
+        ],
+        "map_layers": {
+          "impact": {
+            "layer": "by return period",
+            "values": 100
+          }
+        }
+      }
+    }
+  }
+}
