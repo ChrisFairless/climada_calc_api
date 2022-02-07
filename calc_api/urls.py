@@ -17,6 +17,6 @@ from django.urls import include, path
 
 urlpatterns = [
     path('vtest/', include('calc_api.vtest.urls')),
-    path('vizz/', include('calc_api.vizz.urls')),
+#    path('vizz/', include('calc_api.vizz.urls')),
 #    path('', include('calc_api.vtest.urls')),     # Default/latest version
 ]
