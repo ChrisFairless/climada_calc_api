@@ -13,7 +13,7 @@ from celery import shared_task
 
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.util import get_client_ip
-from climada_calc.settings import BASE_DIR
+from climada_calc.settings import BASE_DIR, STATIC_ROOT
 import calc_api.db as schemas
 from calc_api.calc_methods.colourmaps import values_to_colours
 from calc_api.calc_methods.colourmaps import PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
