@@ -9,6 +9,6 @@ RUN pip install --no-cache -r /requirements.txt
 
 COPY . /climada_calc_api
 COPY ./climada.conf ~/climada.conf
-RUN touch /climada_conf/.env
+RUN touch /climada_calc_api/.env
 WORKDIR /climada_calc_api
 
