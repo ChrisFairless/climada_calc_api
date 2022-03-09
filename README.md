@@ -19,13 +19,17 @@ The Django web server expects to mount a volume located on the host machine at `
 
 ## Usage
 
-All endpoints are available through [localhost:8000/rest/vtest/](localhost:8000/rest/vtest/) (assuming you're running on your local machine). At the moment only these test endpoints are functioning (and even then, not all of them).
+All endpoints are available through [localhost:8000/rest/vtest/](localhost:8000/rest/vtest/) (assuming you're running on your local machine). At the moment only these test endpoints are functioning (and even then, not all of them). They all return the same sample datasets for Haiti, regardless of the query or job details submitted.
 
 Documentation is generated at [127.0.0.1:8000/rest/vtest/docs/](localhost:8000/rest/vtest/docs)
 (assuming you're running on a local host). This is the best way to find out what's available to you!
 
+The API is asynchronous, meaning that endpoints that get climate data have POST methods to submit a job, and GET methods to access the job status and results.
+
+See the documentation for details about the relevant schema. An endpoint's POST method will take multiple parameters in its body that define a piece of desired data. The endpoint returns a job schema, including status information, as well as the URL to poll for results. The GET method, along with the job ID as a query parameter, will return the job's status. When the job is complete, it will also contain a response parameter, formatted according the that endpoint's response schema. Often this will include a URL that will be used to download relevant images or files.
+
 In particular
-- the `/rest/vtest/map/hazard/climate`, `/rest/vtest/map/exposure`, `/rest/vtest/map/impact/climate` endpoints will return sample data for mapping different elements of risk (always for Haiti - change the country by editing the file `scripts/generate_sample_data.py` in the repository and deleting any existing outputs in the mounted volume)
+- the `/rest/vtest/map/hazard/climate`, `/rest/vtest/map/exposure`, `/rest/vtest/map/impact/climate` POST endpoints will return sample job submission data for mapping different elements of risk (always for Haiti - change the country by editing the file `scripts/generate_sample_data.py` in the repository and deleting any existing outputs in the mounted volume). The GET endpoints will return sample completed job information, including a URL to access the generated image. 
 - the `rest/vtest/geocoding/autocomplete` endpoint returns location suggestions for a user-entered string.
 
 Note: since this is a test endpoint, it will ignore all the parameters you pass to it. That is, it requires them to be set, but makes no difference to the returned values.

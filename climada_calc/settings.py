@@ -144,6 +144,6 @@ CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_TIME_LIMIT: 10 * 60
-CELERY_IMPORTS = ['calc_api.vtest.ninja', 'calc_api.vizz.ninja']
+CELERY_IMPORTS = ['calc_api.vtest.ninja']
 
 GEOCODE_URL = 'http://geocode_api:80/'
