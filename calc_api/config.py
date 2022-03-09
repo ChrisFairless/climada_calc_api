@@ -37,9 +37,13 @@ class ClimadaCalcApiConfig:
         self.CHUNK_SIZE = human_to_int(cdac['chunk-size'])
         self.LOGO_LINK = cdac['climada-logo']['link']
         self.LOGO_SRC = cdac['climada-logo']['img-src']
+        self.REPOSITORY_URL = cdac['repository_url']
         self.DEFAULT_LICENSE = cdac['defaults']['data-license']
         self.LOCK_TIMEOUT = int(cdac['lock-timeout'])
+        self.DEFAULT_UNITS = cdac['defaults']['units']
+        self.DEFAULT_FORMAT = cdac['defaults']['format']
         self.DEFAULT_SCENARIO_NAME = cdac['defaults']['api_parameters']['scenario_name']
         self.DEFAULT_SCENARIO_YEAR = cdac['defaults']['api_parameters']['scenario_year']
         self.DEFAULT_N_TRACKS = cdac['defaults']['api_parameters']['n_tracks']
         self.DEFAULT_MIN_DIST_TO_CENTROIDS = cdac['defaults']['api_parameters']['min_dist_to_centroids']
+        self.CACHE_TIMEOUT = cdac['cache']['timeout']

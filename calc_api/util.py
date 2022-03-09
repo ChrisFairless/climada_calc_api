@@ -1,4 +1,7 @@
 import hashlib
+import json
+import dataclasses
+import datetime
 
 HASH_FUNCS = {
     'md5': hashlib.md5,
@@ -27,3 +30,26 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+
+# Adapted from https://death.andgravity.com/stable-hashing
+def json_default(thing):
+    try:
+        return dataclasses.asdict(thing)
+    except TypeError:
+        pass
+    if isinstance(thing, datetime.datetime):
+        return thing.isoformat(timespec='microseconds')
+    raise TypeError(f"object of type {type(thing).__name__} not serializable")
+
+
+def get_hash(thing):
+    dump = json.dumps(
+        thing,
+        default=json_default,
+        ensure_ascii=False,
+        sort_keys=True,
+        indent=None,
+        separators=(',', ':'),
+    )
+    return hashlib.md5(dump.encode('utf-8')).digest().hex()

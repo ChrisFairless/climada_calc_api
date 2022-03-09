@@ -7,7 +7,8 @@ rest:
 chunk-size: 1k
 climada-logo:
   link: https://wcr.ethz.ch/research/climada.html
-  img-src: /static/CLIMADA_logo_QR.png
+  img-src: /static/climada_logo.png
+repository_url: https://github.com/ChrisFairless/climada_calc_api/
 test:
   file: /path/to/test/file
   format: jpg
@@ -15,7 +16,11 @@ test:
 datasets:
   tropical_cyclone: True
   extreme_heat: False
+cache:
+  timeout: 7200
 defaults:
+   units: "metric"
+   format: "tif"
    api_parameters:
      scenario_name: "hist"
      scenario_year: 2020

@@ -1,0 +1,130 @@
+# There are currently two hazards implemented. The hazard determines all other options.
+# The available hazards and the options for each hazard may expand or change over time.
+
+# Questions that aren't answered in this options schema:
+# - How do we add the context from the biodiversity and social vulnerability layers?
+
+climate change scenarios:
+  tropical cyclone:
+      - historical
+      - SSP1 2.6
+      - SSP2 4.5
+      - SSP5 8.5
+  extreme heat:
+    - historical
+    - SSP1 2.6
+    - SSP2 4.5
+    - SSP5 8.5
+
+year:
+  tropical cyclone:
+    - 2020
+    - 2040
+    - 2060
+    - 2080
+  extreme heat:
+    - 2020
+    - 2040
+    - 2060
+    - 2080
+
+exposures:
+  tropical cyclone:
+    - economic assets:
+      impact calculation choices:
+        - assets at risk
+        - damage to assets
+    - people:
+      impact calculation choices:
+        - people affected
+  extreme heat:
+    - people:
+      impact calculation choices:
+        - people affected
+
+map layers:  # I imagine this will change a lot during the design process
+  - hazard:
+    - selected hazard:
+      - historical events
+      - return period:
+          - 1
+          - 10
+          - 20
+          - 50
+          - 100
+          - 150
+          - 200
+          - 250
+    - comparison layer?
+  - exposure:
+    - selected exposure
+    - social vulnerability
+    - biodiversity
+    - comparison layer?
+  - impact and risk:
+    selected risk analysis:
+      - annual average impact
+      # We have a full catalogue of historical footprints that can be visualised, but we don't know if/how this is useful to the user
+      - historical events
+      - return period:
+          - 1
+          - 10
+          - 20
+          - 50
+          - 100
+          - 150
+          - 200
+          - 250
+      - comparison layer?
+
+adaptation measures:
+  - tropical cyclone:
+    # TODO add preconfigured example measures
+  - extreme heat:
+    # TODO add preconfigured example measures
+  - custom:
+      # This is the data model used for all adaptation measures
+      cost type:
+        - per unit area
+        - whole project
+      initial cost: float
+      annual upkeep cost: float
+      cost unit: dollars
+      priority:
+        - most vulnerable
+        - most benefit
+        - none
+      percentage coverage: float            # for measures that don't protect all assets in an area
+      percentage effectiveness: float       # for measures that won't see 100% takeup
+      max distance from coast: float        # for coastal adaptation measures
+      hazard cutoff: none                   # for measures that protect against e.g. 30 m/s winds
+      frequency cutoff: none                # for measures that protect against e.g. 1-in-100 year events
+      intensity reduction multiplier: none  # e.g. reduce hazard by 10%
+      intensity reduction constant: float   # e.g. reduce hazard by e.g. 5 m/s
+      risk transfer: # we haven't decided if we'll include financial tools like this yet, but probably will
+         attach: float
+         cover: float
+         cost factor: float
+
+geographic selection:
+  - global
+    # We don't expect the list of countries to be exposed to the user, who will instead enter a location string which
+    # is passed to a geocoder, but the API receives queries by country.
+    # Coverage is global but has a couple of geocoding oddities inherited from the Natural Earth dataset it's based on.
+  - country_name: ['Indonesia', 'Kenya', 'Latvia', 'Falkland Islands (Malvinas)', 'Tunisia', 'Andorra', 'Denmark', 'Guatemala', 'Bahamas', 'Cook Islands', 'Jordan', 'South Africa', 'Namibia', 'Congo, The Democratic Republic of the', 'Tonga', 'Grenada', 'Zambia', 'Australia', 'Philippines', 'Sudan', 'Haiti', 'Zimbabwe', 'Panama', 'Somalia', 'Palau', 'Korea, Republic of', 'Hong Kong', 'Nicaragua', 'Central African Republic', 'Aruba', 'Åland Islands', 'Slovakia', 'Cabo Verde', 'Hungary', 'Trinidad and Tobago', 'San Marino', 'Saint Lucia', 'Suriname', 'Greece', 'Turkmenistan', 'Uruguay', 'Northern Mariana Islands', 'Sint Maarten (Dutch part)', 'Burundi', 'Guyana', 'Lithuania', 'Viet Nam', 'Monaco', 'Malaysia', 'Italy', 'Cayman Islands', 'El Salvador', 'Turks and Caicos Islands', 'Portugal', 'Nigeria', 'Vanuatu', 'Bangladesh', 'Bolivia, Plurinational State of', "Côte d'Ivoire", 'Burkina Faso', 'Norway', 'Ukraine', 'Senegal', 'Saint Pierre and Miquelon', 'Chad', 'Rwanda', 'Guam', 'Macao', 'Marshall Islands', 'United Arab Emirates', 'Turkey', 'Samoa', 'Costa Rica', 'Madagascar', 'Isle of Man', 'Poland', 'Saint Kitts and Nevis', 'Eswatini', 'French Polynesia', 'Tuvalu', 'Liberia', 'Ecuador', 'Malta', 'Kyrgyzstan', 'Ethiopia', 'Western Sahara', 'Switzerland', 'Solomon Islands', 'Bahrain', 'Saint Martin (French part)', 'New Zealand', 'Slovenia', 'Belgium', 'Estonia', 'Myanmar', 'Guernsey', 'Algeria', 'Nauru', 'Bosnia and Herzegovina', 'Jersey', 'Cyprus', 'Mongolia', 'Gabon', 'United Kingdom', 'Saudi Arabia', 'Timor-Leste', 'Spain', 'Cambodia', 'Syrian Arab Republic', 'Guinea', 'British Indian Ocean Territory', 'Gambia', 'Virgin Islands, U.S.', 'China', 'Mauritius', 'Comoros', 'Niue', 'Singapore', 'North Macedonia', 'Chile', 'Benin', 'South Georgia and the South Sandwich Islands', 'Iran, Islamic Republic of', 'Germany', 'Brazil', 'Lebanon', 'Malawi', 'Seychelles', 'Cuba', 'Mali', 'Finland', 'Cameroon', 'Brunei Darussalam', 'Kiribati', "Lao People's Democratic Republic", 'Serbia', 'Sweden', 'Wallis and Futuna', 'Albania', 'Honduras', 'Fiji', 'Bermuda', 'Dominican Republic', 'Romania', 'Argentina', 'Mexico', 'Liechtenstein', 'Maldives', 'Pitcairn', 'Venezuela, Bolivarian Republic of', 'Austria', 'Dominica', 'Papua New Guinea', 'Angola', 'Antigua and Barbuda', 'Yemen', 'Bulgaria', 'Anguilla', 'Saint Vincent and the Grenadines', 'Paraguay', 'Heard Island and McDonald Islands', 'Botswana', 'Jamaica', 'Montenegro', 'Eritrea', 'France', 'Guinea-Bissau', 'Japan', 'Curaçao', 'Ghana', 'Kuwait', 'Belarus', 'Ireland', "Korea, Democratic People's Republic of", 'South Sudan', 'Bhutan', 'Belize', 'Lesotho', 'Virgin Islands, British', 'Niger', 'Oman', 'Russian Federation', 'India', 'Barbados', 'Egypt', 'Taiwan, Province of China', 'French Southern Territories', 'Kazakhstan', 'Netherlands', 'Djibouti', 'Luxembourg', 'Togo', 'Sri Lanka', 'Thailand', 'Czechia', 'Micronesia, Federated States of', 'Uganda', 'Qatar', 'Moldova, Republic of', 'Tanzania, United Republic of', 'Sierra Leone', 'Colombia', 'Afghanistan', 'Peru', 'Puerto Rico', 'Congo', 'Saint Helena, Ascension and Tristan da Cunha', 'American Samoa', 'Equatorial Guinea', 'Canada', 'Morocco', 'Sao Tome and Principe', 'Iraq', 'Mozambique', 'Greenland', 'New Caledonia', 'Pakistan', 'Nepal', 'Croatia', 'Mauritania', 'Montserrat', 'United States', 'Libya']
+  - country_iso3alpha: ['THA', 'SLV', 'IRQ', 'IRN', 'MLI', 'SMR', 'LSO', 'ZWE', 'BGR', 'HKG', 'MMR', 'TON', 'LAO', 'GNQ', 'KHM', 'HRV', 'CHN', 'TUN', 'AND', 'TCD', 'MAR', 'GNB', 'SEN', 'COM', 'BDI', 'AIA', 'IOT', 'GUY', 'COD', 'DJI', 'GAB', 'GRD', 'GTM', 'BGD', 'COG', 'LKA', 'IND', 'USA', 'ETH', 'PAN', 'KOR', 'VGB', 'SUR', 'ALA', 'JEY', 'ZAF', 'GBR', 'IMN', 'CAN', 'NIC', 'TLS', 'ARE', 'MNP', 'JAM', 'OMN', 'NOR', 'ITA', 'MDG', 'MDA', 'BRA', 'MOZ', 'ERI', 'SDN', 'BWA', 'SGS', 'BMU', 'AUS', 'JOR', 'MCO', 'WLF', 'SYC', 'DEU', 'SAU', 'FRA', 'LUX', 'FIN', 'AFG', 'FLK', 'GRC', 'KWT', 'TUV', 'YEM', 'IDN', 'SGP', 'TKM', 'PRY', 'GRL', 'NCL', 'PAK', 'DZA', 'GUM', 'PYF', 'TUR', 'BHS', 'CUW', 'PHL', 'MUS', 'BEN', 'BFA', 'NZL', 'ZMB', 'MYS', 'GGY', 'HMD', 'CYM', 'LBR', 'NAM', 'FSM', 'CHE', 'JPN', 'ATF', 'MAF', 'SVK', 'ESP', 'TGO', 'UKR', 'DMA', 'ARG', 'SWZ', 'BTN', 'IRL', 'RUS', 'PCN', 'MSR', 'SPM', 'LBN', 'GIN', 'BHR', 'EST', 'PLW', 'TWN', 'SHN', 'NER', 'MEX', 'VEN', 'AGO', 'BEL', 'STP', 'TTO', 'MHL', 'CHL', 'BOL', 'CPV', 'MDV', 'MAC', 'MRT', 'CAF', 'ALB', 'HTI', 'VNM', 'LVA', 'DNK', 'MWI', 'GMB', 'MNE', 'SOM', 'VIR', 'UGA', 'PRI', 'SVN', 'SLB', 'NLD', 'MNG', 'BIH', 'LBY', 'PRT', 'CIV', 'CYP', 'VUT', 'TCA', 'PRK', 'HND', 'VCT', 'SLE', 'TZA', 'BRN', 'ECU', 'KEN', 'EGY', 'RWA', 'ASM', 'KNA', 'LCA', 'KAZ', 'NPL', 'COK', 'QAT', 'MLT', 'PNG', 'ABW', 'POL', 'CZE', 'BLR', 'KGZ', 'CRI', 'SXM', 'CUB', 'KIR', 'URY', 'SSD', 'LTU', 'PER', 'LIE', 'SYR', 'COL', 'NIU', 'HUN', 'GHA', 'NGA', 'BLZ', 'SRB', 'SWE', 'ATG', 'AUT', 'DOM', 'NRU', 'CMR', 'ROU', 'ESH', 'FJI', 'MKD', 'WSM', 'BRB']
+
+global settings:
+  area units:
+    - miles
+    - kilometers
+  currency units:
+    - dollars  # We should probably add more
+  temperature units:
+    - fahrenheit
+    - celsius
+  speed units:
+    - miles per hour
+    - kilometres per hour
+    - metres per second
+    - knots

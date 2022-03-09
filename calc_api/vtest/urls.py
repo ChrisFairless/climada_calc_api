@@ -15,8 +15,10 @@ Including another URLconf
 """
 from django.urls import path, include
 
+from . import views
 from .ninja import resturls
 
 urlpatterns = [
+    path('img/<str:filename>', views.get_result_image, name='get_result_image'),
     path('', resturls),
 ]

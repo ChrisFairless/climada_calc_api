@@ -4,10 +4,12 @@ import numpy as np
 import sys
 import os
 from pathlib import Path
+from itertools import product
 
 from climada.entity import ImpactFunc, ImpactFuncSet, ImpfTropCyclone
 from climada.util.api_client import Client
 from climada.engine.impact import Impact
+import climada.util.coordinates as u_coord
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -31,11 +33,54 @@ output_directory = sys.argv[1]
 # --------------------------------------------------------
 
 map_haz_out_path = Path(output_directory, 'map_haz_rp.csv')
+map_haz_out_path_raster = Path(output_directory, 'map_haz_rp.tif')
 exceedance_haz_out_path = Path(output_directory, 'exceedance_haz.csv')
 map_exp_out_path = Path(output_directory, 'map_exp.csv')
+map_exp_out_path_raster = Path(output_directory, 'map_exp_raster.tif')
 map_imp_out_path = Path(output_directory, 'map_imp_rp.csv')
+map_imp_out_path_raster = Path(output_directory, 'map_imp_rp_raster.tif')
 exceedance_imp_out_path = Path(output_directory, 'exceedance_imp.csv')
-all_paths = [map_haz_out_path, exceedance_haz_out_path, map_exp_out_path, map_imp_out_path, exceedance_imp_out_path]
+all_paths = [map_haz_out_path, map_haz_out_path_raster, exceedance_haz_out_path, map_exp_out_path,
+             map_exp_out_path_raster, map_imp_out_path, map_imp_out_path_raster, exceedance_imp_out_path]
+
+def df_to_raster(df, crs):
+    """
+    This is a shonky replacement for to horror show that is u_coords.points_to_raster. Don't use elsewhere!
+    """
+    lat = df['lat'].unique()
+    lon = df['lon'].unique()
+    if len(lat) * len(lon) == df.shape[0]:     # data frame already complete
+        return df
+
+    bounds = u_coord.latlon_bounds(df['lat'], df['lon'])
+    res = u_coord.get_resolution(df['lat'], df['lon'])
+    nrow, ncol, trans = u_coord.pts_to_raster_meta(bounds, res)
+    meta = {"width": ncol, "height": nrow, "transform": trans, "crs": crs}
+
+    lon_full, lat_full = u_coord.raster_to_meshgrid(meta['transform'], meta['width'], meta['height'])
+    out = pd.DataFrame({'lat': lat_full.flatten(), 'lon': lon_full.flatten()})
+
+    precision = 5   # This is the dangerous bit
+    if 10**-precision > 0.1 * min(abs(np.array(res))):
+        raise ValueError("Precision too low. Precision: " + str(precision) + "  Resolution: " + str(min(abs(np.array(res)))))
+
+    out['lat_trunc'] = np.round(out['lat'], precision)
+    out['lon_trunc'] = np.round(out['lon'], precision)
+    df['lat_trunc'] = np.round(df['lat'], precision)
+    df['lon_trunc'] = np.round(df['lon'], precision)
+
+    out = out.merge(df.drop(['lat', 'lon'], axis=1, inplace=False), how='left', on=['lat_trunc', 'lon_trunc'])
+    out.drop(['lat_trunc', 'lon_trunc'], axis=1)
+    return out, meta
+
+
+def write_sample_to_raster(df, path, value_column, crs):
+    out, meta = df_to_raster(df, crs)
+    values = np.array(out[value_column]).reshape(meta['height'], meta['width'])
+    u_coord.write_raster(path, values, meta, dtype=np.float32)
+
+
+#-----------------------------------------------------
 
 if all(os.path.exists(p) for p in all_paths):
     LOGGER.info('Sample files already exist. Exiting')
@@ -66,6 +111,7 @@ haz_df = pd.DataFrame({'lat': haz.centroids.lat,
                        'lon': haz.centroids.lon,
                        'intensity': haz_rp})
 haz_df.to_csv(map_haz_out_path)
+write_sample_to_raster(haz_df, map_haz_out_path_raster, 'intensity', haz.centroids.crs)
 
 
 haz_ex_df = pd.DataFrame({'intensity': np.max(haz.intensity, axis=1).todense().A1,
@@ -75,7 +121,6 @@ haz_ex_df = haz_ex_df.sort_values(by='intensity', ascending=False)
 haz_ex_df['return_period'] = 1/np.cumsum(haz_ex_df['frequency'])
 haz_ex_df = haz_ex_df.drop(columns='frequency')
 haz_ex_df.to_csv(exceedance_haz_out_path)
-
 
 
 
@@ -104,6 +149,7 @@ exp_df = pd.DataFrame({'lat': exp.gdf.latitude,
                        'lon': exp.gdf.longitude,
                        'value': exp.gdf.value})
 exp_df.to_csv(map_exp_out_path)
+write_sample_to_raster(exp_df, map_exp_out_path_raster, 'value', exp.crs)
 
 # map exposures to hazard centroids
 LOGGER.info('Mapping to centroids')
@@ -131,7 +177,7 @@ imp_df = pd.DataFrame({'lat': exp.gdf['latitude'][ix],
                        'value': imp_rp[ix]})
 
 imp_df.to_csv(map_imp_out_path)
-
+write_sample_to_raster(imp_df, map_imp_out_path_raster, 'value', haz.centroids.crs)
 
 imp_ex_df = pd.DataFrame({'intensity': np.max(imp.imp_mat, axis=1).todense().A1,
                           'frequency': haz.frequency})
