@@ -253,7 +253,7 @@ class TimelineBar(Schema):
 
 
 class TimelineMetadata(Schema):
-    units_warming: str
+    units_temperature: str
     units_response: str
 
 
@@ -262,7 +262,7 @@ class TimelineResponse(Schema):
     metadata: TimelineMetadata
 
 
-class TimelineJobSchema(Schema):
+class TimelineJobSchema(JobSchema):
     response: TimelineResponse = None
 
 

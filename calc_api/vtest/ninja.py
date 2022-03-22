@@ -113,7 +113,7 @@ def make_dummy_job(request_schema, location):
         job_id="test",
         location=location,
         status="submitted",
-        request=request_schema.__dict__,
+        request={} if not request_schema else request_schema.__dict__,
         submitted_at=dt.datetime(2020, 1, 1)
     )
 
@@ -135,7 +135,7 @@ def make_dummy_timeline(response_units, scale):
         units_response=response_units
     )
 
-    out_response = schemas.TimelineResponse(out_data, out_metadata)
+    out_response = schemas.TimelineResponse(data=out_data, metadata=out_metadata)
 
     return schemas.TimelineJobSchema(
         job_id="test",
@@ -426,7 +426,7 @@ def _api_poll_map_impact_event(request, job_id: str):
     summary="Submit job for hazard intensity exceedance curve data"
 )
 def _api_submit_exceedance_hazard(request, data: schemas.ExceedanceHazardRequest = None):
-    job = make_dummy_job(data, "/exceedance/hazard/event?job_id=" + "test")
+    job = make_dummy_job(data, "/exceedance/hazard?job_id=" + "test")
     return schemas.ExceedanceJobSchema(**job.__dict__)
 
 
@@ -439,13 +439,26 @@ def _api_submit_exceedance_hazard(request, data: schemas.ExceedanceHazardRequest
 def _api_poll_exceedance_hazard(request, job_id: str):
     exceedance_path = Path(SAMPLE_DIR, "exceedance_haz.csv")
     df = pd.read_csv(exceedance_path)
-    outdata = schemas.ExceedanceCurveData(
-        return_period=list(df.return_period),
-        intensity=list(df.intensity),
+    outdata = [
+        schemas.ExceedanceCurvePoint(return_period=row['return_period'], intensity=row['intensity'])
+        for _, row in df.iterrows()
+    ]
+    outmetadata = schemas.ExceedanceCurveMetadata(
         return_period_units="years",
         intensity_units="m/s"
     )
-    return schemas.ExceedanceResponse(data=outdata, metadata={})
+    response = schemas.ExceedanceResponse(data=outdata, metadata=outmetadata)
+    return schemas.ExceedanceJobSchema(
+        job_id="test",
+        location="/exceedance/hazard?job_id=" + "test",
+        status="completed",
+        request={},
+        submitted_at=dt.datetime(2020, 1, 1),
+        completed_at=dt.datetime(2020, 1, 2),
+        runtime=86400,
+        response=response,
+        response_uri=None
+    )
 
 
 @_api.post(
@@ -455,26 +468,40 @@ def _api_poll_exceedance_hazard(request, job_id: str):
     summary="Submit job for hazard intensity exceedance curve data"
 )
 def _api_submit_exceedance_impact(request, data: schemas.ExceedanceHazardRequest = None):
-    job = make_dummy_job(data, "/exceedance/impact/event?job_id=" + "test")
+    job = make_dummy_job(data, "/exceedance/impact?job_id=" + "test")
     return schemas.ExceedanceJobSchema(**job.__dict__)
 
 
-@_api.post(
+@_api.get(
     "/exceedance/impact",
     tags=["exceedance"],
     response=schemas.ExceedanceJobSchema,
     summary="Poll job for impact exceedance curve data"
 )
 def _api_poll_exceedance_impact(request, job_id: str):
+    job = make_dummy_job(None, "/exceedance/impact?job_id=" + "test")
     exceedance_path = Path(SAMPLE_DIR, "exceedance_imp.csv")
     df = pd.read_csv(exceedance_path)
-    outdata = schemas.ExceedanceCurveData(
-        return_period=list(df.return_period),
-        intensity=list(df.intensity),
+    outdata = [
+        schemas.ExceedanceCurvePoint(return_period=row['return_period'], intensity=row['intensity'])
+        for _, row in df.iterrows()
+    ]
+    outmetadata = schemas.ExceedanceCurveMetadata(
         return_period_units="years",
-        intensity_units="people affected"
+        intensity_units="people_affected"
     )
-    return schemas.ExceedanceResponse(data=outdata, metadata={})
+    response = schemas.ExceedanceResponse(data=outdata, metadata=outmetadata)
+    return schemas.ExceedanceJobSchema(
+        job_id="test",
+        location="/exceedance/impact?job_id=" + "test",
+        status="completed",
+        request={},
+        submitted_at=dt.datetime(2020, 1, 1),
+        completed_at=dt.datetime(2020, 1, 2),
+        runtime=86400,
+        response=response,
+        response_uri=None
+    )
 
 
 @_api.post(
@@ -485,13 +512,13 @@ def _api_poll_exceedance_impact(request, job_id: str):
 )
 def _api_timeline_hazard(request, data: schemas.TimelineHazardRequest = None):
     job = make_dummy_job(data, "/timeline/hazard?job_id=" + "test")
-    return schemas.ExceedanceJobSchema(**job.__dict__)
+    return schemas.TimelineJobSchema(**job.__dict__)
 
 
 @_api.get(
     "/timeline/hazard",
     tags=["timeline"],
-    response=schemas.TimelineResponse,
+    response=schemas.TimelineJobSchema,
     summary="Poll job for hazard intensity over time"
 )
 def _api_timeline_hazard(request, job_id: str):
@@ -506,13 +533,13 @@ def _api_timeline_hazard(request, job_id: str):
 )
 def _api_timeline_hazard(request, data: schemas.TimelineExposureRequest = None):
     job = make_dummy_job(data, "/timeline/exposure?job_id=" + "test")
-    return schemas.ExceedanceJobSchema(**job.__dict__)
+    return schemas.TimelineJobSchema(**job.__dict__)
 
 
 @_api.get(
     "/timeline/exposure",
     tags=["timeline"],
-    response=schemas.TimelineResponse,
+    response=schemas.TimelineJobSchema,
     summary="Poll job for exposure over time"
 )
 def _api_timeline_hazard(request, job_id: str):
@@ -527,13 +554,13 @@ def _api_timeline_hazard(request, job_id: str):
 )
 def _api_timeline_hazard(request, data: schemas.TimelineImpactRequest = None):
     job = make_dummy_job(data, "/timeline/impact?job_id=" + "test")
-    return schemas.ExceedanceJobSchema(**job.__dict__)
+    return schemas.TimelineJobSchema(**job.__dict__)
 
 
 @_api.get(
     "/timeline/impact",
     tags=["timeline"],
-    response=schemas.TimelineResponse,
+    response=schemas.TimelineJobSchema,
     summary="Poll job for risk over time"
 )
 def _api_timeline_hazard(request, job_id: str):
