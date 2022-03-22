@@ -19,8 +19,13 @@ datasets:
 cache:
   timeout: 7200
 defaults:
-   units: "metric"
-   format: "tif"
+   units:
+     temperature: "fahrenheit"
+     speed: "miles per hour"
+     distance: "miles"
+     area: "square miles"
+     currency: "dollars"
+   image_format: "tif"
    api_parameters:
      scenario_name: "hist"
      scenario_year: 2020

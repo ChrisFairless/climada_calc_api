@@ -45,8 +45,8 @@ class MapHazardClimateRequest(Schema):
     location_poly: str = None
     aggregation_level: str = None
     aggregation_method: str = None
-    format: str = conf.DEFAULT_FORMAT
-    units: str = conf.DEFAULT_UNITS
+    format: str = conf.DEFAULT_IMAGE_FORMAT
+    units: str = None
 
 
 class MapHazardEventRequest(Schema):
@@ -62,8 +62,8 @@ class MapHazardEventRequest(Schema):
     location_poly: str = None
     aggregation_scale: str = None
     aggregation_method: str = None
-    format: str = conf.DEFAULT_FORMAT
-    units: str = conf.DEFAULT_UNITS
+    format: str = conf.DEFAULT_IMAGE_FORMAT
+    units: str = None
 
 
 
@@ -79,8 +79,8 @@ class MapExposureRequest(Schema):
     location_poly: str = None
     aggregation_scale: str = None
     aggregation_method: str = None
-    format: str = conf.DEFAULT_FORMAT
-    units: str = conf.DEFAULT_UNITS
+    format: str = conf.DEFAULT_IMAGE_FORMAT
+    units: str = None
 
 
 
@@ -98,8 +98,8 @@ class MapImpactClimateRequest(Schema):
     location_poly: str = None
     aggregation_scale: str = None
     aggregation_method: str = None
-    format: str = conf.DEFAULT_FORMAT
-    units: str = conf.DEFAULT_UNITS
+    format: str = conf.DEFAULT_IMAGE_FORMAT
+    units: str = None
 
 
 
@@ -117,8 +117,8 @@ class MapImpactEventRequest(Schema):
     location_poly: str = None
     aggregation_scale: str = None
     aggregation_method: str = None
-    format: str = conf.DEFAULT_FORMAT
-    units: str = conf.DEFAULT_UNITS
+    format: str = conf.DEFAULT_IMAGE_FORMAT
+    units: str = None
 
 
 
@@ -152,51 +152,118 @@ class MapJobSchema(JobSchema):
 
 class ExceedanceHazardRequest(Schema):
     hazard_type: str
-    hazard_event_name: str
-    scenario_name: str
-    scenario_year: int
+    hazard_event_name: str = None
+    scenario_name: str = None
+    scenario_year: int = None
     location_name: str = None
-    location_scale: str
-    location_code: str
-    location_poly: str
-    aggregation_scale: str
-    aggregation_method: str
-    format: str = conf.DEFAULT_FORMAT
-    units: str = conf.DEFAULT_UNITS
-
+    location_scale: str = None
+    location_code: str = None
+    location_poly: str = None
+    aggregation_scale: str = None
+    aggregation_method: str = None
+    format: str = conf.DEFAULT_IMAGE_FORMAT
+    units: str = None
 
 
 class ExceedanceImpactRequest(Schema):
     hazard_type: str
-    hazard_event_name: str
-    exposure_type: str
-    scenario_name: str
-    scenario_year: int
-    location_name: str
-    location_scale: str
-    location_code: str
-    location_poly: str
-    aggregation_scale: str
-    aggregation_method: str
-    format: str = conf.DEFAULT_FORMAT
-    units: str = conf.DEFAULT_UNITS
+    hazard_event_name: str = None
+    exposure_type: str = None
+    scenario_name: str = None
+    scenario_year: int = None
+    location_name: str = None
+    location_scale: str = None
+    location_code: str = None
+    location_poly: str = None
+    aggregation_scale: str = None
+    aggregation_method: str = None
+    format: str = conf.DEFAULT_IMAGE_FORMAT
+    units: str = None
 
 
+class ExceedanceCurvePoint(Schema):
+    return_period: float
+    intensity: float
 
-class ExceedanceCurveData(Schema):
-    return_period: List[float]
-    intensity: List[float]
+
+class ExceedanceCurveMetadata(Schema):
     return_period_units: str
     intensity_units: str
 
 
 class ExceedanceResponse(Schema):
-    data: ExceedanceCurveData
-    metadata: dict       # we'll expand this later...
+    data: List[ExceedanceCurvePoint]
+    metadata: ExceedanceCurveMetadata
 
 
 class ExceedanceJobSchema(JobSchema):
     response: ExceedanceResponse = None
+
+
+class TimelineHazardRequest(Schema):
+    hazard_type: str
+    hazard_event_name: str = None
+    scenario_name: str = None
+    scenario_rp: int = None
+    location_name: str = None
+    location_scale: str = None
+    location_code: str = None
+    location_poly: str = None
+    aggregation_scale: str = None
+    aggregation_method: str = None
+    units_warming: str = None
+    units_response: str = None
+
+
+class TimelineExposureRequest(Schema):
+    exposure_type: str = None
+    scenario_name: str = None
+    location_name: str = None
+    location_scale: str = None
+    location_code: str = None
+    location_poly: str = None
+    aggregation_scale: str = None
+    aggregation_method: str = None
+    units_warming: str = None
+    units_response: str = None
+
+
+class TimelineImpactRequest(Schema):
+    hazard_type: str
+    hazard_event_name: str = None
+    exposure_type: str = None
+    scenario_name: str = None
+    scenario_rp: int = None
+    location_name: str = None
+    location_scale: str = None
+    location_code: str = None
+    location_poly: str = None
+    aggregation_scale: str = None
+    aggregation_method: str = None
+    units_warming: str = None
+    units_response: str = None
+
+
+class TimelineBar(Schema):
+    year: float
+    temperature: float
+    risk_baseline: float
+    risk_population_change: float
+    risk_climate_change: float
+
+
+class TimelineMetadata(Schema):
+    units_warming: str
+    units_response: str
+
+
+class TimelineResponse(Schema):
+    data: List[TimelineBar]
+    metadata: TimelineMetadata
+
+
+class TimelineJobSchema(Schema):
+    response: TimelineResponse = None
 
 
 class GeocodePlace(Schema):

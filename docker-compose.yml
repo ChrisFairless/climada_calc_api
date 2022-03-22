@@ -9,7 +9,7 @@ services:
       - calc_network
   web:
     build: .
-    command: bash -c "python scripts/generate_sample_data.py /climada_calc_api/static/sample_data/ && python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
     depends_on:

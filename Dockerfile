@@ -9,6 +9,10 @@ RUN pip install --no-cache -r /requirements.txt
 
 COPY . /climada_calc_api
 COPY ./climada.conf ~/climada.conf
-RUN touch /climada_calc_api/.env
 WORKDIR /climada_calc_api
+RUN touch .env
+RUN bash -c "python manage.py makemigrations calc_api --noinput && \
+             python manage.py migrate calc_api --noinput && \
+             python manage.py generate_sample_data && \
+             python manage.py generate_measure_data"
 

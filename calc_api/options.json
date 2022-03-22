@@ -293,7 +293,7 @@
               "step": 10
             }
           },
-          "intensity_change_multiplier": {
+          "hazard_change_multiplier": {
             "description": "How does this measure scale the effective experienced hazard (%)?",
             "type": "slider",
             "default": 100,
@@ -303,7 +303,7 @@
               "step": 1
             }
           },
-          "intensity_change_constant": {
+          "hazard_change_constant": {
             "description": "How much does this measure adjust the effective experienced hazard?",
             "type": "slider",
             "default": {
