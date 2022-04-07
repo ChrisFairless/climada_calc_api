@@ -1,0 +1,16 @@
+setup:
+  addons:
+    - plan: heroku-redis:hobby-dev
+build:
+  docker:
+    web:
+      dockerfile: ./Dockerfile
+    celery:
+      dockerfile: ./Dockerfile
+    geocode_api:
+      dockerfile: ./Dockerfile.osmnames
+
+run:
+  web: bash -c "python manage.py runserver 0.0.0.0:8000"
+  celery: celery -A calc_api worker -l info
+

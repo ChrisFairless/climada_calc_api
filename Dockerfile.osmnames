@@ -1,0 +1,2 @@
+FROM klokantech/osmnames-sphinxsearch:latest
+
