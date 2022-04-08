@@ -5,12 +5,12 @@ build:
   docker:
     web:
       dockerfile: ./Dockerfile
-    celery:
-      dockerfile: ./Dockerfile
     geocode_api:
       dockerfile: ./Dockerfile.osmnames
 
 run:
   web: bash -c "python manage.py runserver"
-  celery: celery -A calc_api worker -l info
-
+  worker: 
+    command: 
+      - celery -A calc_api worker -l info
+    image: web
