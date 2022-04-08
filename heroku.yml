@@ -11,6 +11,6 @@ build:
       dockerfile: ./Dockerfile.osmnames
 
 run:
-  web: bash -c "python manage.py runserver 0.0.0.0:8000"
+  web: bash -c "python manage.py runserver"
   celery: celery -A calc_api worker -l info
 
