@@ -8,6 +8,7 @@ COPY requirements.txt /requirements.txt
 RUN pip install --no-cache -r /requirements.txt
 
 COPY . /climada_calc_api
+RUN chmod 755 /climada_calc_api
 COPY ./climada.conf ~/climada.conf
 WORKDIR /climada_calc_api
 RUN touch .env
