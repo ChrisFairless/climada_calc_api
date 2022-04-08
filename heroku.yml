@@ -4,9 +4,14 @@ setup:
 build:
   docker:
     web:
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.heroku.django
     geocode_api:
-      dockerfile: ./Dockerfile.osmnames
+      dockerfile: ./Dockerfile.heroku.osmnames
+
+release:
+  image: web
+  command: 
+    - ./heroku-deployment-tasks.sh
 
 run:
   web: bash -c "python manage.py runserver"
