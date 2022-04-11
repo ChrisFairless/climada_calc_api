@@ -5,4 +5,3 @@ flower
 colorcet
 django-cache-memoize
 redis
-django-environ
