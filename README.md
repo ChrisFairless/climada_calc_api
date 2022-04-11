@@ -2,6 +2,7 @@
 
 This is a work in progress. This first version only has the 'test' endpoints which provide precalculated dummy data in response to every request.
 
+This is the Heroku test version. It's a mess still.
 
 ## Install and run
 
