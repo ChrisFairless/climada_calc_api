@@ -5,6 +5,19 @@ from climada_calc.settings import GEOCODE_URL
 from calc_api.vizz.schemas import GeocodePlaceList, GeocodePlace
 
 
+def osmnames_to_schema(place):
+    level = 'suburb'
+    return GeocodePlace(
+        name=place['display_name'],
+        id=place['osm_id'],
+        type=place['type'],
+        city=place['city'],
+        county=place['county'],
+        state=place['state'],
+        country=place['country'],
+        bbox=place['boundingbox']
+    )
+
 def query_place(s):
     query = GEOCODE_URL + "q/" + s
     response = requests.get(query).json()['results']
@@ -21,14 +34,9 @@ def get_one_place(s, exact=True):
 
     exact_response = [r for r in response if r['display_name'] == s]
     if exact_response:
-        return GeocodePlace(name=exact_response[0]['display_name'],
-                            id=exact_response[0]['osm_id'],
-                            bbox=exact_response[0]['boundingbox'])
-    # is a close match acceptable?
+        return osmnames_to_schema(exact_response[0])
     elif not exact:
-        return GeocodePlace(name=response[0]['display_name'],
-                            id=response[0]['osm_id'],
-                            bbox=response[0]['boundingbox'])
+        return osmnames_to_schema(response[0])
     else:
         return None
 
@@ -51,5 +59,5 @@ def geocode_autocomplete(s):
     response = query_place(s)
     if not response:
         return GeocodePlaceList(data=[])
-    suggestions = [GeocodePlace(name=p['display_name'], id=p['osm_id'], bbox=p['boundingbox']) for p in response]
+    suggestions = [osmnames_to_schema(p) for p in response]
     return GeocodePlaceList(data=suggestions)
