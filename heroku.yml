@@ -14,7 +14,7 @@ release:
     - ./heroku-deployment-tasks.sh
 
 run:
-  web: bash -c "python manage.py runserver"
+  web: bash -c "python manage.py runserver 0.0.0.0:\$PORT"
   worker: 
     command: 
       - celery -A calc_api worker -l info
