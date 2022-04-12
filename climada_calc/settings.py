@@ -88,7 +88,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379',
+        'LOCATION': os.environ.get('REDIS_URL')
     }
 }
 
@@ -136,14 +136,14 @@ STATICFILES_DIRS = [
 
 # Celery configuration
 # All of the configurable options are in climada_calc-config.yaml
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-#TODO switch back to rabbitmq
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL')
+#TODO switch back to rabbitmq   --- also does the above need '/0' at the end?
 #CELERY_BROKER_URL = 'amqp://rabbittest:fasthydrantpotter@127.0.0.1:5672//'
-CELERY_BROKER_URL = 'redis://redis:6379'
+CELERY_BROKER_URL = os.environ.get('REDIS_URL')
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_TIME_LIMIT: 10 * 60
 CELERY_IMPORTS = ['calc_api.vtest.ninja']
 
-GEOCODE_URL = 'http://geocode_api:80/'
+GEOCODE_URL = os.environ.get('GEOCODE_URL')
