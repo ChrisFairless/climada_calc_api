@@ -51,3 +51,4 @@ class ClimadaCalcApiConfig:
         self.DEFAULT_N_TRACKS = cdac['defaults']['api_parameters']['n_tracks']
         self.DEFAULT_MIN_DIST_TO_CENTROIDS = cdac['defaults']['api_parameters']['min_dist_to_centroids']
         self.CACHE_TIMEOUT = cdac['cache']['timeout']
+        self.JOB_TIMEOUT = cdac['job']['timeout']

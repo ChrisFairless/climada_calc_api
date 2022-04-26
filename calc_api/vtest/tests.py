@@ -14,9 +14,9 @@ CONF = ClimadaCalcApiConfig()
 
 
 def dummy_submitted_map_job(request, endpoint):
-    location = endpoint + "?job_id=test"
+    location = endpoint + "?job_id=tests"
     return schemas.MapJobSchema(
-        job_id="test",
+        job_id="tests",
         location=location,
         status="submitted",
         request=request.__dict__,
@@ -25,11 +25,11 @@ def dummy_submitted_map_job(request, endpoint):
 
 
 def dummy_completed_map_job(request, endpoint, filename):
-    location = endpoint + "?job_id=test"
+    location = endpoint + "?job_id=tests"
     path = Path(endpoint, filename)
     uri =  request.build_absolute_uri(path)
     return schemas.MapJobSchema(
-        job_id="test",
+        job_id="tests",
         location=location,
         status="submitted",
         request={},

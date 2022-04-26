@@ -10,14 +10,16 @@ climada-logo:
   img-src: /static/climada_logo.png
 repository_url: https://github.com/ChrisFairless/climada_calc_api/
 test:
-  file: /path/to/test/file
+  file: /path/to/tests/file
   format: jpg
   tmp: /path/to/tmp/file
 datasets:
   tropical_cyclone: True
   extreme_heat: False
+job:
+  timeout: 72000
 cache:
-  timeout: 7200
+  timeout: 72000
 defaults:
    units:
      temperature: "fahrenheit"
