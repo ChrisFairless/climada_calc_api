@@ -9,7 +9,7 @@ build:
       dockerfile: ./Dockerfile.heroku.osmnames
 
 run:
-  web: bash -c "python manage.py runserver 0.0.0.0:\$PORT"
+  web: bash -c "./setup.sh && python manage.py runserver 0.0.0.0:\$PORT"
   worker: 
     command: 
       - celery -A calc_api worker -l info
