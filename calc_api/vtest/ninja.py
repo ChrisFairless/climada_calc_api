@@ -4,6 +4,9 @@ from time import sleep
 import pandas as pd
 from pathlib import Path
 import base64
+import uuid
+from typing import List
+from millify import millify
 
 from django.contrib import auth
 from django.middleware import csrf
@@ -14,14 +17,13 @@ from ninja.security import HttpBearer, HttpBasicAuth
 import climada.util.coordinates as u_coord
 
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.util import get_client_ip, get_hash
+from calc_api.util import get_client_ip
 from climada_calc.settings import BASE_DIR, STATIC_ROOT
 import calc_api.vizz.models as models
 import calc_api.vizz.schemas as schemas
-from calc_api.calc_methods.colourmaps import values_to_colours
-from calc_api.calc_methods.colourmaps import PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
+import calc_api.vizz.schemas_widgets as schemas_widgets
 from calc_api.calc_methods.geocode import geocode_autocomplete
-
+from calc_api.vizz import schemas_examples
 conf = ClimadaCalcApiConfig()
 
 SAMPLE_DIR = Path(STATIC_ROOT, "sample_data")
@@ -108,48 +110,6 @@ _rapi = Router(auth=AuthBearer(), tags=['restricted'])
 _dapi = Router(auth=AuthBearer(), tags=['dangerous'])
 
 
-def make_dummy_job(request_schema, location):
-    return models.Job(
-        job_id="test",
-        location=location,
-        status="submitted",
-        request={} if not request_schema else request_schema.__dict__,
-        submitted_at=dt.datetime(2020, 1, 1)
-    )
-
-
-def make_dummy_timeline(response_units, scale):
-    out_data = [
-        schemas.TimelineBar(
-            year=2020 + 20 * i,
-            temperature=1 + 0.25 * i,
-            risk_baseline=scale,
-            risk_population_change=scale/5 * i,
-            risk_climate_change=scale/10 * i
-        )
-        for i in range(5)
-    ]
-
-    out_metadata = schemas.TimelineMetadata(
-        units_temperature="Fahrenheit",
-        units_response=response_units
-    )
-
-    out_response = schemas.TimelineResponse(data=out_data, metadata=out_metadata)
-
-    return schemas.TimelineJobSchema(
-        job_id="test",
-        location="/map/hazard/climate?job_id=" + "test",
-        status="completed",
-        request={},
-        submitted_at=dt.datetime(2020, 1, 1),
-        completed_at=dt.datetime(2020, 1, 2),
-        runtime=86400,
-        response=out_response,
-        response_uri=None
-    )
-
-
 @_api.get("/debug", tags=["debug"], summary="Short wait and return")
 def map_debug(request):
     sleep(4)
@@ -170,11 +130,11 @@ def get_options(request):
     response=schemas.MapJobSchema,
     summary="Submit job to construct climatological hazard map data"
 )
-def _api_submit_map_hazard_climate(request, data: schemas.MapHazardClimateRequest = None):
+def _api_map_hazard_climate_submit(request, data: schemas.MapHazardClimateRequest = None):
     """
     Return a Job Schema without actually submitting a job or adding to DB
     """
-    job = make_dummy_job(data, "/map/hazard/climate?job_id=" + "test")
+    job = schemas_examples.make_dummy_job(data, "/map/hazard/climate?job_id=", uuid.uuid4())
     job = schemas.MapJobSchema(**job.__dict__)
     return job
 
@@ -185,56 +145,11 @@ def _api_submit_map_hazard_climate(request, data: schemas.MapHazardClimateReques
     response=schemas.MapJobSchema,
     summary="Poll job for climatological hazard map data"
 )
-def _api_poll_map_hazard_climate(request, job_id: str):
+def _api_map_hazard_climate_poll(request, job_id: uuid.UUID = None):
     """
     Return a completed mapping job. Always the same.
     """
-    haz_path = Path(SAMPLE_DIR, "map_haz_rp.csv")
-    df = pd.read_csv(haz_path)
-
-    colours, legend_values, legend_colours = values_to_colours(
-        df['intensity'],
-        PALETTE_HAZARD_COLORCET,
-        reverse=True
-    )
-
-    outdata = [
-        schemas.MapEntry(lat=lat, lon=lon, value=v, color=c)
-        for lat, lon, v, c
-        in zip(df['lat'], df['lon'], df['intensity'], colours)
-    ]
-
-    lat_res, lon_res = u_coord.get_resolution(df['lat'], df['lon'])
-    if abs(abs(lat_res) - abs(lon_res)) > 0.001:
-        raise ValueError("Mismatch in x and y resolutions: " + str(lon_res) + " vs " + str(lat_res))
-    bounds = u_coord.latlon_bounds(df['lat'], df['lon'], buffer=lon_res)
-
-    raster_path = Path("/rest", "vtest", "img", "map_haz_rp.tif")
-    raster_uri = request.build_absolute_uri(raster_path)
-
-    metadata = schemas.MapMetadata(
-        description="Test hazard climatology map",
-        units="m/s",
-        legend=legend_values,
-        legend_colors=legend_colours,
-        bounding_box=list(bounds),
-        file_uri=raster_uri
-    )
-
-    response = schemas.MapResponse(data=outdata, metadata=metadata)
-
-    job = schemas.MapJobSchema(
-        job_id="test",
-        location="/map/hazard/climate?job_id=" + "test",
-        status="completed",
-        request={},
-        submitted_at=dt.datetime(2020, 1, 1),
-        completed_at=dt.datetime(2020, 1, 2),
-        runtime=86400,
-        response=response,
-        response_uri=raster_uri
-    )
-    return job
+    return schemas_examples.make_dummy_mapjobschema_hazard(request, job_id)
 
 
 
@@ -244,11 +159,11 @@ def _api_poll_map_hazard_climate(request, job_id: str):
     response=schemas.MapJobSchema,
     summary="Construct hazard data for one event"
 )
-def _api_submit_map_hazard_event(request, data: schemas.MapHazardEventRequest = None):
+def _api_map_hazard_event_submit(request, data: schemas.MapHazardEventRequest = None):
     """
     Return a Job Schema without actually submitting a job or adding to DB
     """
-    job = make_dummy_job(data, "/map/hazard/event?job_id=" + "test")
+    job = schemas_examples.make_dummy_job(data, "/map/hazard/event?job_id=", uuid.uuid4())
     return schemas.MapJobSchema(**job.__dict__)
 
 
@@ -258,8 +173,8 @@ def _api_submit_map_hazard_event(request, data: schemas.MapHazardEventRequest = 
     response=schemas.MapJobSchema,
     summary="Poll for hazard event map data"
 )
-def _api_poll_map_hazard_event(request, job_id: str):
-    return _api_poll_map_hazard_climate(request, job_id)
+def _api_map_hazard_event_poll(request, job_id: uuid.UUID = None):
+    return _api_map_hazard_climate_poll(request, job_id)
 
 
 @_api.post(
@@ -268,11 +183,11 @@ def _api_poll_map_hazard_event(request, job_id: str):
     response=schemas.MapJobSchema,
     summary="Submit job to construct exposure map data"
 )
-def _api_submit_map_exposure(request, data: schemas.MapExposureRequest = None):
+def _api_map_exposure_submit(request, data: schemas.MapExposureRequest = None):
     """
     Return a Job Schema without actually submitting a job or adding to DB
     """
-    job = make_dummy_job(data, "/map/exposure?job_id=" + "test")
+    job = schemas_examples.make_dummy_job(data, "/map/exposure?job_id=", uuid.uuid4())
     return schemas.MapJobSchema(**job.__dict__)
 
 
@@ -282,53 +197,8 @@ def _api_submit_map_exposure(request, data: schemas.MapExposureRequest = None):
     response=schemas.MapJobSchema,
     summary="Poll for exposure map data"
 )
-def _api_poll_map_exposure(request, job_id: str):
-    exp_path = Path(SAMPLE_DIR, "map_exp.csv")
-    df = pd.read_csv(exp_path)
-
-    colours, legend_values, legend_colours = values_to_colours(
-        df['value'],
-        PALETTE_EXPOSURE_COLORCET,
-        reverse=True
-    )
-
-    outdata = [
-        schemas.MapEntry(lat=lat, lon=lon, value=v, color=c)
-        for lat, lon, v, c
-        in zip(df['lat'], df['lon'], df['value'], colours)
-    ]
-
-    lat_res, lon_res = u_coord.get_resolution(df['lat'], df['lon'])
-    if abs(abs(lat_res) - abs(lon_res)) > 0.001:
-        raise ValueError("Mismatch in x and y resolutions: " + str(lon_res) + " vs " + str(lat_res))
-    bounds = u_coord.latlon_bounds(df['lat'], df['lon'], buffer=lon_res)
-
-    raster_path = Path("/rest", "vtest", "img", "map_exp.tif")
-    raster_uri = request.build_absolute_uri(raster_path)
-
-    metadata = schemas.MapMetadata(
-        description="Test exposure climatology map",
-        units="people",
-        legend=legend_values,
-        legend_colors=legend_colours,
-        bounding_box=list(bounds),
-        file_uri=raster_uri
-    )
-
-    response = schemas.MapResponse(data=outdata, metadata=metadata)
-
-    job = schemas.MapJobSchema(
-        job_id="test",
-        location="/map/exposure/climate?job_id=" + "test",
-        status="completed",
-        request={},
-        submitted_at=dt.datetime(2020, 1, 1),
-        completed_at=dt.datetime(2020, 1, 2),
-        runtime=86400,
-        response=response,
-        response_uri=raster_uri
-    )
-    return job
+def _api_map_exposure_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_mapjobschema_exposure(request, job_id)
 
 
 @_api.post(
@@ -337,11 +207,11 @@ def _api_poll_map_exposure(request, job_id: str):
     response=schemas.MapJobSchema,
     summary="Submit job for climatological impact map data"
 )
-def _api_submit_map_impact_climate(request, data: schemas.MapImpactClimateRequest = None):
+def _api_map_impact_climate_submit(request, data: schemas.MapImpactClimateRequest = None):
     """
     Return a Job Schema without actually submitting a job or adding to DB
     """
-    job = make_dummy_job(data, "/map/impact/climate?job_id=" + "test")
+    job = schemas_examples.make_dummy_job(data, "/map/impact/climate?job_id=", uuid.uuid4())
     return schemas.MapJobSchema(**job.__dict__)
 
 
@@ -351,52 +221,9 @@ def _api_submit_map_impact_climate(request, data: schemas.MapImpactClimateReques
     response=schemas.MapJobSchema,
     summary="Poll for climatological impact map data"
 )
-def _api_poll_map_impact_climate(request, job_id: str):
-    imp_path = Path(SAMPLE_DIR, "map_imp_rp.csv")
-    df = pd.read_csv(imp_path)
-    colours, legend_values, legend_colours = values_to_colours(
-        df['value'],
-        PALETTE_IMPACT_COLORCET,
-        reverse=True
-    )
+def _api_map_impact_climate_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_mapjobschema_impact(request, job_id)
 
-    outdata = [
-        schemas.MapEntry(lat=lat, lon=lon, value=v, color=c)
-        for lat, lon, v, c
-        in zip(df['lat'], df['lon'], df['value'], colours)
-    ]
-
-    lat_res, lon_res = u_coord.get_resolution(df['lat'], df['lon'])
-    if abs(abs(lat_res) - abs(lon_res)) > 0.001:
-        raise ValueError("Mismatch in x and y resolutions: " + str(lon_res) + " vs " + str(lat_res))
-    bounds = u_coord.latlon_bounds(df['lat'], df['lon'], buffer=lon_res)
-
-    raster_path = Path("/rest", "vtest", "img", "map_imp_rp.tif")
-    raster_uri = request.build_absolute_uri(raster_path)
-
-    metadata = schemas.MapMetadata(
-        description="Test impact climatology map",
-        units="people affected",
-        legend=legend_values,
-        legend_colors=legend_colours,
-        bounding_box=list(bounds),
-        file_uri=raster_uri
-    )
-
-    response = schemas.MapResponse(data=outdata, metadata=metadata)
-
-    job = schemas.MapJobSchema(
-        job_id="test",
-        location="/map/impact/climate?job_id=" + "test",
-        status="completed",
-        request={},
-        submitted_at=dt.datetime(2020, 1, 1),
-        completed_at=dt.datetime(2020, 1, 2),
-        runtime=86400,
-        response=response,
-        response_uri=raster_uri
-    )
-    return job
 
 @_api.post(
     "/map/impact/event",
@@ -404,8 +231,8 @@ def _api_poll_map_impact_climate(request, job_id: str):
     response=schemas.MapJobSchema,
     summary="Submit job to get impact map data for one event"
 )
-def _api_submit_map_impact_event(request, data: schemas.MapImpactEventRequest = None):
-    job = make_dummy_job(data, "/map/impact/event?job_id=" + "test")
+def _api_map_impact_event_submit(request, data: schemas.MapImpactEventRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/map/impact/event?job_id=", uuid.uuid4())
     return schemas.MapJobSchema(**job.__dict__)
 
 
@@ -415,8 +242,8 @@ def _api_submit_map_impact_event(request, data: schemas.MapImpactEventRequest = 
     response=schemas.MapJobSchema,
     summary="Poll for impact map data"
 )
-def _api_poll_map_impact_event(request, job_id: str):
-    return _api_poll_map_impact_climate(request, job_id)
+def _api_map_impact_event_poll(request, job_id: uuid.UUID = None):
+    return _api_map_impact_climate_poll(request, job_id)
 
 
 @_api.post(
@@ -425,8 +252,8 @@ def _api_poll_map_impact_event(request, job_id: str):
     response=schemas.ExceedanceJobSchema,
     summary="Submit job for hazard intensity exceedance curve data"
 )
-def _api_submit_exceedance_hazard(request, data: schemas.ExceedanceHazardRequest = None):
-    job = make_dummy_job(data, "/exceedance/hazard?job_id=" + "test")
+def _api_exceedance_hazard_submit(request, data: schemas.ExceedanceHazardRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/exceedance/hazard?job_id=", uuid.uuid4())
     return schemas.ExceedanceJobSchema(**job.__dict__)
 
 
@@ -436,30 +263,8 @@ def _api_submit_exceedance_hazard(request, data: schemas.ExceedanceHazardRequest
     response=schemas.ExceedanceJobSchema,
     summary="Poll job for hazard intensity exceedance curve data"
 )
-def _api_poll_exceedance_hazard(request, job_id: str):
-    exceedance_path = Path(SAMPLE_DIR, "exceedance_haz.csv")
-    df = pd.read_csv(exceedance_path)
-    outdata = [
-        schemas.ExceedanceCurvePoint(return_period=row['return_period'], intensity=row['intensity'])
-        for _, row in df.iterrows()
-    ]
-    outmetadata = schemas.ExceedanceCurveMetadata(
-        return_period_units="years",
-        intensity_units="m/s"
-    )
-    response = schemas.ExceedanceResponse(data=outdata, metadata=outmetadata)
-    return schemas.ExceedanceJobSchema(
-        job_id="test",
-        location="/exceedance/hazard?job_id=" + "test",
-        status="completed",
-        request={},
-        submitted_at=dt.datetime(2020, 1, 1),
-        completed_at=dt.datetime(2020, 1, 2),
-        runtime=86400,
-        response=response,
-        response_uri=None
-    )
-
+def _api_exceedance_hazard_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_exceedance_hazard(job_id)
 
 @_api.post(
     "/exceedance/impact",
@@ -467,8 +272,8 @@ def _api_poll_exceedance_hazard(request, job_id: str):
     response=schemas.ExceedanceJobSchema,
     summary="Submit job for hazard intensity exceedance curve data"
 )
-def _api_submit_exceedance_impact(request, data: schemas.ExceedanceHazardRequest = None):
-    job = make_dummy_job(data, "/exceedance/impact?job_id=" + "test")
+def _api_exceedance_impact_submit(request, data: schemas.ExceedanceHazardRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/exceedance/impact?job_id=", uuid.uuid4())
     return schemas.ExceedanceJobSchema(**job.__dict__)
 
 
@@ -478,30 +283,8 @@ def _api_submit_exceedance_impact(request, data: schemas.ExceedanceHazardRequest
     response=schemas.ExceedanceJobSchema,
     summary="Poll job for impact exceedance curve data"
 )
-def _api_poll_exceedance_impact(request, job_id: str):
-    job = make_dummy_job(None, "/exceedance/impact?job_id=" + "test")
-    exceedance_path = Path(SAMPLE_DIR, "exceedance_imp.csv")
-    df = pd.read_csv(exceedance_path)
-    outdata = [
-        schemas.ExceedanceCurvePoint(return_period=row['return_period'], intensity=row['intensity'])
-        for _, row in df.iterrows()
-    ]
-    outmetadata = schemas.ExceedanceCurveMetadata(
-        return_period_units="years",
-        intensity_units="people_affected"
-    )
-    response = schemas.ExceedanceResponse(data=outdata, metadata=outmetadata)
-    return schemas.ExceedanceJobSchema(
-        job_id="test",
-        location="/exceedance/impact?job_id=" + "test",
-        status="completed",
-        request={},
-        submitted_at=dt.datetime(2020, 1, 1),
-        completed_at=dt.datetime(2020, 1, 2),
-        runtime=86400,
-        response=response,
-        response_uri=None
-    )
+def _api_exceedance_impact_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_exceedance_impact(job_id)
 
 
 @_api.post(
@@ -510,8 +293,8 @@ def _api_poll_exceedance_impact(request, job_id: str):
     response=schemas.TimelineJobSchema,
     summary="Submit job for hazard intensity over time"
 )
-def _api_timeline_hazard(request, data: schemas.TimelineHazardRequest = None):
-    job = make_dummy_job(data, "/timeline/hazard?job_id=" + "test")
+def _api_timeline_hazard_submit(request, data: schemas.TimelineHazardRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/timeline/hazard?job_id=", uuid.uuid4())
     return schemas.TimelineJobSchema(**job.__dict__)
 
 
@@ -521,8 +304,8 @@ def _api_timeline_hazard(request, data: schemas.TimelineHazardRequest = None):
     response=schemas.TimelineJobSchema,
     summary="Poll job for hazard intensity over time"
 )
-def _api_timeline_hazard(request, job_id: str):
-    return make_dummy_timeline("m/s", 20)
+def _api_timeline_hazard_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_timeline("m/s", 20, job_id=job_id)
 
 
 @_api.post(
@@ -531,8 +314,8 @@ def _api_timeline_hazard(request, job_id: str):
     response=schemas.TimelineJobSchema,
     summary="Submit job for exposure over time"
 )
-def _api_timeline_hazard(request, data: schemas.TimelineExposureRequest = None):
-    job = make_dummy_job(data, "/timeline/exposure?job_id=" + "test")
+def _api_timeline_exposure_submit(request, data: schemas.TimelineExposureRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/timeline/exposure?job_id=", uuid.uuid4())
     return schemas.TimelineJobSchema(**job.__dict__)
 
 
@@ -542,8 +325,8 @@ def _api_timeline_hazard(request, data: schemas.TimelineExposureRequest = None):
     response=schemas.TimelineJobSchema,
     summary="Poll job for exposure over time"
 )
-def _api_timeline_hazard(request, job_id: str):
-    return make_dummy_timeline("people", 1000000)
+def _api_timeline_exposure_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_timeline("people", 1000000, job_id=job_id)
 
 
 @_api.post(
@@ -552,8 +335,8 @@ def _api_timeline_hazard(request, job_id: str):
     response=schemas.TimelineJobSchema,
     summary="Submit job for risk over time"
 )
-def _api_timeline_hazard(request, data: schemas.TimelineImpactRequest = None):
-    job = make_dummy_job(data, "/timeline/impact?job_id=" + "test")
+def _api_timeline_impact_submit(request, data: schemas.TimelineImpactRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/timeline/impact?job_id=", uuid.uuid4())
     return schemas.TimelineJobSchema(**job.__dict__)
 
 
@@ -563,24 +346,107 @@ def _api_timeline_hazard(request, data: schemas.TimelineImpactRequest = None):
     response=schemas.TimelineJobSchema,
     summary="Poll job for risk over time"
 )
-def _api_timeline_hazard(request, job_id: str):
-    return make_dummy_timeline("people", 1000000)
+def _api_timeline_impact_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_timeline("people", 1000000, job_id=job_id)
 
 
-@_api.get("/measures", tags=["adaptation measures"], summary="Not yet implemented")
-def _api_get_adaptation_measures():
-    return {}
+
+# TODO /breakdown/exposure endpoint
 
 
-@_api.post("/measures/add", tags=["adaptation measures"], summary="Not yet implemented")
-def _api_get_adaptation_measures():
-    return {}
+
+
+
+@_api.post("/measures",
+           tags=["adaptation measures"],
+           response=schemas.MeasureSchema,
+           summary="Create an adaptation measure")
+def _api_adaptation_measure_create(request, measure_request: schemas.CreateMeasureSchema):
+    d = measure_request.__dict__
+    d['id'] = uuid.uuid4()
+    d['user_generated'] = True
+    return schemas.MeasureSchema(**d)
+
+
+@_api.get("/measures",
+          tags=["adaptation measures"],
+          response=List[schemas.MeasureSchema],
+          summary="Get adaptation measures")
+def _api_adaptation_measure_get(request, measure_request: schemas.MeasureRequestSchema = None):
+    measures = models.Measure.objects.filter(user_generated=False)
+    return [schemas.MeasureSchema(**m.__dict__) for m in measures]
 
 
 @_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas.GeocodePlaceList,
           summary="Get suggested locations from a string")
 def _api_geocode_autocomplete(request, query):
     return geocode_autocomplete(query)
+
+
+# Widgets
+# =========================================================
+
+@_api.post(
+    "/widgets/risk-timeline",
+    tags=["widget"],
+    response=schemas_widgets.TimelineWidgetJobSchema,
+    summary="Create data for the risk over time section of the RECA site"
+)
+def _api_widget_risk_timeline_submit(request, data: schemas_widgets.TimelineWidgetRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/widgets/risk-timeline?job_id=", uuid.uuid4())
+    return schemas_widgets.TimelineWidgetJobSchema(**job.__dict__)
+
+
+@_api.get(
+    "/widgets/risk-timeline",
+    tags=["widget"],
+    response=schemas_widgets.TimelineWidgetJobSchema,
+    summary="Create data for the risk over time section of the RECA site"
+)
+def _api_widget_risk_timeline_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_timelinewidget_risk(job_id)
+
+
+@_api.post(
+    "/widgets/biodiversity",
+    tags=["widget"],
+    response=schemas_widgets.BiodiversityWidgetJobSchema,
+    summary="Create text for the biodiversity section of the RECA site"
+)
+def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityWidgetRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/widgets/biodiversity?job_id=", uuid.uuid4())
+    return schemas_widgets.BiodiversityWidgetJobSchema(**job.__dict__)
+
+
+@_api.get(
+    "/widgets/biodiversity",
+    tags=["widget"],
+    response=schemas_widgets.BiodiversityWidgetJobSchema,
+    summary="Poll for text for the biodiversity section of the RECA site"
+)
+def _api_widget_biodiversity_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_biodiversitywidget(job_id)
+
+
+@_api.post(
+    "/widgets/social-vulnerability",
+    tags=["widget"],
+    response=schemas_widgets.SocialVulnerabilityWidgetJobSchema,
+    summary="Create text for the social vulnerability section of the RECA site"
+)
+def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityWidgetRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/widgets/biodiversity?job_id=", uuid.uuid4())
+    return schemas_widgets.BiodiversityWidgetJobSchema(**job.__dict__)
+
+
+@_api.get(
+    "/widgets/social-vulnerability",
+    tags=["widget"],
+    response=schemas_widgets.SocialVulnerabilityWidgetJobSchema,
+    summary="Poll for text for the social vulnerability section of the RECA site"
+)
+def _api_widget_socialvulnerability_poll(request, job_id: uuid.UUID = None):
+    return schemas_examples.make_dummy_socialvulnerability_widget(job_id)
 
 
 @_rapi.get("/csrf", tags=['restricted'], auth=None, include_in_schema=False)

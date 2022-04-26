@@ -100,7 +100,7 @@ class Command(BaseCommand):
             exit()
 
         if not os.path.exists(output_directory):
-            LOGGER.info("Creating output directory: " + output_directory)
+            LOGGER.info("Creating output directory: " + str(output_directory))
             os.mkdir(output_directory)
 
         return_periods = [10, 50, 100, 150, 200, 250]

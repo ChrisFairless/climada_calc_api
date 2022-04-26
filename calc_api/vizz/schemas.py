@@ -2,21 +2,63 @@ from django.utils import timezone
 from ninja import Schema, ModelSchema
 from typing import List
 from enum import Enum
+import datetime
+import uuid
+import json
+from celery.result import AsyncResult
 
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.models import Job
+from django_celery_results.models import TaskResult
+from calc_api.vizz.models import Measure
+from climada_calc import celery_app as app
 
 conf = ClimadaCalcApiConfig()
 
-job_fields = ["job_id", "location", "status", "request", "submitted_at",
-              "completed_at", "runtime", "response_uri", "code", "message"]  # excludes response
-
 
 # We don't actually use this: we create similar schema later with typed responses.
-class JobSchema(ModelSchema):
-    class Config:
-        model = Job
-        model_fields = job_fields  # i.e. all fields. Derived classes overwrite response.
+class JobSchema(Schema):
+    job_id: uuid.UUID
+    location: str
+    status: str
+    request: dict
+    completed_at: datetime.datetime = None
+    expires_at: datetime.datetime = None
+    response: dict = None  # This will be replaced in child classes
+    response_uri: str = None
+    code: int = None
+    message: str = None
+
+    @classmethod
+    def from_task_id(cls, task_id, response_schema_name, location_root):
+        # task = TaskResult.objects.get(task_id=task_id)
+        # response_schema = globals().copy()
+        # response_schema = response_schema.get(response_schema_name)
+        task = app.AsyncResult(task_id)
+        if task.ready():
+            if task.successful():
+                response = task.get()
+                uri = task.result['metadata']['uri']
+                expiry = task.date_done + datetime.timedelta(seconds=conf.JOB_TIMEOUT)
+            else:
+                # TODO deal with failed tasks
+                task.forget()
+                return ValueError("Task failed but there's no code to handle this yet.")
+        else:
+            response, uri, expiry = None, None, None
+
+        return cls(
+            job_id=task.id,
+            location=location_root + '/' + task.id,
+            status=task.status,
+            request={},  # TODO work out where to get this from
+            completed_at=task.date_done,
+            expires_at=expiry,
+            response=response,
+            response_uri=uri,
+            code=None,
+            message=None
+        )
+
 
 
 class FileSchema(Schema):
@@ -27,9 +69,44 @@ class FileSchema(Schema):
     url: str
 
 
+class ColorbarLegendItem(Schema):
+    band_min: float
+    band_max: float
+    color: str
+
+
+class ColorbarLegend(Schema):
+    title: str
+    units: str
+    value: str
+    items: List[ColorbarLegendItem]
+
+
+class CategoricalLegendItem(Schema):
+    label: str
+    slug: str
+    value: str
+
+
+class CategoricalLegend(Schema):
+    title: str
+    units: str
+    items: List[CategoricalLegendItem]
+
+
+class TextVariable(Schema):
+    key: str
+    value: str
+    unit: str = None
+
+
+class GeneratedText(Schema):
+    template: str
+    values: List[TextVariable]
+
 class HazardTypeEnum(str, Enum):
-    tropical_cyclone = "tropical cyclone"
-    extreme_heat = "extreme heat"
+    tropical_cyclone = "tropical_cyclone"
+    extreme_heat = "extreme_heat"
 
 
 class MapHazardClimateRequest(Schema):
@@ -43,7 +120,7 @@ class MapHazardClimateRequest(Schema):
     location_scale: str = None
     location_code: str = None
     location_poly: str = None
-    aggregation_level: str = None
+    aggregation_scale: str = None
     aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
@@ -66,9 +143,8 @@ class MapHazardEventRequest(Schema):
     units: str = None
 
 
-
 class MapExposureRequest(Schema):
-    exposure_type: HazardTypeEnum
+    exposure_type: str
     scenario_name: str = None
     scenario_climate: str = None
     scenario_growth: str = None
@@ -81,7 +157,6 @@ class MapExposureRequest(Schema):
     aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
-
 
 
 class MapImpactClimateRequest(Schema):
@@ -102,7 +177,6 @@ class MapImpactClimateRequest(Schema):
     units: str = None
 
 
-
 class MapImpactEventRequest(Schema):
     hazard_type: HazardTypeEnum
     hazard_event_name: str
@@ -121,7 +195,6 @@ class MapImpactEventRequest(Schema):
     units: str = None
 
 
-
 class MapEntry(Schema):
     #TODO is the best way to encode this info?
     lat: float    # of floats
@@ -131,23 +204,30 @@ class MapEntry(Schema):
     color: str
 
 
+class Map(Schema):
+    items: List[MapEntry]
+    legend: ColorbarLegend
+
+
 class MapMetadata(Schema):
     description: str
+    file_uri: str = None
     units: str
-    legend: List[float]
-    legend_colors: List[str]
     custom_fields: dict = None
     bounding_box: List[float]
-    file_uri: str = None
 
 
 class MapResponse(Schema):
-    data: List[MapEntry] = None
+    data: Map = None
     metadata: MapMetadata
 
 
 class MapJobSchema(JobSchema):
     response: MapResponse = None
+
+    @staticmethod
+    def location_root():
+        return ""
 
 
 class ExceedanceHazardRequest(Schema):
@@ -186,13 +266,24 @@ class ExceedanceCurvePoint(Schema):
     intensity: float
 
 
-class ExceedanceCurveMetadata(Schema):
+class ExceedanceCurve(Schema):
+    items: List[ExceedanceCurvePoint]
+    scenario_name: str
+    slug: str
+
+class ExceedanceCurveSet(Schema):
+    items: List[ExceedanceCurve]
     return_period_units: str
     intensity_units: str
+    legend: CategoricalLegend
+
+
+class ExceedanceCurveMetadata(Schema):
+    description: str
 
 
 class ExceedanceResponse(Schema):
-    data: List[ExceedanceCurvePoint]
+    data: ExceedanceCurveSet
     metadata: ExceedanceCurveMetadata
 
 
@@ -245,25 +336,87 @@ class TimelineImpactRequest(Schema):
 
 
 class TimelineBar(Schema):
-    year: float
+    yearLabel: str
+    yearValue: float
     temperature: float
-    risk_baseline: float
-    risk_population_change: float
-    risk_climate_change: float
+    current_climate: float
+    population_growth: float
+    climate_change: float
 
 
-class TimelineMetadata(Schema):
+class Timeline(Schema):
+    items: List[TimelineBar]
+    legend: CategoricalLegend
     units_temperature: str
     units_response: str
 
 
+class TimelineMetadata(Schema):
+    description: str
+
+
 class TimelineResponse(Schema):
-    data: List[TimelineBar]
+    data: Timeline
     metadata: TimelineMetadata
 
 
 class TimelineJobSchema(JobSchema):
     response: TimelineResponse = None
+
+
+class ExposureBreakdownRequest(Schema):
+    exposure_type: str = None
+    exposure_categorisation: str
+    scenario_year: int = None
+    location_name: List[str] = None
+    location_scale: List[str] = None
+    location_code: List[str] = None
+    location_poly: List[str] = None
+    aggregation_method: str = None
+    units: str = None
+
+
+class ExposureBreakdownBar(Schema):
+    label: str
+    category_labels: List[str]
+    values: List[float]
+
+
+class ExposureBreakdown(Schema):
+    items: List[ExposureBreakdownBar]
+    legend: CategoricalLegend
+
+
+class ExposureBreakdownResponse(Schema):
+    data: ExposureBreakdown
+    metadata: dict
+
+
+class ExposureBreakdownJob(JobSchema):
+    response: ExposureBreakdownResponse = None
+
+
+
+class MeasureSchema(ModelSchema):
+    class Config:
+        model = Measure
+        model_fields = ["name", "description", "hazard_type", "exposure_type", "cost_type", "cost", "annual_upkeep",
+                        "priority", "percentage_coverage", "percentage_effectiveness", "is_coastal",
+                        "max_distance_from_coast", "hazard_cutoff", "return_period_cutoff", "hazard_change_multiplier",
+                        "hazard_change_constant", "cobenefits", "units_currency", "units_hazard", "units_distance",
+                        "user_generated"]
+
+
+class CreateMeasureSchema(ModelSchema):
+    class Config:
+        model = Measure
+        model_exclude = ['id', 'user_generated']
+
+
+class MeasureRequestSchema(Schema):
+    ids: List[uuid.UUID] = None
+    include_defaults: bool = None
+    hazard: str = None
 
 
 class GeocodePlace(Schema):

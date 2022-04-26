@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,13 +20,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'admin'
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
+ALLOWED_HOSTS.extend(filter(None, os.environ.get('ALLOWED_HOSTS', '').split(',')))
 
 
 # Application definition
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_celery_results',
     'ninja'
 ]
 
@@ -88,7 +90,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': 'redis://127.0.0.1:6379',
+        'LOCATION': 'redis://redis:6379',
     }
 }
 
@@ -136,14 +138,19 @@ STATICFILES_DIRS = [
 
 # Celery configuration
 # All of the configurable options are in climada_calc-config.yaml
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL') + '/0'
+#CELERY_RESULT_BACKEND = "db+sqlite:////climada_calc_api/celery.sqlite3"
+CELERY_CACHE_BACKEND = 'default'
 #TODO switch back to rabbitmq
 #CELERY_BROKER_URL = 'amqp://rabbittest:fasthydrantpotter@127.0.0.1:5672//'
-CELERY_BROKER_URL = 'redis://redis:6379'
+CELERY_BROKER_URL = os.environ.get('REDIS_URL')
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_TIME_LIMIT: 10 * 60
-CELERY_IMPORTS = ['calc_api.vtest.ninja']
+CELERY_IMPORTS = ['calc_api.vtest.ninja', ]
 
-GEOCODE_URL = 'http://geocode_api:80/'
+CELERY_SINGLETON_BACKEND_URL = os.environ.get('REDIS_URL') + '/0'
+CELERY_SINGLETON_LOCK_EXPIRY = 300
+
+GEOCODE_URL = os.environ.get('GEOCODE_URL')
