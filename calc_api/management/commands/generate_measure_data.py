@@ -5,7 +5,7 @@ from csv import DictReader
 from django.core.management import BaseCommand
 
 from calc_api.vizz.models import Cobenefit, Measure
-from climada_calc.settings import STATIC_ROOT
+from climada_calc.settings import BASE_DIR
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -13,12 +13,12 @@ LOGGER.setLevel(logging.INFO)
 
 class Command(BaseCommand):
     # Show this when the user types help
-    help = "Populates the database with measure and cobenefit data from static/data folder."
+    help = "Populates the database with measure and cobenefit data from staticfiles/data folder."
 
     def handle(self, *args, **options):
         LOGGER.info("Creating database entries for cobenefits and measures")
 
-        data_directory = Path(STATIC_ROOT, "data")
+        data_directory = Path(BASE_DIR, "staticfiles", "data")
         cobenefits_file = Path(data_directory, "cobenefits.csv")
         measures_file = Path(data_directory, "measures.csv")
 

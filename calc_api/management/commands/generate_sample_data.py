@@ -17,7 +17,7 @@ from csv import DictReader
 from django.core.management import BaseCommand
 
 from calc_api.vizz.models import Cobenefit, Measure
-from climada_calc.settings import STATIC_ROOT
+from climada_calc.settings import MEDIA_ROOT
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -36,12 +36,12 @@ sample_settings = {
 
 class Command(BaseCommand):
     # Show this when the user types help
-    help = "Populates the database with measure and cobenefit data from static/data folder."
+    help = "Generates sample data needed for the vtest endpoints"
 
     def handle(self, *args, **options):
-        LOGGER.info("Creating database entries for cobenefits and measures")
+        LOGGER.info("Generating sample data needed for the vtest endpoints")
 
-        output_directory = Path(STATIC_ROOT, 'sample_data')
+        output_directory = Path(MEDIA_ROOT, 'sample_data')
 
         LOGGER.info("Creating sample datasets")
 
@@ -98,6 +98,9 @@ class Command(BaseCommand):
         if all(os.path.exists(p) for p in all_paths):
             LOGGER.info('Sample files already exist. Exiting')
             exit()
+
+        if not os.path.exists(MEDIA_ROOT):
+            os.mkdir(MEDIA_ROOT)
 
         if not os.path.exists(output_directory):
             LOGGER.info("Creating output directory: " + str(output_directory))
