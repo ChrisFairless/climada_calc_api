@@ -391,9 +391,7 @@ def make_dummy_biodiversitywidget(job_id=None):
     out_data = schemas_widgets.BiodiversityWidgetData(
         text=[
             schemas.GeneratedText(
-                template="As a city, {{location}} is densely populated. Its green spaces are hugely important to \
-                its biodiversity and community wellbeing. {{prop_protected_land}} of the land and \
-                {{prop_protected_green}} of the area classified as 'green' is protected in some way.",
+                template="As a city, {{location}} is densely populated. Its green spaces are hugely important to its biodiversity and community wellbeing. {{prop_protected_land}} of the land and {{prop_protected_green}} of the area classified as 'green' is protected in some way.",
                 values=[
                     schemas.TextVariable(key="location", value="Cancún", unit=None),
                     schemas.TextVariable(key="prop_protected_land", value="1", unit="%"),
@@ -401,9 +399,7 @@ def make_dummy_biodiversitywidget(job_id=None):
                 ]
             ),
             schemas.GeneratedText(
-                template="{{location}} is also home to endangered species with very limited habitats, including \
-                {{endangered_species_1}} {{endangered_species_2}} (click here for the full list), and has \
-                {{biodiverse_area}} of land classified as 'highly biodiverse'.",
+                template="{{location}} is also home to endangered species with very limited habitats, including {{endangered_species_1}} {{endangered_species_2}} (click here for the full list), and has {{biodiverse_area}} of land classified as 'highly biodiverse'.",
                 values=[
                     schemas.TextVariable(key="location", value="Cancún", unit=None),
                     schemas.TextVariable(key="endangered_species_1", value="XXX", unit=None),
@@ -412,10 +408,7 @@ def make_dummy_biodiversitywidget(job_id=None):
                 ]
             ),
             schemas.GeneratedText(
-                template="The low amounts of green space mean that it's critical to preserve and expand them to \
-                support local species, mitigate heat and boost community wellbeing. {{location}}’s coastline has \
-                {{coastline_feature_1}} {{coastline_feature_2}}, {{coastline_conjunction}} rich biodiversity and \
-                protect the area from coastal hazards.",
+                template="The low amounts of green space mean that it's critical to preserve and expand them to support local species, mitigate heat and boost community wellbeing. {{location}}’s coastline has {{coastline_feature_1}} {{coastline_feature_2}}, {{coastline_conjunction}} rich biodiversity and protect the area from coastal hazards.",
                 values=[
                     schemas.TextVariable(key="location", value="Cancún", unit=None),
                     schemas.TextVariable(key="coastline_feature_1", value="mangroves", unit=None),
@@ -452,22 +445,15 @@ def make_dummy_socialvulnerability_widget(job_id=None):
     out_data = schemas_widgets.SocialVulnerabilityWidgetData(
         text=[
             schemas.GeneratedText(
-                template="Not everyone experiences the effects of climate change equally. Societies are structured \
-                giving some groups disproportionate access to resources which in turn affects their vulnerability \
-                to extreme events and ability to adapt.",
+                template="Not everyone experiences the effects of climate change equally. Societies are structured giving some groups disproportionate access to resources which in turn affects their vulnerability to extreme events and ability to adapt.",
                 values=[]
             ),
             schemas.GeneratedText(
-                template="Extreme heat has disproportionate effects on the elderly, the disabled, people under the \
-                age of 5, outdoor labourers, people in uncooled workplaces, and people unable to cool their \
-                homes. Adaptation measures should be targeted accordingly.",
+                template="Extreme heat has disproportionate effects on the elderly, the disabled, people under the age of 5, outdoor labourers, people in uncooled workplaces, and people unable to cool their homes. Adaptation measures should be targeted accordingly.",
                 values=[]
             ),
             schemas.GeneratedText(
-                template="The population of {{location}} is projected to grow larger and older by \
-                {{future_year}}, both of which enhance the risks it faces. Today about \
-                {{current_elderly_percentage}} of London is aged over 70, and this is projected to grow to \
-                {{future_elderly_percentage}} by 2080 in the moderate action scenario.",
+                template="The population of {{location}} is projected to grow larger and older by {{future_year}}, both of which enhance the risks it faces. Today about {{current_elderly_percentage}} of London is aged over 70, and this is projected to grow to {{future_elderly_percentage}} by 2080 in the moderate action scenario.",
                 values=[
                     schemas.TextVariable(key="location", value="London", unit=None),
                     schemas.TextVariable(key="future_year", value="2080", unit=None),
@@ -476,10 +462,7 @@ def make_dummy_socialvulnerability_widget(job_id=None):
                 ]
             ),
             schemas.GeneratedText(
-                template="Communities in {{location}} are on average more wealthy than the whole of {{country}}. \
-                {{location}} has more particularly rich communities than other regions but also more particularly \
-                poor communities than other regions of Great Britain, meaning that adaptation measures must be \
-                targeted carefully in order to maximise their benefits.",
+                template="Communities in {{location}} are on average more wealthy than the whole of {{country}}. {{location}} has more particularly rich communities than other regions but also more particularly poor communities than other regions of Great Britain, meaning that adaptation measures must be targeted carefully in order to maximise their benefits.",
                 values=[
                     schemas.TextVariable(key="location", value="London", unit=None),
                     schemas.TextVariable(key="country", value="Great Britain", unit=None),
