@@ -5,6 +5,7 @@ flower
 colorcet
 django-cache-memoize
 django-celery-results
+whitenoise
 redis
 sqlalchemy
 celery-singleton
