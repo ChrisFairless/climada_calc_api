@@ -1,0 +1,4 @@
+FROM klokantech/osmnames-sphinxsearch:latest
+
+EXPOSE $PORT
+CMD ["/usr/local/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

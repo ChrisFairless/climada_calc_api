@@ -423,6 +423,12 @@ class GeocodePlace(Schema):
     """Response data provided in a geocoding query"""
     name: str
     id: str
+    type: str
+    adminLevel: str = None
+    city: str = None
+    county: str = None
+    state: str = None
+    country: str = None
     bbox: List[float]
 
 

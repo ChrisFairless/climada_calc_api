@@ -28,7 +28,6 @@ DEBUG = True
 ALLOWED_HOSTS = []
 ALLOWED_HOSTS.extend(filter(None, os.environ.get('ALLOWED_HOSTS', '').split(',')))
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -92,7 +91,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': 'redis://redis:6379',
+        'LOCATION': os.environ.get('REDIS_URL')
     }
 }
 
@@ -145,6 +144,7 @@ MEDIA_URL = "/media/"
 
 # Celery configuration
 # All of the configurable options are in climada_calc-config.yaml
+#TODO switch back to rabbitmq   --- also does the above need '/0' at the end?
 CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL') + '/0'
 #CELERY_RESULT_BACKEND = "db+sqlite:////climada_calc_api/celery.sqlite3"
 CELERY_CACHE_BACKEND = 'default'
