@@ -14,6 +14,8 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 from . import views
 from .ninja import resturls
@@ -21,4 +23,5 @@ from .ninja import resturls
 urlpatterns = [
     path('img/<str:filename>', views.get_result_image, name='get_result_image'),
     path('', resturls),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)   # TODO don't use in production
+
