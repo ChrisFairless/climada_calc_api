@@ -1,3 +1,7 @@
+
+# Generate the sample data files needed for the test api endpoints
+# Run before collecting static
+
 import logging
 import pandas as pd
 import numpy as np
@@ -10,14 +14,9 @@ from climada.util.api_client import Client
 from climada.engine.impact import Impact
 import climada.util.coordinates as u_coord
 
-import logging
-import sys
-from pathlib import Path
-from csv import DictReader
 from django.core.management import BaseCommand
 
-from calc_api.vizz.models import Cobenefit, Measure
-from climada_calc.settings import MEDIA_ROOT
+from climada_calc.settings import BASE_DIR
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.INFO)
@@ -41,7 +40,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         LOGGER.info("Generating sample data needed for the vtest endpoints")
 
-        output_directory = Path(MEDIA_ROOT, 'sample_data')
+        output_directory = Path(BASE_DIR, 'staticfiles', 'sample_data')
 
         LOGGER.info("Creating sample datasets")
 
@@ -98,9 +97,6 @@ class Command(BaseCommand):
         if all(os.path.exists(p) for p in all_paths):
             LOGGER.info('Sample files already exist. Exiting')
             exit()
-
-        if not os.path.exists(MEDIA_ROOT):
-            os.mkdir(MEDIA_ROOT)
 
         if not os.path.exists(output_directory):
             LOGGER.info("Creating output directory: " + str(output_directory))

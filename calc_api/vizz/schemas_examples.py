@@ -4,7 +4,7 @@ import uuid
 from pathlib import Path
 import pandas as pd
 
-from climada_calc.settings import BASE_DIR, STATIC_ROOT
+from climada_calc.settings import STATIC_ROOT
 import climada.util.coordinates as u_coord
 
 from calc_api.vizz import models
