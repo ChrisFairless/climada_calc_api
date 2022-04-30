@@ -23,5 +23,6 @@ urlpatterns = [
     path('rest/', include('calc_api.urls')),
     path('restricted/', include('calc_api.rurls')),
     path('admin/', admin.site.urls),
-] + static('data', document_root=(BASE_DIR.parent / 'data'))
+] + static('media', document_root=(BASE_DIR.parent / 'media')) \
+  + static('static', document_root=(BASE_DIR.parent / 'static'))
 # the static(...) part is for development only

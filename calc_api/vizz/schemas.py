@@ -29,7 +29,7 @@ class JobSchema(Schema):
     message: str = None
 
     @classmethod
-    def from_task_id(cls, task_id, response_schema_name, location_root):
+    def from_task_id(cls, task_id, location_root):
         # task = TaskResult.objects.get(task_id=task_id)
         # response_schema = globals().copy()
         # response_schema = response_schema.get(response_schema_name)
@@ -219,7 +219,7 @@ class MapMetadata(Schema):
 
 class MapResponse(Schema):
     data: Map = None
-    metadata: MapMetadata
+    metadata: MapMetadata = None
 
 
 class MapJobSchema(JobSchema):

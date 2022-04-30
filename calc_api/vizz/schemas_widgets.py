@@ -62,7 +62,7 @@ class SocialVulnerabilityWidgetRequest(Schema):
     location_name: str = None
     location_id: str = None
     location_poly: str = None
-    area_units: str = None
+    units_area: str = None
 
 
 class SocialVulnerabilityWidgetData(Schema):
