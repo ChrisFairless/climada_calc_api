@@ -23,5 +23,4 @@ from .ninja import resturls
 urlpatterns = [
     path('img/<str:filename>', views.get_result_image, name='get_result_image'),
     path('', resturls),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)   # TODO don't use in production
-
+]
