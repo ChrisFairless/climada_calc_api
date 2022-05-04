@@ -41,12 +41,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_celery_results',
-    'ninja'
+    'ninja',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -143,6 +145,7 @@ STATICFILES_DIRS = [
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 
+
 # Celery configuration
 # All of the configurable options are in climada_calc-config.yaml
 #TODO switch back to rabbitmq   --- also does the above need '/0' at the end?
@@ -161,4 +164,10 @@ CELERY_IMPORTS = ['calc_api.vtest.ninja', ]
 CELERY_SINGLETON_BACKEND_URL = os.environ.get('REDIS_URL') + '/0'
 CELERY_SINGLETON_LOCK_EXPIRY = 300
 
+
+# Geocoding
 GEOCODE_URL = os.environ.get('GEOCODE_URL')
+
+
+# CORS
+CORS_ALLOW_ALL_ORIGINS = True
