@@ -411,7 +411,7 @@ def _api_widget_risk_timeline_poll(request, job_id: uuid.UUID = None):
     "/widgets/biodiversity",
     tags=["widget"],
     response=schemas_widgets.BiodiversityWidgetJobSchema,
-    summary="Create text for the biodiversity section of the RECA site"
+    summary="Create data for the biodiversity section of the RECA site"
 )
 def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityWidgetRequest = None):
     job = schemas_examples.make_dummy_job(data, "/widgets/biodiversity?job_id=", uuid.uuid4())
@@ -422,7 +422,7 @@ def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityW
     "/widgets/biodiversity",
     tags=["widget"],
     response=schemas_widgets.BiodiversityWidgetJobSchema,
-    summary="Poll for text for the biodiversity section of the RECA site"
+    summary="Poll for data for the biodiversity section of the RECA site"
 )
 def _api_widget_biodiversity_poll(request, job_id: uuid.UUID = None):
     return schemas_examples.make_dummy_biodiversitywidget(job_id)
@@ -432,18 +432,18 @@ def _api_widget_biodiversity_poll(request, job_id: uuid.UUID = None):
     "/widgets/social-vulnerability",
     tags=["widget"],
     response=schemas_widgets.SocialVulnerabilityWidgetJobSchema,
-    summary="Create text for the social vulnerability section of the RECA site"
+    summary="Create data for the social vulnerability section of the RECA site"
 )
-def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityWidgetRequest = None):
-    job = schemas_examples.make_dummy_job(data, "/widgets/biodiversity?job_id=", uuid.uuid4())
-    return schemas_widgets.BiodiversityWidgetJobSchema(**job.__dict__)
+def _api_widget_social_vulnerability_submit(request, data: schemas_widgets.SocialVulnerabilityWidgetRequest = None):
+    job = schemas_examples.make_dummy_job(data, "/widgets/social_vulnerability/", uuid.uuid4())
+    return schemas_widgets.SocialVulnerabilityWidgetJobSchema(**job.__dict__)
 
 
 @_api.get(
     "/widgets/social-vulnerability",
     tags=["widget"],
     response=schemas_widgets.SocialVulnerabilityWidgetJobSchema,
-    summary="Poll for text for the social vulnerability section of the RECA site"
+    summary="Poll for data for the social vulnerability section of the RECA site"
 )
 def _api_widget_socialvulnerability_poll(request, job_id: uuid.UUID = None):
     return schemas_examples.make_dummy_socialvulnerability_widget(job_id)

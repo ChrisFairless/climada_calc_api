@@ -39,28 +39,28 @@
                 "value": "historical",
                 "ssp_value": "historical",
                 "rcp_value": "historical",
-                "description": "No change from the present day"
+                "description": "present day"
               },
               {
                 "name": "SSP1 2.6",
                 "value": "ssp126",
                 "ssp_value": "ssp1",
                 "rcp_value": "rcp26",
-                "description": "A sustainable future"
+                "description": "sustainable future"
               },
               {
                 "name": "SSP2 4.5",
                 "value": "ssp245",
                 "ssp_value": "ssp2",
                 "rcp_value": "rcp45",
-                "description": "Middle of the road"
+                "description": "middle of the road"
               },
               {
                 "name": "SSP5 8.5",
                 "value": "ssp585",
                 "ssp_value": "ssp5",
                 "rcp_value": "rcp85",
-                "description": "Business as usual"
+                "description": "business as usual"
               }
             ]
           },
@@ -334,7 +334,7 @@
         "name": "Tropical cyclone",
         "value": "tropical_cyclone",
         "default": false,
-        "options": {
+        "scenario_options": {
           "year": {
             "description": "Scenario year",
             "type": "Select",
@@ -403,8 +403,8 @@
                 "value": "people_affected"
               },
               {
-                "name": "economic impact",
-                "value": "economic_impact"
+                "name": "economic loss",
+                "value": "economic_loss"
               },
               {
                 "name": "assets affected",
@@ -432,23 +432,23 @@
                 "value": "aai"
               },
               {
-                "name": "10",
+                "name": "10-year return period",
                 "value": "10"
               },
               {
-                "name": "50",
+                "name": "50-year return period",
                 "value": "50"
               },
               {
-                "name": "100",
+                "name": "100-year return period",
                 "value": "100"
               },
               {
-                "name": "150",
+                "name": "150-year return period",
                 "value": "150"
               },
               {
-                "name": "200",
+                "name": "200-year return period",
                 "value": "200"
               }
             ]
