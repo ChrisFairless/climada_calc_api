@@ -6,11 +6,25 @@ import calc_api.vizz.schemas as schemas
 # Timeline / Impact over time
 # ===========================
 
+
+class TextVariable(Schema):
+    key: str
+    value: str
+    unit: str = None
+
+
+class GeneratedText(Schema):
+    template: str
+    values: List[TextVariable]
+
+
 class TimelineWidgetRequest(Schema):
     hazard_type: str
+    hazard_rp: int = None
     exposure_type: str = None
     scenario_name: str = None
-    scenario_rp: int = None
+    scenario_climate: str = None
+    scenario_growth: str = None
     location_name: str = None
     location_id: str = None
     location_poly: str = None
@@ -19,7 +33,7 @@ class TimelineWidgetRequest(Schema):
 
 
 class TimelineWidgetData(Schema):
-    text: List[schemas.GeneratedText]
+    text: List[GeneratedText]
     chart: schemas.Timeline
 
 
@@ -43,7 +57,7 @@ class BiodiversityWidgetRequest(Schema):
 
 
 class BiodiversityWidgetData(Schema):
-    text: List[schemas.GeneratedText]
+    text: List[GeneratedText]
 
 
 class BiodiversityWidgetResponse(Schema):
@@ -66,7 +80,7 @@ class SocialVulnerabilityWidgetRequest(Schema):
 
 
 class SocialVulnerabilityWidgetData(Schema):
-    text: List[schemas.GeneratedText]
+    text: List[GeneratedText]
     chart: schemas.ExposureBreakdown
 
 

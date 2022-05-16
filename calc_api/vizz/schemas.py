@@ -1,19 +1,18 @@
 from django.utils import timezone
 from ninja import Schema, ModelSchema
 from typing import List
-from enum import Enum
 import datetime
 import uuid
 import json
-from celery.result import AsyncResult
 
 from calc_api.config import ClimadaCalcApiConfig
-from django_celery_results.models import TaskResult
 from calc_api.vizz.models import Measure
 from climada_calc import celery_app as app
+from calc_api.vizz import enums
 
 conf = ClimadaCalcApiConfig()
 
+# TODO extend schemas to include 'impact type' as well as exposure type
 
 # We don't actually use this: we create similar schema later with typed responses.
 class JobSchema(Schema):
@@ -94,103 +93,53 @@ class CategoricalLegend(Schema):
     items: List[CategoricalLegendItem]
 
 
-class TextVariable(Schema):
-    key: str
-    value: str
-    unit: str = None
-
-
-class GeneratedText(Schema):
-    template: str
-    values: List[TextVariable]
-
-class HazardTypeEnum(str, Enum):
-    tropical_cyclone = "tropical_cyclone"
-    extreme_heat = "extreme_heat"
-
-
-class MapHazardClimateRequest(Schema):
-    hazard_type: HazardTypeEnum
+class AnalysisSchema(Schema):
     scenario_name: str = None
     scenario_climate: str = None
     scenario_growth: str = None
     scenario_year: int = None
-    scenario_rp: float = None
     location_name: str = None
     location_scale: str = None
     location_code: str = None
     location_poly: str = None
     aggregation_scale: str = None
     aggregation_method: str = None
+
+
+class MapHazardClimateRequest(AnalysisSchema):
+    hazard_type: enums.HazardTypeEnum
+    hazard_rp: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
 
 
-class MapHazardEventRequest(Schema):
-    hazard_type: HazardTypeEnum
+class MapHazardEventRequest(AnalysisSchema):
+    hazard_type: enums.HazardTypeEnum
     hazard_event_name: str
-    scenario_name: str = None
-    scenario_climate: str = None
-    scenario_growth: str = None
-    scenario_year: int = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: str = None
-    aggregation_scale: str = None
-    aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
 
 
-class MapExposureRequest(Schema):
+class MapExposureRequest(AnalysisSchema):
     exposure_type: str
-    scenario_name: str = None
-    scenario_climate: str = None
-    scenario_growth: str = None
-    scenario_year: int = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: str = None
-    aggregation_scale: str = None
-    aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
 
 
-class MapImpactClimateRequest(Schema):
-    hazard_type: HazardTypeEnum
+class MapImpactClimateRequest(AnalysisSchema):
+    hazard_type: enums.HazardTypeEnum
+    hazard_rp: str = None
     exposure_type: str
-    scenario_name: str = None
-    scenario_climate: str = None
-    scenario_growth: str = None
-    scenario_year: int = None
-    scenario_rp: float = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: str = None
-    aggregation_scale: str = None
-    aggregation_method: str = None
+    impact_type: str
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
 
 
-class MapImpactEventRequest(Schema):
-    hazard_type: HazardTypeEnum
+class MapImpactEventRequest(AnalysisSchema):
+    hazard_type: enums.HazardTypeEnum
     hazard_event_name: str
     exposure_type: str
-    scenario_name: str = None
-    scenario_climate: str = None
-    scenario_growth: str = None
-    scenario_year: int = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: str = None
-    aggregation_scale: str = None
-    aggregation_method: str = None
+    impact_type: str
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
 
@@ -230,34 +179,17 @@ class MapJobSchema(JobSchema):
         return ""
 
 
-class ExceedanceHazardRequest(Schema):
+class ExceedanceHazardRequest(AnalysisSchema):
     hazard_type: str
     hazard_event_name: str = None
-    scenario_name: str = None
-    scenario_year: int = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: str = None
-    aggregation_scale: str = None
-    aggregation_method: str = None
-    format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
 
 
-class ExceedanceImpactRequest(Schema):
+class ExceedanceImpactRequest(AnalysisSchema):
     hazard_type: str
     hazard_event_name: str = None
     exposure_type: str = None
-    scenario_name: str = None
-    scenario_year: int = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: str = None
-    aggregation_scale: str = None
-    aggregation_method: str = None
-    format: str = conf.DEFAULT_IMAGE_FORMAT
+    impact_type: str = None
     units: str = None
 
 
@@ -270,6 +202,7 @@ class ExceedanceCurve(Schema):
     items: List[ExceedanceCurvePoint]
     scenario_name: str
     slug: str
+
 
 class ExceedanceCurveSet(Schema):
     items: List[ExceedanceCurve]
@@ -294,13 +227,14 @@ class ExceedanceJobSchema(JobSchema):
 class TimelineHazardRequest(Schema):
     hazard_type: str
     hazard_event_name: str = None
+    hazard_rp: str = None
     scenario_name: str = None
-    scenario_rp: int = None
+    scenario_climate: str = None
+    scenario_growth: str = None
     location_name: str = None
     location_scale: str = None
     location_code: str = None
     location_poly: str = None
-    aggregation_scale: str = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -309,11 +243,11 @@ class TimelineHazardRequest(Schema):
 class TimelineExposureRequest(Schema):
     exposure_type: str = None
     scenario_name: str = None
+    scenario_growth: str = None
     location_name: str = None
     location_scale: str = None
     location_code: str = None
     location_poly: str = None
-    aggregation_scale: str = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -322,14 +256,16 @@ class TimelineExposureRequest(Schema):
 class TimelineImpactRequest(Schema):
     hazard_type: str
     hazard_event_name: str = None
+    hazard_rp: str = None
     exposure_type: str = None
+    impact_type: str = None
     scenario_name: str = None
-    scenario_rp: int = None
+    scenario_climate: str = None
+    scenario_growth: str = None
     location_name: str = None
     location_scale: str = None
     location_code: str = None
     location_poly: str = None
-    aggregation_scale: str = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -338,7 +274,7 @@ class TimelineImpactRequest(Schema):
 class TimelineBar(Schema):
     yearLabel: str
     yearValue: float
-    temperature: float
+    temperature: float = None
     current_climate: float
     population_growth: float
     climate_change: float
@@ -394,7 +330,6 @@ class ExposureBreakdownResponse(Schema):
 
 class ExposureBreakdownJob(JobSchema):
     response: ExposureBreakdownResponse = None
-
 
 
 class MeasureSchema(ModelSchema):
