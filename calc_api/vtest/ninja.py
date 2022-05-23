@@ -24,6 +24,8 @@ import calc_api.vizz.schemas as schemas
 import calc_api.vizz.schemas_widgets as schemas_widgets
 from calc_api.calc_methods.geocode import geocode_autocomplete
 from calc_api.vizz import schemas_examples
+from calc_api.vizz.renderers import SchemaJSONRenderer
+
 conf = ClimadaCalcApiConfig()
 
 SAMPLE_DIR = Path(STATIC_ROOT, "sample_data")
@@ -102,8 +104,19 @@ def basic_auth(request):
     return _basic_auth(request, username, password)
 
 
-_default = NinjaAPI(title='CLIMADA Calc API', urls_namespace='vtest', description=description)
-_restricted = NinjaAPI(title='CLIMADA Calc API', version='vtest_restricted', description=description, csrf=True)
+_default = NinjaAPI(
+    title='CLIMADA Calc API',
+    urls_namespace='vtest',
+    description=description,
+    # renderer=SchemaJSONRenderer()
+)
+_restricted = NinjaAPI(
+    title='CLIMADA Calc API',
+    version='vtest_restricted',
+    description=description,
+    csrf=True,
+    # renderer=SchemaJSONRenderer()
+)
 
 _api = Router()
 _rapi = Router(auth=AuthBearer(), tags=['restricted'])

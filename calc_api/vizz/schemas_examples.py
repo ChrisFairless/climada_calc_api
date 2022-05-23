@@ -289,7 +289,8 @@ def make_dummy_timeline(
                 yearValue=2020 + 20 * i,
                 temperature=1 + 0.25 * i,
                 current_climate=scale,
-                population_growth=scale/5 * i,
+                future_climate=scale + (3 * i * scale) / 10,
+                population_change=scale/5 * i,
                 climate_change=scale/10 * i
             )
             for i in range(5)

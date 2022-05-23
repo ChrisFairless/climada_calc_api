@@ -33,6 +33,18 @@ sample_settings = {
 }
 
 
+def get_round_resolution_1d(x):
+    res = u_coord.get_resolution_1d(x)
+    recip = 1/res
+    if abs(recip - np.round(recip)) < 0.001:
+        res = 1/np.round(recip)
+    return res
+
+
+def get_round_resolution(lon, lat):
+    return get_round_resolution_1d(lon), get_round_resolution_1d(lat)
+
+
 class Command(BaseCommand):
     # Show this when the user types help
     help = "Generates sample data needed for the vtest endpoints"
@@ -65,7 +77,7 @@ class Command(BaseCommand):
                 return df
 
             bounds = u_coord.latlon_bounds(df['lat'], df['lon'])
-            res = u_coord.get_resolution(df['lat'], df['lon'])
+            res = get_round_resolution(df['lon'], df['lat'])
             nrow, ncol, trans = u_coord.pts_to_raster_meta(bounds, res)
             meta = {"width": ncol, "height": nrow, "transform": trans, "crs": crs}
 

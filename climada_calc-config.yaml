@@ -4,6 +4,7 @@ data:
   url-root: http://localhost:8000/data/
 rest:
   url-root: http://localhost:8000/
+geocoder: osmnames
 chunk-size: 1k
 climada-logo:
   link: https://wcr.ethz.ch/research/climada.html

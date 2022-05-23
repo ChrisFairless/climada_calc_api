@@ -1,8 +1,32 @@
-from climada.util.coordinates import country_to_iso
+import logging
 from celery import shared_task
+from climada.util.coordinates import country_to_iso
+from calc_api.config import ClimadaCalcApiConfig
+from calc_api.vizz.enums import SCENARIO_LOOKUPS
+
+conf = ClimadaCalcApiConfig()
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
-# @shared_task
+# TODO probably make this a class
+def standardise_scenario(scenario_name=None, scenario_growth=None, scenario_climate=None, scenario_year=None):
+
+    if not scenario_name and (scenario_climate is None or scenario_growth is None):
+        raise ValueError('When scenario_name is not set, scenario_climate and scenario_growth must be')
+
+    if scenario_year and int(scenario_year) == 2020:
+        return 'historical', 'historical', 'historical'
+
+    if scenario_name and not scenario_growth:
+        scenario_growth = SCENARIO_LOOKUPS[scenario_name]['scenario_growth']
+    if scenario_name and not scenario_climate:
+        scenario_climate = SCENARIO_LOOKUPS[scenario_name]['scenario_climate']
+
+    return scenario_name, scenario_growth, scenario_climate
+
+
 def country_iso_from_parameters(location_scale,
                                 location_code=None,
                                 location_name=None,

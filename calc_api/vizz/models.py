@@ -63,6 +63,39 @@ class Measure(models.Model):
     user_generated = models.BooleanField()
 
 
+class Hazard(models.Model):
+    id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField()
+    event_id = models.FloatField()
+    event_name = models.IntegerField()
+    lat = models.FloatField()
+    lon = models.FloatField()
+
+class Exposures(models.Model):
+    id = models.AutoField(primary_key=True)
+    uuid = models.UUIDField()
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    value = models.FloatField()
+    reg_id = models.IntegerField()
+
+
+class ImpactRP(models.Model):
+    id = models.AutoField(primary_key=True)
+    haz_uuid = models.UUIDField()
+    exp_uuid = models.UUIDField()
+    impf_uuid = models.UUIDField(blank=True)
+    scaling = models.FloatField(blank=True)
+    rp = models.CharField(max_length=4)
+    value = models.FloatField()
+    country_code = models.CharField(max_length=3, blank=True)
+    admin1_code = models.CharField(max_length=20, blank=True)
+    admin2_code = models.CharField(max_length=20, blank=True)
+    poly = models.TextField(blank=True)
+    lat = models.FloatField(blank=True)
+    lon = models.FloatField(blank=True)
+
+
 class FileCache(models.Model):
     id = models.AutoField(primary_key=True)
     key = models.TextField(unique=True)

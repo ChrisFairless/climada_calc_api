@@ -3,6 +3,7 @@ import json
 import dataclasses
 import datetime
 
+
 HASH_FUNCS = {
     'md5': hashlib.md5,
     'sha1': hashlib.sha1

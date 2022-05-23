@@ -36,12 +36,13 @@ class JobSchema(Schema):
         if task.ready():
             if task.successful():
                 response = task.get()
-                uri = task.result['metadata']['uri']
+                uri = task.result.metadata.uri if hasattr(task.result.metadata, 'uri') else None
                 expiry = task.date_done + datetime.timedelta(seconds=conf.JOB_TIMEOUT)
             else:
                 # TODO deal with failed tasks
                 task.forget()
-                return ValueError("Task failed but there's no code to handle this yet.")
+                print("FORGETTING")
+                raise ValueError(f"Task failed but there's no code to handle this yet. Task: {task}")
         else:
             response, uri, expiry = None, None, None
 
@@ -101,7 +102,7 @@ class AnalysisSchema(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: str = None
+    location_poly: List[float] = None
     aggregation_scale: str = None
     aggregation_method: str = None
 
@@ -234,7 +235,7 @@ class TimelineHazardRequest(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: str = None
+    location_poly: List[float] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -247,7 +248,7 @@ class TimelineExposureRequest(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: str = None
+    location_poly: List[float] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -265,19 +266,20 @@ class TimelineImpactRequest(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: str = None
+    location_poly: List[float] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
 
 
 class TimelineBar(Schema):
-    yearLabel: str
-    yearValue: float
+    year_label: str
+    year_value: float
     temperature: float = None
-    current_climate: float
-    population_growth: float
-    climate_change: float
+    current_climate: float = None
+    future_climate: float = None
+    population_change: float = None
+    climate_change: float = None
 
 
 class Timeline(Schema):
@@ -304,10 +306,10 @@ class ExposureBreakdownRequest(Schema):
     exposure_type: str = None
     exposure_categorisation: str
     scenario_year: int = None
-    location_name: List[str] = None
-    location_scale: List[str] = None
-    location_code: List[str] = None
-    location_poly: List[str] = None
+    location_name: str = None
+    location_scale: str = None
+    location_code: str = None
+    location_poly: List[float] = None
     aggregation_method: str = None
     units: str = None
 
@@ -358,7 +360,12 @@ class GeocodePlace(Schema):
     """Response data provided in a geocoding query"""
     name: str
     id: str
-    bbox: List[float]
+    scale: str = None   # -> Enum
+    country: str = None
+    admin1: str = None
+    admin2: str = None
+    bbox: List[float] = None
+    poly: List[dict] = None
 
 
 class GeocodePlaceList(Schema):

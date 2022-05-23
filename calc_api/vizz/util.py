@@ -11,7 +11,7 @@ def get_options():
 
 def options_return_period_to_description(rp, hazard_type):
     rp = str(rp)
-    options = get_options()['data']['filters'][hazard_type]['scenario_options']['return_period']['choices']
+    options = get_options(hazard_type)
     out = [opt['description'] for opt in options if opt['value'] == rp]
     if len(out) == 0:
         raise ValueError(f'No option matches found for {rp}-year return period and hazard {hazard_type}')
@@ -29,3 +29,5 @@ def options_scenario_to_description(scenario, hazard_type):
     if len(out) > 1:
         raise ValueError(f'Too many matches found for {scenario} scenario and hazard {hazard_type}: {out}')
     return out[0]
+
+

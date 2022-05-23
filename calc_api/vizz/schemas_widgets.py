@@ -20,14 +20,15 @@ class GeneratedText(Schema):
 
 class TimelineWidgetRequest(Schema):
     hazard_type: str
-    hazard_rp: int = None
-    exposure_type: str = None
+    hazard_rp: int
+    exposure_type: str
+    impact_type: str
     scenario_name: str = None
     scenario_climate: str = None
     scenario_growth: str = None
+    scenario_year: str = None
     location_name: str = None
     location_id: str = None
-    location_poly: str = None
     units_warming: str = None
     units_response: str = None
 
@@ -44,7 +45,7 @@ class TimelineWidgetResponse(Schema):
 
 class TimelineWidgetJobSchema(schemas.JobSchema):
     response: TimelineWidgetResponse = None
-
+    # response: dict = None  # Trying this because I can't serialise the TimelineWidgetResponse >:(
 
 # Biodiversity
 # ============
