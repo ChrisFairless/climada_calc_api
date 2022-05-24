@@ -24,7 +24,6 @@ import calc_api.vizz.schemas as schemas
 import calc_api.vizz.schemas_widgets as schemas_widgets
 from calc_api.calc_methods.geocode import geocode_autocomplete
 from calc_api.vizz import schemas_examples
-from calc_api.vizz.renderers import SchemaJSONRenderer
 
 conf = ClimadaCalcApiConfig()
 
