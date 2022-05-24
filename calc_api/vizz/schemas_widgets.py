@@ -6,20 +6,35 @@ import calc_api.vizz.schemas as schemas
 # Timeline / Impact over time
 # ===========================
 
+
+class TextVariable(Schema):
+    key: str
+    value: str
+    unit: str = None
+
+
+class GeneratedText(Schema):
+    template: str
+    values: List[TextVariable]
+
+
 class TimelineWidgetRequest(Schema):
     hazard_type: str
-    exposure_type: str = None
+    hazard_rp: int
+    exposure_type: str
+    impact_type: str
     scenario_name: str = None
-    scenario_rp: int = None
+    scenario_climate: str = None
+    scenario_growth: str = None
+    scenario_year: str = None
     location_name: str = None
     location_id: str = None
-    location_poly: str = None
     units_warming: str = None
     units_response: str = None
 
 
 class TimelineWidgetData(Schema):
-    text: List[schemas.GeneratedText]
+    text: List[GeneratedText]
     chart: schemas.Timeline
 
 
@@ -30,7 +45,7 @@ class TimelineWidgetResponse(Schema):
 
 class TimelineWidgetJobSchema(schemas.JobSchema):
     response: TimelineWidgetResponse = None
-
+    # response: dict = None  # Trying this because I can't serialise the TimelineWidgetResponse >:(
 
 # Biodiversity
 # ============
@@ -43,7 +58,7 @@ class BiodiversityWidgetRequest(Schema):
 
 
 class BiodiversityWidgetData(Schema):
-    text: List[schemas.GeneratedText]
+    text: List[GeneratedText]
 
 
 class BiodiversityWidgetResponse(Schema):
@@ -66,7 +81,7 @@ class SocialVulnerabilityWidgetRequest(Schema):
 
 
 class SocialVulnerabilityWidgetData(Schema):
-    text: List[schemas.GeneratedText]
+    text: List[GeneratedText]
     chart: schemas.ExposureBreakdown
 
 

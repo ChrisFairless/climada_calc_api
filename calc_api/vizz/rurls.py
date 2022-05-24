@@ -13,10 +13,10 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.urls import include, path
+from django.urls import path
+
+from .ninja import restrictedurls
 
 urlpatterns = [
-    path('vtest/', include('calc_api.vtest.urls')),
-    path('vizz/', include('calc_api.vizz.urls')),
-#    path('', include('calc_api.vtest.urls')),     # Default/latest version
+    path('', restrictedurls),
 ]

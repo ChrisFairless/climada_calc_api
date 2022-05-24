@@ -95,6 +95,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': os.environ.get('REDIS_URL')
+        'LOCATION': 'redis://redis:6379',  # TODO get this from an env variable
     }
 }
 
@@ -155,11 +156,11 @@ CELERY_CACHE_BACKEND = 'default'
 #TODO switch back to rabbitmq
 #CELERY_BROKER_URL = 'amqp://rabbittest:fasthydrantpotter@127.0.0.1:5672//'
 CELERY_BROKER_URL = os.environ.get('REDIS_URL')
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['application/json', 'application/x-python-serialize']
+CELERY_TASK_SERIALIZER = 'pickle'  # TODO Get this working with json
+CELERY_RESULT_SERIALIZER = 'pickle'
 CELERY_TASK_TIME_LIMIT: 10 * 60
-CELERY_IMPORTS = ['calc_api.vtest.ninja', ]
+CELERY_IMPORTS = ['calc_api.vtest.ninja', 'calc_api.vizz.ninja']
 
 CELERY_SINGLETON_BACKEND_URL = os.environ.get('REDIS_URL') + '/0'
 CELERY_SINGLETON_LOCK_EXPIRY = 300

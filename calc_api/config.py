@@ -30,6 +30,7 @@ class ClimadaCalcApiConfig:
         self.LOG_LEVEL = cdac['log_level']
         self.DATA_ROOT = Path(cdac['data']['path-root'])
         self.DATA_URL = cdac['data']['url-root']
+        self.GEOCODER = cdac['geocoder']
         self.TEST_FILE = Path(cdac['test']['file'])
         self.TEST_FORMAT = cdac['test']['format']
         self.TEMP_FILE = Path(cdac['test']['tmp'])
@@ -49,6 +50,6 @@ class ClimadaCalcApiConfig:
         self.DEFAULT_SCENARIO_NAME = cdac['defaults']['api_parameters']['scenario_name']
         self.DEFAULT_SCENARIO_YEAR = cdac['defaults']['api_parameters']['scenario_year']
         self.DEFAULT_N_TRACKS = cdac['defaults']['api_parameters']['n_tracks']
-        self.DEFAULT_MIN_DIST_TO_CENTROIDS = cdac['defaults']['api_parameters']['min_dist_to_centroids']
-        self.CACHE_TIMEOUT = cdac['cache']['timeout']
-        self.JOB_TIMEOUT = cdac['job']['timeout']
+        self.DEFAULT_MIN_DIST_TO_CENTROIDS = float(cdac['defaults']['api_parameters']['min_dist_to_centroids'])
+        self.CACHE_TIMEOUT = int(cdac['cache']['timeout'])
+        self.JOB_TIMEOUT = int(cdac['job']['timeout'])
