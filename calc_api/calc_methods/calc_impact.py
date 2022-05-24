@@ -1,21 +1,15 @@
 import logging
-from cache_memoize import cache_memoize
 from celery import shared_task
 from celery_singleton import Singleton
-import pandas as pd
 import numpy as np
 
-from climada.hazard import Hazard
-from climada.entity import Exposures, ImpactFunc, ImpactFuncSet, ImpfTropCyclone
+from climada.entity import ImpactFunc, ImpactFuncSet, ImpfTropCyclone
 from climada.engine import Impact
-from climada.util.api_client import Client
-import climada.util.coordinates as u_coord
 
-from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.calc_methods.calc_hazard import get_hazard_from_api
-from calc_api.calc_methods.calc_exposure import get_exposure, get_exposure_from_api, determine_api_exposure_type
-from calc_api.vizz.enums import exposure_type_from_impact_type, HAZARD_TO_ABBREVIATION
+from calc_api.calc_methods.calc_exposure import _get_exposure_from_api, determine_api_exposure_type
+from calc_api.vizz.schemas.enums import exposure_type_from_impact_type, HAZARD_TO_ABBREVIATION
 from calc_api.calc_methods.util import standardise_scenario
 
 conf = ClimadaCalcApiConfig()
@@ -52,8 +46,9 @@ def get_impact_by_return_period(
     api_exposure_type, exponent = determine_api_exposure_type(exposure_type, scenario_growth, exposure_year)
 
     # TODO: consider making these simultaeous calls?
+    # TODO make this a call to get_exposure
     haz = get_hazard_from_api(hazard_type, country, scenario_climate, hazard_year)
-    exp = get_exposure_from_api(country, exposure_type, impact_type, scenario_name, scenario_growth, exposure_year)
+    exp = _get_exposure_from_api(country, exposure_type, scenario_name, scenario_growth, exposure_year)
 
     save_mat = (aggregation_scale != 'country')
     imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, save_mat)
@@ -102,7 +97,7 @@ def get_impact_event(
 
     # TODO
     haz = get_hazard_from_api(hazard_type, country, scenario_name, scenario_year)
-    exp = get_exposure_from_api(exposure_type, country, scenario_name, scenario_year)
+    exp = _get_exposure_from_api(country, exposure_type, scenario_name, scenario_growth, exposure_year)
 
     haz = haz.select(event_names=[event_name])
     imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, aggregation_scale)

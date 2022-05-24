@@ -165,6 +165,11 @@ CELERY_SINGLETON_BACKEND_URL = os.environ.get('REDIS_URL') + '/0'
 CELERY_SINGLETON_LOCK_EXPIRY = 300
 
 
+# Use DO functions
+DIGITAL_OCEAN_URL = 'https://reca-functions.digitalocean.com'
+DIGITAL_OCEAN_FUNCTIONS = True
+
+
 # Geocoding
 GEOCODE_URL = os.environ.get('GEOCODE_URL')
 

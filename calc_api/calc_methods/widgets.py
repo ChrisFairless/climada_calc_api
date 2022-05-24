@@ -1,12 +1,11 @@
-from celery import chain, chord, group, shared_task
+from celery import chord, shared_task
 from celery_singleton import Singleton
 
-from calc_api.vizz import schemas, schemas_widgets
-from calc_api.calc_methods.timeline import timeline_impact
+from calc_api.vizz.schemas import schemas
+from calc_api.vizz.schemas import schemas_widgets
 from calc_api.vizz.texts import generate_timeline_widget_text
-from calc_api.calc_methods.geocode import standardise_location
-from calc_api.calc_methods.calc_exposure import get_exposure
-from calc_api.calc_methods.timeline import set_up_timeline_calculations, combine_impacts_to_timeline, combine_impacts_to_timeline_no_celery
+from calc_api.vizz.endpoints.get_exposure import get_exposure
+from calc_api.calc_methods.timeline import set_up_timeline_calculations, combine_impacts_to_timeline_no_celery
 from calc_api.calc_methods.geocode import standardise_location
 
 def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
@@ -28,7 +27,7 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
         units_response=data.units_response
     )
 
-    exposure_total_signature = get_exposure.s(
+    exp_request = schemas.MapExposureRequest(
         country=location.id,
         exposure_type=request.exposure_type,
         impact_type=request.impact_type,
@@ -37,9 +36,12 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
         scenario_year=data.scenario_year,
         location_poly=request.location_poly,
         aggregation_scale=location.scale,
-        aggregation_method=request.aggregation_method)
+        aggregation_method=request.aggregation_method,
+        units=None
+    )
 
     job_config_list, chord_header = set_up_timeline_calculations(request)
+    exposure_total_signature = get_exposure.s(exp_request)
     chord_header.extend([exposure_total_signature])  # last job total exposure, all the rest impact calc
     # this is such an ugly way to parallise all this but I am extremely tired
 

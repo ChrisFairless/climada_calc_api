@@ -8,7 +8,8 @@ from climada_calc.settings import STATIC_ROOT
 import climada.util.coordinates as u_coord
 
 from calc_api.vizz import models
-from calc_api.vizz import schemas, schemas_widgets
+from calc_api.vizz.schemas import schemas
+from calc_api.vizz.schemas import schemas_widgets
 from calc_api.calc_methods.colourmaps import Legend
 from calc_api.calc_methods.colourmaps import PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
 
@@ -285,8 +286,8 @@ def make_dummy_timeline(
     timeline = schemas.Timeline(
         items=[
             schemas.TimelineBar(
-                yearLabel=str(2020 + 20 * i),
-                yearValue=2020 + 20 * i,
+                year_label=str(2020 + 20 * i),
+                year_value=2020 + 20 * i,
                 temperature=1 + 0.25 * i,
                 current_climate=scale,
                 future_climate=scale + (3 * i * scale) / 10,

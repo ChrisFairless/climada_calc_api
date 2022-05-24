@@ -6,9 +6,8 @@ from ninja import Schema
 from climada.util.coordinates import country_to_iso
 
 from climada_calc.settings import GEOCODE_URL
-from calc_api.vizz.schemas import GeocodePlaceList, GeocodePlace
+from calc_api.vizz.schemas.schemas_geocode import GeocodePlaceList, GeocodePlace
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz import schemas
 
 conf = ClimadaCalcApiConfig()
 
@@ -34,7 +33,7 @@ def standardise_location(location_name=None, location_code=None, location_scale=
     if location_scale in ['country', 'admin0']:
         code = location_code if location_code else location_name
         code = country_to_iso(code, representation='alpha3')
-        return schemas.GeocodePlace(
+        return GeocodePlace(
             name=location_name,
             id=code,
             scale='country',

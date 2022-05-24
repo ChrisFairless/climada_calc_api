@@ -1,12 +1,9 @@
 import datetime as dt
 import json
 from time import sleep
-import pandas as pd
 from pathlib import Path
-import base64
 import uuid
 from typing import List
-from millify import millify
 
 from django.contrib import auth
 from django.middleware import csrf
@@ -14,16 +11,12 @@ from django.middleware import csrf
 from ninja import NinjaAPI, Router
 from ninja.security import HttpBearer, HttpBasicAuth
 
-import climada.util.coordinates as u_coord
-
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.util import get_client_ip
 from climada_calc.settings import BASE_DIR, STATIC_ROOT
 import calc_api.vizz.models as models
-import calc_api.vizz.schemas as schemas
-import calc_api.vizz.schemas_widgets as schemas_widgets
+from calc_api.vizz.schemas import schemas, schemas_widgets, schemas_examples, schemas_geocode
 from calc_api.calc_methods.geocode import geocode_autocomplete
-from calc_api.vizz import schemas_examples
 
 conf = ClimadaCalcApiConfig()
 
@@ -389,7 +382,7 @@ def _api_adaptation_measure_get(request, measure_request: schemas.MeasureRequest
     return [schemas.MeasureSchema(**m.__dict__) for m in measures]
 
 
-@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas.GeocodePlaceList,
+@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas_geocode.GeocodePlaceList,
           summary="Get suggested locations from a string")
 def _api_geocode_autocomplete(request, query):
     return geocode_autocomplete(query)

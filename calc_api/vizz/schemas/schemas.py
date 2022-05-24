@@ -1,20 +1,42 @@
-from django.utils import timezone
 from ninja import Schema, ModelSchema
 from typing import List
 import datetime
 import uuid
-import json
 
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.models import Measure
 from climada_calc import celery_app as app
-from calc_api.vizz import enums
+from calc_api.calc_methods.util import standardise_scenario
+from calc_api.calc_methods.geocode import standardise_location
+from calc_api.vizz.schemas import enums
 
 conf = ClimadaCalcApiConfig()
 
-# TODO extend schemas to include 'impact type' as well as exposure type
 
-# We don't actually use this: we create similar schema later with typed responses.
+class SchemaPlus(Schema):
+    def standardise(self):
+        scenario_att_list = ['scenario_name', 'scenario_growth', 'scenario_climate', 'scenario_year']
+        standardised_att_list = standardise_scenario(self.get_att_if_exists(scenario_att_list))
+        self.set_att_if_exists(zip(scenario_att_list[0:3], standardised_att_list))
+
+        location_att_list = ['location_name', 'location_code', 'location_scale', 'location_poly']
+        location = standardise_location(self.set_att_if_exists(location_att_list))
+        self.set_att_if_exists(zip(location_att_list, [location.name, location.id, location.scale, location.poly]))
+
+        if hasattr(self, 'exposure_type') and hasattr(self, 'impact_type') and self.exposure_type is None:
+            self.exposure_type = enums.exposure_type_from_impact_type(self.exposure_type)
+
+    def get_att_if_exists(self, att_list):
+        return [None if not hasattr(self, att) else getattr(self, 'att') for att in att_list]
+
+
+    def set_att_if_exists(self, att_iterable):
+        for name, value in att_iterable:
+            if hasattr(self, name) and value is not None:
+                self.__setattr__(name, value)
+
+
+
 class JobSchema(Schema):
     job_id: uuid.UUID
     location: str
@@ -94,14 +116,14 @@ class CategoricalLegend(Schema):
     items: List[CategoricalLegendItem]
 
 
-class AnalysisSchema(Schema):
+class AnalysisSchema(SchemaPlus):
     scenario_name: str = None
     scenario_climate: str = None
     scenario_growth: str = None
     scenario_year: int = None
     location_name: str = None
-    location_scale: str = None
     location_code: str = None
+    location_scale: str = None
     location_poly: List[float] = None
     aggregation_scale: str = None
     aggregation_method: str = None
@@ -111,7 +133,7 @@ class MapHazardClimateRequest(AnalysisSchema):
     hazard_type: enums.HazardTypeEnum
     hazard_rp: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
-    units: str = None
+    units: str = None  # TODO set as enum
 
 
 class MapHazardEventRequest(AnalysisSchema):
@@ -225,7 +247,7 @@ class ExceedanceJobSchema(JobSchema):
     response: ExceedanceResponse = None
 
 
-class TimelineHazardRequest(Schema):
+class TimelineHazardRequest(SchemaPlus):
     hazard_type: str
     hazard_event_name: str = None
     hazard_rp: str = None
@@ -241,7 +263,7 @@ class TimelineHazardRequest(Schema):
     units_response: str = None
 
 
-class TimelineExposureRequest(Schema):
+class TimelineExposureRequest(SchemaPlus):
     exposure_type: str = None
     scenario_name: str = None
     scenario_growth: str = None
@@ -254,7 +276,7 @@ class TimelineExposureRequest(Schema):
     units_response: str = None
 
 
-class TimelineImpactRequest(Schema):
+class TimelineImpactRequest(SchemaPlus):
     hazard_type: str
     hazard_event_name: str = None
     hazard_rp: str = None
@@ -302,7 +324,7 @@ class TimelineJobSchema(JobSchema):
     response: TimelineResponse = None
 
 
-class ExposureBreakdownRequest(Schema):
+class ExposureBreakdownRequest(SchemaPlus):
     exposure_type: str = None
     exposure_categorisation: str
     scenario_year: int = None
@@ -356,19 +378,6 @@ class MeasureRequestSchema(Schema):
     hazard: str = None
 
 
-class GeocodePlace(Schema):
-    """Response data provided in a geocoding query"""
-    name: str
-    id: str
-    scale: str = None   # -> Enum
-    country: str = None
-    admin1: str = None
-    admin2: str = None
-    bbox: List[float] = None
-    poly: List[dict] = None
 
-
-class GeocodePlaceList(Schema):
-    data: List[GeocodePlace]
 
 

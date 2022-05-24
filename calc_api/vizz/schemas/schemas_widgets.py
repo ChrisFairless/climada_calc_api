@@ -1,6 +1,6 @@
 from ninja import Schema
 from typing import List
-import calc_api.vizz.schemas as schemas
+from calc_api.vizz.schemas import schemas
 
 
 # Timeline / Impact over time
@@ -18,7 +18,7 @@ class GeneratedText(Schema):
     values: List[TextVariable]
 
 
-class TimelineWidgetRequest(Schema):
+class TimelineWidgetRequest(schemas.SchemaPlus):
     hazard_type: str
     hazard_rp: int
     exposure_type: str
@@ -50,7 +50,7 @@ class TimelineWidgetJobSchema(schemas.JobSchema):
 # Biodiversity
 # ============
 
-class BiodiversityWidgetRequest(Schema):
+class BiodiversityWidgetRequest(schemas.SchemaPlus):
     location_name: str = None
     location_id: str = None
     location_poly: str = None
@@ -73,7 +73,7 @@ class BiodiversityWidgetJobSchema(schemas.JobSchema):
 # Population breakdown
 # ====================
 
-class SocialVulnerabilityWidgetRequest(Schema):
+class SocialVulnerabilityWidgetRequest(schemas.SchemaPlus):
     location_name: str = None
     location_id: str = None
     location_poly: str = None

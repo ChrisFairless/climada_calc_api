@@ -1,20 +1,16 @@
 import datetime as dt
-import json
 from time import sleep
-from pathlib import Path
 import logging
 
 from django.contrib import auth
 from django.middleware import csrf
-from django.db import transaction
 
-from ninja import NinjaAPI, Router, Schema
+from ninja import NinjaAPI, Router
 from ninja.security import HttpBearer, HttpBasicAuth
 
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.util import get_client_ip
-from climada_calc.settings import BASE_DIR, STATIC_ROOT
-from calc_api.vizz import schemas, schemas_widgets
+from calc_api.vizz.schemas import schemas, schemas_widgets, schemas_geocode
 from calc_api.vizz.util import get_options
 from calc_api.calc_methods import mapping, geocode, widgets, timeline
 
@@ -398,7 +394,7 @@ def _api_exceedance_impact_poll(
     return {}
 
 
-@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas.GeocodePlaceList,
+@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas_geocode.GeocodePlaceList,
           summary="Get suggested locations from a string")
 def _api_geocode_autocomplete(request, query):
     return geocode.geocode_autocomplete(query)

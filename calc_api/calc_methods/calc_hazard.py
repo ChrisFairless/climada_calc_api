@@ -1,18 +1,12 @@
 import logging
-import numpy as np
-from cache_memoize import cache_memoize
 from celery import shared_task
 from celery_singleton import Singleton
-import pandas as pd
 
-from climada.hazard import Hazard
 from climada.util.api_client import Client
-import climada.util.coordinates as u_coord
 
-from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.calc_methods.util import standardise_scenario
-from calc_api.vizz.enums import ScenarioClimateEnum, HazardTypeEnum
+from calc_api.vizz.schemas.enums import ScenarioClimateEnum, HazardTypeEnum
 
 conf = ClimadaCalcApiConfig()
 

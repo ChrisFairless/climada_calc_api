@@ -1,8 +1,7 @@
 import logging
-from celery import shared_task
 from climada.util.coordinates import country_to_iso
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.enums import SCENARIO_LOOKUPS
+from calc_api.vizz.schemas.enums import SCENARIO_LOOKUPS
 
 conf = ClimadaCalcApiConfig()
 
@@ -27,9 +26,9 @@ def standardise_scenario(scenario_name=None, scenario_growth=None, scenario_clim
     return scenario_name, scenario_growth, scenario_climate
 
 
-def country_iso_from_parameters(location_scale,
+def country_iso_from_parameters(location_name=None,
                                 location_code=None,
-                                location_name=None,
+                                location_scale=None,
                                 location_poly=None,
                                 representation="alpha3"):
     """

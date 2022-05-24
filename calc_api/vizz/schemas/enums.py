@@ -63,6 +63,7 @@ HAZARD_TO_ABBREVIATION = {
 }
 
 
+# TODO make this a class method for the impact_type enum
 def exposure_type_from_impact_type(impact_type):
     if impact_type not in IMPACT_TO_EXPOSURE.keys():
         raise ValueError('impact type must be one of: ' + str(list(IMPACT_TO_EXPOSURE.keys())))

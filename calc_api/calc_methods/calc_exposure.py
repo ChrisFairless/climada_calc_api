@@ -1,44 +1,28 @@
 import logging
-from cache_memoize import cache_memoize
-from celery import shared_task
-from celery_singleton import Singleton
 import numpy as np
-import pandas as pd
-from pathlib import Path
 from time import sleep
 
-from climada.entity.exposures import Exposures
 from climada.util.api_client import Client
-import climada.util.coordinates as u_coord
 
-from calc_api.calc_methods.profile import profile
-from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.enums import exposure_type_from_impact_type
-from calc_api.calc_methods.util import standardise_scenario
-from calc_api.vizz.enums import ScenarioGrowthEnum, ExposureTypeEnum, ApiExposureTypeEnum
-
-conf = ClimadaCalcApiConfig()
-
+# TODO get from env variable
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
+LOGGER.setLevel(getattr(logging, 'DEBUG'))
 
 
-# TODO organise these functions better. get_exposure should just be admin, get_exposure_from_api should do the work
-@shared_task(base=Singleton)
-# @profile()
-# @cache_memoize(timeout=conf.CACHE_TIMEOUT)
 def get_exposure(
         country,
         exposure_type=None,
-        impact_type=None,
-        scenario_name=None,
         scenario_growth=None,
         scenario_year=None,
         location_poly=None,
         aggregation_scale=None,
-        aggregation_method=None):
+        aggregation_method=None,
+        units=None):
 
-    exp = get_exposure_from_api(country, exposure_type, impact_type, scenario_name, scenario_growth, scenario_year)
+    if not scenario_year and scenario_growth == 'historic':
+        scenario_year = '2020'
+
+    exp = _get_exposure_from_api(country, exposure_type, scenario_growth, scenario_year)
 
     # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
     if location_poly:
@@ -78,22 +62,17 @@ def get_exposure(
     ]
 
 
-def determine_api_exposure_type(exposure_type, scenario_name, scenario_year, impact_type=None):
-    if not exposure_type:
-        exposure_type = exposure_type_from_impact_type(impact_type)
-
-    is_historical = (scenario_year == 2020) or (scenario_name == 'historical')
+def determine_api_exposure_type(exposure_type, scenario_growth, scenario_year):
+    is_historical = (scenario_year == 2020) or (scenario_growth == 'historical')
     if exposure_type == 'people':
         if is_historical:
             return 'litpop_tccentroids', '(0,1)'
-            # LOGGER.warning('Using 2020 SSP when we should really be getting LitPop')
-            # return 'ssp_population', None
         else:
             return 'ssp_population', None
     elif exposure_type == 'economic_assets':
         return 'litpop_tccentroids', '(1,1)'
     else:
-        raise ValueError(f'Unrecognised exposure definition: {exposure_type}, {scenario_name}, {scenario_year}, {impact_type}')
+        raise ValueError(f'Unrecognised exposure definition: {exposure_type}, {scenario_growth}, {scenario_year}')
 
 
 def get_gdp_scaling(country, scenario_year):
@@ -102,23 +81,13 @@ def get_gdp_scaling(country, scenario_year):
 
 
 # TODO this is a quick fix and we need to store this info in a database
-def get_exposure_from_api(
+def _get_exposure_from_api(
         country,
         exposure_type=None,
-        impact_type=None,
-        scenario_name=None,
         scenario_growth=None,
         scenario_year=None):
 
-    if not scenario_year and scenario_growth == 'historic':
-        scenario_year = '2020'
-
-    scenario_name, scenario_growth, _ = standardise_scenario(scenario_name=scenario_name, scenario_growth=scenario_growth)
-
-    if impact_type and exposure_type is None:
-        exposure_type = exposure_type_from_impact_type(impact_type)
-
-    api_exposure_type, exponents = determine_api_exposure_type(exposure_type, scenario_name, scenario_year, impact_type)
+    api_exposure_type, exponents = determine_api_exposure_type(exposure_type, scenario_growth, scenario_year)
 
     request_properties = {
         'spatial_coverage': 'country',

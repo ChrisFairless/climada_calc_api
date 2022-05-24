@@ -1,27 +1,16 @@
 import logging
-import json
 import pandas as pd
 import numpy as np
 from millify import millify
 
-from django.db import transaction
-from celery import chain, chord, shared_task
+from celery import chord, shared_task
 from celery_singleton import Singleton
 
-from climada.engine.impact import Impact
-from climada.entity import ImpactFunc, ImpactFuncSet, ImpfTropCyclone, Exposures
-from climada.hazard import Hazard
-
-import calc_api.vizz.schemas as schemas
+from calc_api.vizz.schemas import schemas
 from calc_api.calc_methods.util import country_iso_from_parameters
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.enums import get_year_options, get_rp_options
-from calc_api.calc_methods.calc_hazard import get_hazard_event, get_hazard_by_return_period
-from calc_api.calc_methods.calc_exposure import get_exposure
-from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_return_period
-from calc_api.calc_methods.mapping import points_to_map_response
-from calc_api.calc_methods.colourmaps import Legend, PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
-from calc_api.vizz.util import options_return_period_to_description
+from calc_api.vizz.schemas.enums import get_year_options, get_rp_options
+from calc_api.calc_methods.calc_impact import get_impact_by_return_period
 
 conf = ClimadaCalcApiConfig()
 
@@ -50,9 +39,9 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
     year_choices = get_year_options(request.hazard_type)
     years_to_calculate = [year['value'] for year in year_choices]
     country_iso3 = country_iso_from_parameters(
-        location_scale=request.location_scale,
-        location_code=request.location_code,
         location_name=request.location_name,
+        location_code=request.location_code,
+        location_scale=request.location_scale,
         location_poly=request.location_poly,
         representation="alpha3"
     )
