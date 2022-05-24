@@ -14,7 +14,7 @@ from ninja.security import HttpBearer, HttpBasicAuth
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.util import get_client_ip
 from climada_calc.settings import BASE_DIR, STATIC_ROOT
-from calc_api.vizz import schemas, schemas_widgets, renderers
+from calc_api.vizz import schemas, schemas_widgets
 from calc_api.vizz.util import get_options
 from calc_api.calc_methods import mapping, geocode, widgets, timeline
 
