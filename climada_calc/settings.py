@@ -155,6 +155,7 @@ CELERY_CACHE_BACKEND = 'default'
 #TODO switch back to rabbitmq
 #CELERY_BROKER_URL = 'amqp://rabbittest:fasthydrantpotter@127.0.0.1:5672//'
 CELERY_BROKER_URL = os.environ.get('REDIS_URL')
+CELERY_BROKER_POOL_LIMIT = 8
 CELERY_ACCEPT_CONTENT = ['application/json', 'application/x-python-serialize']
 CELERY_TASK_SERIALIZER = 'pickle'  # TODO Get this working with json
 CELERY_RESULT_SERIALIZER = 'pickle'
