@@ -166,8 +166,8 @@ CELERY_SINGLETON_LOCK_EXPIRY = 300
 
 
 # Use DO functions
-DIGITAL_OCEAN_URL = 'https://reca-functions.digitalocean.com'
-DIGITAL_OCEAN_FUNCTIONS = True
+DIGITAL_OCEAN_URL = 'https://reca-api.digitalocean.com'
+DIGITAL_OCEAN_FUNCTIONS = False
 
 
 # Geocoding
