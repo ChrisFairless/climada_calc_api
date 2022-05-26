@@ -72,7 +72,7 @@ def standardise_location(location_name=None, location_code=None, location_scale=
             url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
         else:
             url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
-        place = requests.request('GET', url)
+        place = requests.request.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO split this to a setting?
         return maptiler_to_schema(place.json())
     else:
         raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
@@ -123,7 +123,7 @@ def query_place(s):
         response = requests.get(query).json()
     elif conf.GEOCODER == 'maptiler':
         query = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
-        response = requests.get(query).json()['features']
+        response = requests.get(query, headers={'Origin': 'reca-api.herokuapp.com'}).json()['features']
     else:
         ValueError(
             f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
@@ -171,12 +171,6 @@ def geocode_autocomplete(s):
         suggestions = [maptiler_to_schema(p) for p in response]
     else:
         raise ValueError('GEOCODE must be one of osmnames, nominatim_web or maptiler')
-    LOGGER.debug('RESPONSE')
-    LOGGER.debug(response)
-    LOGGER.debug('SUGGESTIONS')
-    LOGGER.debug(suggestions)
-    print(response)
-    print(suggestions)
     return GeocodePlaceList(data=suggestions)
 
 
