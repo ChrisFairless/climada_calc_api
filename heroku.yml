@@ -5,8 +5,6 @@ build:
   docker:
     web:
       dockerfile: ./Dockerfile
-    geocode_api:
-      dockerfile: ./Dockerfile.heroku.osmnames
 
 run:
   web: bash -c "./setup.sh && python manage.py runserver 0.0.0.0:\$PORT"
