@@ -171,6 +171,12 @@ def geocode_autocomplete(s):
         suggestions = [maptiler_to_schema(p) for p in response]
     else:
         raise ValueError('GEOCODE must be one of osmnames, nominatim_web or maptiler')
+    LOGGER.debug('RESPONSE')
+    LOGGER.debug(response)
+    LOGGER.debug('SUGGESTIONS')
+    LOGGER.debug(suggestions)
+    print(response)
+    print(suggestions)
     return GeocodePlaceList(data=suggestions)
 
 
