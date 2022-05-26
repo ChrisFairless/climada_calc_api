@@ -46,12 +46,6 @@ services:
     networks:
       - calc_network
     env_file: .env
-  geocode_api:
-    image: "klokantech/osmnames-sphinxsearch:latest"
-    ports:
-      - "80:80"
-    networks:
-      - calc_network
 
 networks:
   calc_network:

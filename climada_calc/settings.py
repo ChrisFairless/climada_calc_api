@@ -167,7 +167,8 @@ CELERY_SINGLETON_LOCK_EXPIRY = 300
 
 # Geocoding
 GEOCODE_URL = os.environ.get('GEOCODE_URL')
-
+# If deploying your own version a free Maptiler account gives a key for 100k requests/month. This is locked to our site.
+MAPTILER_KEY = os.environ.get('MAPTILER_KEY')
 
 # CORS
 CORS_ALLOW_ALL_ORIGINS = True

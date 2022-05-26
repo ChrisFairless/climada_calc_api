@@ -2,10 +2,11 @@ import requests
 import logging
 from typing import List
 from ninja import Schema
+import os
 
 from climada.util.coordinates import country_to_iso
 
-from climada_calc.settings import GEOCODE_URL
+from climada_calc.settings import GEOCODE_URL, MAPTILER_KEY
 from calc_api.vizz.schemas import GeocodePlaceList, GeocodePlace
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz import schemas
@@ -66,7 +67,13 @@ def standardise_location(location_name=None, location_code=None, location_scale=
             url = f'https://nominatim.openstreetmap.org/search?q={location_name}&format=json'
         place = requests.request('GET', url)
         return osmnames_to_schema(place.json())
-
+    elif conf.GEOCODER == 'maptiler':
+        if location_code:
+            url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
+        else:
+            url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
+        place = requests.request('GET', url)
+        return maptiler_to_schema(place.json())
     else:
         raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
 
@@ -75,7 +82,6 @@ def standardise_location(location_name=None, location_code=None, location_scale=
 ### Self-deployed geocoder
 
 def osmnames_to_schema(place):
-    level = 'suburb'
     return GeocodePlace(
         name=place['display_name'],
         id=place['osm_id'],
@@ -88,6 +94,26 @@ def osmnames_to_schema(place):
     )
 
 
+def maptiler_to_schema(place):
+    if len(list(place['place_type'])) > 1:
+        LOGGER.debug(f'Geocoder was given multiple place types: {place["place_type"]}')
+    return GeocodePlace(
+        name=place['place_name'],
+        id=place['id'],
+        type=place['place_type'][0],
+        city=_get_place_context_type(place, 'city'),
+        county=_get_place_context_type(place, 'county'),
+        state=_get_place_context_type(place, 'state'),
+        country=_get_place_context_type(place, 'country'),
+        bbox=place['bbox']
+    )
+
+
+def _get_place_context_type(place, type):
+    name = [context['text'] for context in place['context'] if type in context['id']]
+    return None if len(name) == 0 else name[0]
+
+
 def query_place(s):
     if conf.GEOCODER == 'osmnames':
         query = GEOCODE_URL + "q/" + s
@@ -95,9 +121,9 @@ def query_place(s):
     elif conf.GEOCODER == 'nominatim_web':
         query = f'https://nominatim.openstreetmap.org/search?q={s}&format=json'
         response = requests.get(query).json()
-        print("====================")
-        print('GEOCODE')
-        print(response)
+    elif conf.GEOCODER == 'maptiler':
+        query = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
+        response = requests.get(query).json()['features']
     else:
         ValueError(
             f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
@@ -139,15 +165,12 @@ def geocode_autocomplete(s):
     response = query_place(s)
     if not response:
         return GeocodePlaceList(data=[])
-    suggestions = [
-        GeocodePlace(
-            name=p['display_name'],
-            id=p['osm_id'],
-            bbox=p['boundingbox'],
-            poly=bbox_to_poly(p['boundingbox'])
-        )
-        for p in response
-    ]
+    if conf.GEOCODER in ['osmnames', 'nominatim_web']:
+        suggestions = [osmnames_to_schema(p) for p in response]
+    elif conf.GEOCODER == 'maptiler':
+        suggestions = [maptiler_to_schema(p) for p in response]
+    else:
+        raise ValueError('GEOCODE must be one of osmnames, nominatim_web or maptiler')
     return GeocodePlaceList(data=suggestions)
 
 
