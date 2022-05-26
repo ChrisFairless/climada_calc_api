@@ -59,9 +59,16 @@ def standardise_location(location_name=None, location_code=None, location_scale=
                                'Code will try again for a non-exact match. '
                                'Error message: {msg}')
         return get_one_place(location_name, exact=False)
+    elif conf.GEOCODER == 'nominatim_web':
+        if location_code:
+            url = f'https://nominatim.openstreetmap.org/lookup?q=N{location_name}&format=json'
+        else:
+            url = f'https://nominatim.openstreetmap.org/search?q={location_name}&format=json'
+        place = requests.request('GET', url)
+        return osmnames_to_schema(place.json())
 
     else:
-        raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Current value: {conf.GEOCODER}")
+        raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
 
 
 
@@ -80,9 +87,20 @@ def osmnames_to_schema(place):
         bbox=place['boundingbox']
     )
 
+
 def query_place(s):
-    query = GEOCODE_URL + "q/" + s
-    response = requests.get(query).json()['results']
+    if conf.GEOCODER == 'osmnames':
+        query = GEOCODE_URL + "q/" + s
+        response = requests.get(query).json()['results']
+    elif conf.GEOCODER == 'nominatim_web':
+        query = f'https://nominatim.openstreetmap.org/search?q={s}&format=json'
+        response = requests.get(query).json()
+        print("====================")
+        print('GEOCODE')
+        print(response)
+    else:
+        ValueError(
+            f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
     if len(response) == 0:
         return None
     else:
