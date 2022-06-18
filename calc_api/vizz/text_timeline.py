@@ -20,6 +20,10 @@ def generate_timeline_widget_text(
         affected_future_climate_change,
         future_year,
         return_period,
+        frequency_change,
+        intensity_change,
+        new_10yr_return,
+        new_100yr_return
 ):
 
     overview_text = _generate_timeline_widget_overview_text(
@@ -32,25 +36,33 @@ def generate_timeline_widget_text(
         return_period
     )
 
-    if affected_future_exposure_change == 0 and affected_future_climate_change == 0:
-        change_text = _generate_timeline_widget_no_change_text(
-            hazard_type,
-            scenario
-        )
-    else:
-        change_text = _generate_timeline_widget_change_text(
-            hazard_type,
-            scenario,
-            impact_type,
-            exposure_units,
-            affected_present,
-            affected_future,
-            affected_future_exposure_change,
-            affected_future_climate_change,
-            future_year,
-        )
+    change_text = _generate_timeline_widget_change_text(
+        hazard_type,
+        scenario,
+        impact_type,
+        exposure_units,
+        affected_present,
+        affected_future,
+        affected_future_exposure_change,
+        affected_future_climate_change,
+        future_year
+    )
 
-    return [overview_text, change_text]
+    hazard_overview_text = _generate_timeline_widget_hazard_overview_text(
+        hazard_type
+    )
+
+    frequency_intensity_text = _generate_timeline_widget_frequency_intensity_text(
+        hazard_type,
+        location,
+        future_year,
+        frequency_change,
+        intensity_change,
+        new_10yr_return,
+        new_100yr_return
+    )
+
+    return [overview_text, change_text, hazard_overview_text, frequency_intensity_text]
 
 
 def _generate_timeline_widget_overview_text(
@@ -69,12 +81,7 @@ def _generate_timeline_widget_overview_text(
     )
 
     proportional_qualifier = 'all' if affected_present == value_present else ''
-    if hazard_type == 'tropical_cyclone':
-        event_description = 'tropical cyclones'
-    elif hazard_type == 'extreme_heat':
-        event_description = 'extreme heat events'
-    else:
-        raise ValueError(f'{hazard_type} is not in my list of pre-prepared hazards for text generation')
+    event_description = event_description_from_hazard_type(hazard_type)
 
     if return_period == 'aai':
         return_period_description = 'on average each year'
@@ -108,9 +115,6 @@ def _generate_timeline_widget_overview_text(
     )
 
 
-
-
-
 def _generate_timeline_widget_no_change_text(
         hazard_type,
         scenario
@@ -138,6 +142,37 @@ def _generate_timeline_widget_change_text(
         affected_future_climate_change,
         future_year,
 ):
+
+    if affected_future_exposure_change == 0 and affected_future_climate_change == 0:
+        return _generate_timeline_widget_no_change_text(
+            hazard_type,
+            scenario
+        )
+    else:
+        return _generate_timeline_widget_with_change_text(
+            hazard_type,
+            scenario,
+            impact_type,
+            exposure_units,
+            affected_present,
+            affected_future,
+            affected_future_exposure_change,
+            affected_future_climate_change,
+            future_year,
+        )
+
+def _generate_timeline_widget_with_change_text(
+        hazard_type,
+        scenario,
+        impact_type,
+        exposure_units,
+        affected_present,
+        affected_future,
+        affected_future_exposure_change,
+        affected_future_climate_change,
+        future_year,
+):
+
     text_change_description = Template(
         "The $affected_description is projected to "
         "$growth_description by $future_year under the $scenario scenario. "
@@ -217,6 +252,122 @@ def _generate_timeline_widget_change_text(
     )
 
 
+def _generate_timeline_widget_hazard_overview_text(hazard_type):
+    if hazard_type == 'tropical_cyclone':
+        text = 'Tropical storms cause can damage from high winds, flooding and coastal storm surges, with the strongest storms devastating whole communities, causing severe financial losses, injuries and deaths.'
+    elif hazard_type == 'extreme_heat':
+        text = 'Heatwaves are one of the deadliest natural disasters globally. Heat stress causes illness and death and slows economic activity.'
+    else:
+        raise ValueError('Hazard must be one of tropical_cyclone or extreme_heat')
+    return schemas_widgets.GeneratedText(
+        template=text,
+        values=[]
+    )
+
+def _generate_timeline_widget_frequency_intensity_text(
+        hazard_type,
+        location_name,
+        future_year,
+        frequency_change,
+        intensity_change,
+        new_10yr_return,
+        new_100yr_return
+):
+
+    text_freq_intense_change = Template(
+        '$event_description in $location $frequency_change_desc $intensity_change_desc by {{future_year}}. $rp_text'
+    )
+    values = [schemas_widgets.TextVariable(
+        key='frequency_change',
+        value=100 * frequency_change,
+        units='%'
+        )]
+
+    if frequency_change > 0.15:
+        frequency_change_desc = "are projected to become much more ({{frequency_change}}) frequent"
+    elif frequency_change > 0.05:
+        frequency_change_desc = "are projected to become more ({{frequency_change}}) frequent"
+    elif frequency_change > 0.01:
+        frequency_change_desc = "are projected to become slightly more ({{frequency_change}}) frequent"
+    elif frequency_change > -0.01:
+        frequency_change_desc = "are not projected to change much in frequency"
+        _ = values.pop()  # Drop the frequency change, we don't need it
+    elif frequency_change > -0.05:
+        frequency_change_desc = "are projected to become slightly less ({{frequency_change}}) frequent"
+    elif frequency_change > -0.1:
+        frequency_change_desc = "are projected to become less ({{frequency_change}}) frequent"
+    elif frequency_change <= -0.15:
+        frequency_change_desc = "are projected to become much less ({{frequency_change}}) frequent"
+    else:
+        raise ValueError(f'Could not process change in frequency: {frequency_change}')
+
+    # TODO think about whether to decscribe changing intensity rather than changing impacts
+    values.extend([
+        schemas_widgets.TextVariable(
+            key='intensity_change',
+            value=100 * intensity_change,
+            units='%'
+        )
+    ])
+    if intensity_change > 0.15:
+        intensity_change_desc = "and are projected to become much more ({{intensity_change}}) damaging on average"
+    elif intensity_change > 0.05:
+        intensity_change_desc = "and are projected to become more ({{intensity_change}}) damaging on average"
+    elif intensity_change > 0.01:
+        intensity_change_desc = "and are projected to become slightly more ({{intensity_change}}) damaging on average"
+    elif intensity_change > -0.01:
+        intensity_change_desc = "and are not projected to change much in average impact"
+        _ = values.pop()  # Drop the intensity change since we won't display it
+    elif intensity_change > -0.05:
+        intensity_change_desc = "and are projected to become slightly less ({{intensity_change}}) damaging on average"
+    elif intensity_change > -0.1:
+        intensity_change_desc = "and are projected to become less ({{intensity_change}}) damaging on average"
+    elif intensity_change <= -0.1:
+        intensity_change_desc = "and are projected to become much less ({{intensity_change}}) damaging on average"
+    else:
+        raise ValueError(f'Could not process change in intensity: {intensity_change}')
+
+    event_description = event_description_from_hazard_type(hazard_type)
+    is_new_rp_10yr = new_10yr_return <= 9.5 or new_10yr_return >= 10.5
+    is_new_rp_100yr = new_100yr_return <= 95 or new_100yr_return >= 105
+
+    value_new_10yr = [schemas_widgets.TextVariable(
+        key='new_10yr_return',
+        value=new_10yr_return,
+        units='years'
+    )]
+    value_new_100yr = [schemas_widgets.TextVariable(
+        key='new_100yr_return',
+        value=new_100yr_return,
+        units='years'
+    )]
+
+    if not is_new_rp_100yr and not is_new_rp_10yr:
+        rp_text = ''
+    elif not is_new_rp_100yr:
+        rp_text = f'The impacts of a {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, but the impacts of 1-in-100-year events are not projected to change much by {{year}}.'
+        values.extend(value_new_10yr)
+    elif not is_new_rp_10yr:
+        rp_text = f'The impacts of 1-in-10-year events are not projected to change much, but the impacts of a {event_description} that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
+        values.extend(value_new_100yr)
+    else:
+        rp_text = f'The impacts of a {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, and impacts that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
+        values.extend(value_new_10yr)
+        values.extend(value_new_100yr)
+
+    final_text = text_freq_intense_change.substitute(
+        event_description=event_description,
+        location=location_name,
+        future_year=future_year,
+        frequency_change_desc=frequency_change_desc,
+        intensity_change_desc=intensity_change_desc,
+        rp_text=rp_text
+    )
+
+    return schemas_widgets.GeneratedText(
+        template=final_text,
+        values=values
+    )
 
 
 def prettify_exposure(value, units):
@@ -280,3 +431,10 @@ def growth_description(current, future, units):
 
     raise ValueError("Somehow we didn't work out a growth description")
 
+
+def event_description_from_hazard_type(hazard_type):
+    if hazard_type == 'tropical_cyclone':
+        return 'tropical cyclones'
+    if hazard_type == 'extreme_heat':
+        return 'extreme heat events'
+    raise ValueError(f'{hazard_type} is not in my list of pre-prepared hazards for text generation')

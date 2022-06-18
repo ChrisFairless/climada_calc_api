@@ -40,8 +40,11 @@ def standardise_location(location_name=None, location_code=None, location_scale=
             id=code,
             scale='country',
             country=location_name,
+            country_id=code,
             admin1=None,
+            admin1_id=None,
             admin2=None,
+            admin2_id=None,
             bbox=None,  # TODO
             poly=None  # TODO
         )

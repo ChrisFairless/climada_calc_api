@@ -16,7 +16,7 @@ from calc_api.util import get_client_ip
 from climada_calc.settings import BASE_DIR, STATIC_ROOT
 from calc_api.vizz import schemas, schemas_widgets
 from calc_api.vizz.util import get_options
-from calc_api.calc_methods import mapping, geocode, widgets, timeline
+from calc_api.calc_methods import mapping, geocode, timeline, widget_timeline, widget_social_vulnerability
 
 conf = ClimadaCalcApiConfig()
 
@@ -417,7 +417,7 @@ def _api_geocode_autocomplete(request, query):
     summary="Create data for the risk over time section of the RECA site"
 )
 def _api_widget_risk_timeline_submit(request, data: schemas_widgets.TimelineWidgetRequest):
-    job_id = widgets.widget_timeline(data)
+    job_id = widget_timeline.widget_timeline(data)
     return schemas_widgets.TimelineWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/risk-timeline')
 
 
@@ -438,7 +438,7 @@ def _api_widget_risk_timeline_poll(request, job_id):
     summary="Create data for the biodiversity section of the RECA site"
 )
 def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityWidgetRequest):
-    job_id = widgets.widget_biodiversity(data)
+    job_id = widget_timeline.widget_biodiversity(data)
     return schemas_widgets.BiodiversityWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/biodiversity')
 
 
@@ -458,8 +458,8 @@ def _api_widget_biodiversity_poll(request, job_id):
     response=schemas_widgets.SocialVulnerabilityWidgetJobSchema,
     summary="Create data for the social vulnerability section of the RECA site"
 )
-def _api_widget_biodiversity_submit(request, data: schemas_widgets.SocialVulnerabilityWidgetRequest):
-    job_id = widgets.widget_social_vulnerability(data)
+def _api_widget_social_vulnerability_submit(request, data: schemas_widgets.SocialVulnerabilityWidgetRequest):
+    job_id = widget_social_vulnerability.widget_social_vulnerability(data)
     return schemas_widgets.SocialVulnerabilityWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/social-vulnerability')
 
 
@@ -469,7 +469,7 @@ def _api_widget_biodiversity_submit(request, data: schemas_widgets.SocialVulnera
     response=schemas_widgets.SocialVulnerabilityWidgetJobSchema,
     summary="Poll for data for the social vulnerability section of the RECA site"
 )
-def _api_widget_socialvulnerability_poll(request, job_id):
+def _api_widget_social_vulnerability_poll(request, job_id):
     return schemas_widgets.SocialVulnerabilityWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/social-vulnerability')
 
 

@@ -59,22 +59,28 @@ def get_impact_by_return_period(
     imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, save_mat)
 
     if aggregation_scale:
-
         if aggregation_scale == 'country':
             if return_period == 'aai':
                 imp_rp = imp.aai_agg
             else:
                 imp_rp = imp.calc_freq_curve((int(return_period))).impact
+            imp_10yr_100yr = imp.calc_freq_curve((10, 100)).impact
         else:
             raise ValueError("Can't yet deal with aggregation scales that aren't country.")
 
+        total_freq = sum(imp.frequency)
+        mean_imp = np.average(imp.at_event, weights=imp.frequency) # TODO is this the right way to assess change in intensity/impacts?
+
+        # TODO there's a better way to pass the freq/intensity info to the timeline widgets
         return [
             {"lat": float(np.median(exp.gdf['latitude'])),
              "lon": float(np.median(exp.gdf['longitude'])),
-             "value": float(imp_rp)}
+             "value": float(imp_rp),
+             "total_freq": total_freq,
+             "mean_imp": mean_imp,
+             "imp_10yr": imp_10yr_100yr[0],
+             "imp_100yr": imp_10yr_100yr[1]}
         ]
-
-
 
     # TODO should this be a separate celery job? with the (admittedly large) result above cached?
     if return_period == 'aai':

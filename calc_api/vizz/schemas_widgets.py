@@ -18,6 +18,7 @@ class GeneratedText(Schema):
     values: List[TextVariable]
 
 
+# TODO add polygon functionality?
 class TimelineWidgetRequest(Schema):
     hazard_type: str
     hazard_rp: int

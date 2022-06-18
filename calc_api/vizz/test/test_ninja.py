@@ -23,7 +23,7 @@ calculation_endpoints = {
     'rest/vizz/timeline/impact': 'TimelineImpactRequest',
     'rest/vizz/widgets/risk-timeline': 'TimelineWidgetRequest',
     # 'rest/vizz/widgets/biodiversity': 'BiodiversityWidgetRequest',
-    # 'rest/vizz/widgets/social-vulnerability': 'SocialVulnerabilityWidgetRequest',
+    'rest/vizz/widgets/social-vulnerability': 'SocialVulnerabilityWidgetRequest',
     # 'rest/vizz/exceedance/hazard': 'ExceedanceHazardRequest',
     # 'rest/vizz/exceedance/impact': 'ExceedanceImpactRequest',
 }
@@ -165,10 +165,10 @@ Response:\n
                                 LOGGER.info(f"not a success: {response.json()}")
                             self.assertEqual(response.status_code, 200)
                             self.assertEqual(status, 'SUCCESS')
-            #                 break
-            #             break
-            #         break
-            #     break
+                            break
+                        break
+                    break
+                break
             # break
 
 

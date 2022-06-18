@@ -2,23 +2,25 @@ from celery import chain, chord, group, shared_task
 from celery_singleton import Singleton
 
 from calc_api.vizz import schemas, schemas_widgets
-from calc_api.calc_methods.timeline import timeline_impact
-from calc_api.vizz.texts import generate_timeline_widget_text
-from calc_api.calc_methods.geocode import standardise_location
+from calc_api.calc_methods.util import standardise_scenario
+from calc_api.vizz.text_timeline import generate_timeline_widget_text
 from calc_api.calc_methods.calc_exposure import get_exposure
 from calc_api.calc_methods.timeline import set_up_timeline_calculations, combine_impacts_to_timeline, combine_impacts_to_timeline_no_celery
 from calc_api.calc_methods.geocode import standardise_location
 
+
 def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
     location = standardise_location(location_name=data.location_name, location_code=data.location_id)
+    scenario_name, scenario_growth, scenario_climate = standardise_scenario(
+        data.scenario_name, data.scenario_growth, data.scenario_climate, data.scenario_year)
     request = schemas.TimelineImpactRequest(
         hazard_type=data.hazard_type,
         hazard_rp=data.hazard_rp,
         exposure_type=data.exposure_type,
         impact_type=data.impact_type,
-        scenario_name=data.scenario_name,
-        scenario_climate=data.scenario_climate,
-        scenario_growth=data.scenario_growth,
+        scenario_name=scenario_name,
+        scenario_climate=scenario_climate,
+        scenario_growth=scenario_growth,
         location_name=location.name,
         location_scale=location.scale,
         location_code=location.id,
@@ -47,7 +49,7 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
         'hazard_type': request.hazard_type,
         'location_name': request.location_name,
         'location_scale': request.location_scale,
-        'scenario_name':request.scenario_name,
+        'scenario_name': request.scenario_name,
         'impact_type': request.impact_type,
         'units_response': request.units_response,
         'hazard_rp': request.hazard_rp
@@ -74,6 +76,17 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
     timeline = combine_impacts_to_timeline_no_celery(impacts_list, job_config_list).data
 
     future_analysis = [item for item in timeline.items if item.year_value == int(report_year)][0]
+    present_impact = [
+        imp
+        for imp, job in zip(impacts_list, job_config_list)
+        if job['haz_year'] == 2020 and job['exp_year'] == 2020][0][0]
+    future_impact = [
+        imp
+        for imp, job in zip(impacts_list, job_config_list)
+        if job['haz_year'] == int(report_year) and job['exp_year'] == int(report_year)][0][0]
+    frequency_change = future_impact['total_freq'] - present_impact['total_freq']
+    intensity_change = future_impact['mean_imp'] - present_impact['mean_imp']
+
     # TODO make this deal with differing economic and climate scenarios
     generated_text = generate_timeline_widget_text(
         config['hazard_type'],
@@ -88,7 +101,11 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
         future_analysis.population_change,
         future_analysis.climate_change,
         report_year,
-        config['hazard_rp']
+        config['hazard_rp'],
+        frequency_change,
+        intensity_change,
+        future_impact['imp_10yr'],
+        future_impact['imp_100yr']
     )
     timeline_data = schemas_widgets.TimelineWidgetData(
         text=generated_text,
@@ -101,12 +118,3 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
         data=timeline_data,
         metadata=timeline_metadata
     )
-
-
-
-def widget_social_vulnerability(data: schemas_widgets.SocialVulnerabilityWidgetRequest):
-    return {}
-
-
-def widget_biodiversity(data: schemas_widgets.BiodiversityWidgetRequest):
-    return {}

@@ -1,0 +1,61 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:14.1
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+  rabbit:
+    hostname: rabbitmq
+    image: rabbitmq:3-management
+    volumes:
+      - ./rabbit_definitions.json:/etc/rabbitmq/definitions.json
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    env_file:
+      - .env
+    ports:
+      - "5673:5672"
+      - "15672:15672"
+  redis:
+    image: "redis:alpine"
+  web:
+    build: .
+    command: bash -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/climada_calcapi
+    ports:
+      - "8000:8000"
+    links:
+      - rabbit
+    depends_on:
+      - db
+      - redis
+      - rabbit
+    restart: on-failure
+    env_file:
+      - .env
+  celery:
+    build: .
+    command: celery -A calc_api worker -l info
+    volumes:
+      - .:/climada_calc
+    depends_on:
+      - db
+      - redis
+      - rabbit
+  celery_flower:
+    build: .
+    command: celery -A calc_api flower
+    volumes:
+      - .:/climada_calc
+    depends_on:
+      - db
+      - redis
+      - rabbit
+    restart: on-failure
+
+volumes:
+  postgres_data:
+

@@ -362,8 +362,11 @@ class GeocodePlace(Schema):
     id: str
     scale: str = None   # -> Enum
     country: str = None
+    country_id: str = None
     admin1: str = None
+    admin1_id: str = None
     admin2: str = None
+    admin2_id: str = None
     bbox: List[float] = None
     poly: List[dict] = None
 
