@@ -137,12 +137,12 @@ def _make_impact(haz,
 
     # TODO make into another lookup
     if exposure_type == 'economic_assets':
-        if impact_type == 'economic_loss':
+        if impact_type == 'economic_impact':
             impf = ImpfTropCyclone.from_emanuel_usa()
         elif impact_type == 'assets_affected':
             impf = ImpactFunc.set_step_impf(intensity=(0, 33, 500))  # Cat 1 storm
         else:
-            raise ValueError(f'impact_type with economic_assets must be economic_loss or assets_affected. Type = {impact_type}')
+            raise ValueError(f'impact_type with economic_assets must be economic_impact or assets_affected. Type = {impact_type}')
     elif exposure_type == 'people':
         if hazard_type == 'tropical_cyclone':
             impf = ImpactFunc.from_step_impf(intensity=(0, 54, 300))

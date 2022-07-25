@@ -16,7 +16,7 @@ class ApiExposureTypeEnum(str, Enum):
 
 class ExposureTypeEnum(str, Enum):
     people = 'people'
-    economica_assets = 'economica_assets'
+    economic_assets = 'economic_assets'
 
 
 class ScenarioNameEnum(str, Enum):
@@ -53,7 +53,7 @@ SCENARIO_LOOKUPS = {
 
 IMPACT_TO_EXPOSURE = {
     'people_affected': 'people',
-    'economic_loss': 'economic_assets',
+    'economic_impact': 'economic_assets',
     'assets_affected': 'economic_assets'
 }
 

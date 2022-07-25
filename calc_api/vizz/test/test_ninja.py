@@ -115,7 +115,7 @@ class TestEndpoints(unittest.TestCase):
                     continue
                 elif haz_name == 'tropical_cyclone':
                     exposure_type = 'economic_assets'
-                    impact_type = 'economic_loss'
+                    impact_type = 'economic_impact'
                     units = 'dollars'
                 else:
                     raise ValueError('haz_name must be extreme_heat or tropical_cyclone')
