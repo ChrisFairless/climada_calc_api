@@ -1,0 +1,14 @@
+# These three settings need to be changed before deploying to production
+SECRET_KEY=replace_with_secret_key
+DEBUG=True
+ALLOWED_HOSTS=0.0.0.0
+
+# If using PostgreSQL change these settings before deploying to production
+POSTGRES_USER=admin
+POSTGRES_PASSWORD=admin
+POSTGRES_DB=default_database
+
+REDIS_URL=redis://redis:6379
+
+GEOCODE_URL=http://geocode_api:80/
+MAPTILER_KEY=replace_with_maptiler_key_if_using
