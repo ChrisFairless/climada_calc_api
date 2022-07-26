@@ -240,6 +240,7 @@ def _generate_timeline_widget_with_change_text(
         raise ValueError("Something went wrong with the logic processing changes in impacts")
 
     final_text = text_change_description.substitute(
+        affected_description=affected_description,
         growth_description=growth_text,
         future_year=future_year,
         scenario=options_scenario_to_description(scenario, hazard_type),
