@@ -7,13 +7,15 @@ services:
       - "6379:6379"
     networks:
       - calc_network
+
   web:
     build: .
     command: bash -c "./setup.sh && python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
     depends_on:
-      - redis
+      db:
+        condition: service_healthy
     restart: on-failure
     env_file: .env
     volumes:
@@ -22,9 +24,10 @@ services:
       - ./static/sample_data:/climada_calc_api/static/sample_data
     networks:
       - calc_network
+
   celery:
     build: .
-    command: bash -c "./setup.sh && celery -A calc_api worker -l info"
+    command: celery -A calc_api worker -l info
     volumes:
       - .:/climada_calc_api/
       - ./celery/run/:/var/run/celery
@@ -34,17 +37,40 @@ services:
     networks:
       - calc_network
     env_file: .env
+    healthcheck:
+      test: [ "CMD-SHELL", "celery -A calc_api inspect ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   celery_flower:
     build: .
     command: bash -c "./setup.sh && ./start_flower.sh"
     ports:
       - "5555:5555"
     depends_on:
-      - redis
+      celery:
+        condition: service_healthy
     restart: on-failure
     networks:
       - calc_network
     env_file: .env
+
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    env_file: .env
+    volumes:
+      - ./db-data/:/var/lib/postgresql/data/
+    networks:
+      - calc_network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   calc_network:

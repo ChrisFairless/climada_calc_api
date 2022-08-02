@@ -80,11 +80,14 @@ WSGI_APPLICATION = 'climada_calc.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-# TODO switch over to postgres
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    "default": {
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": os.environ.get('POSTGRES_DB'),
+        "USER": os.environ.get('POSTGRES_USER'),
+        "PASSWORD": os.environ.get('POSTGRES_PASSWORD'),
+        "HOST": os.environ.get('POSTGRES_HOST'),
+        "PORT": "5432",
     }
 }
 
@@ -151,7 +154,7 @@ MEDIA_URL = "/media/"
 #TODO switch back to rabbitmq   --- also does the above need '/0' at the end?
 CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL') + '/0'
 #CELERY_RESULT_BACKEND = "db+sqlite:////climada_calc_api/celery.sqlite3"
-CELERY_CACHE_BACKEND = 'default'
+CELERY_CACHE_BACKEND = os.environ.get('REDIS_URL') + '/0'
 #TODO switch back to rabbitmq
 #CELERY_BROKER_URL = 'amqp://rabbittest:fasthydrantpotter@127.0.0.1:5672//'
 CELERY_BROKER_URL = os.environ.get('REDIS_URL')
