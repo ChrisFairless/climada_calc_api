@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
+    networks:
+      - calc_network
+  web:
+    build: .
+    command: bash -c "./setup.sh && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    restart: on-failure
+    env_file: .env
+    volumes:
+      - .:/climada_calc_api/
+      - ./static/climada/data:/climada/data
+      - ./static/sample_data:/climada_calc_api/static/sample_data
+    networks:
+      - calc_network
+  celery:
+    build: .
+    command: bash -c "./setup.sh && celery -A calc_api worker -l info"
+    volumes:
+      - .:/climada_calc_api/
+      - ./celery/run/:/var/run/celery
+      - ./celery/log/:/var/log/celery
+    depends_on:
+      - redis
+    networks:
+      - calc_network
+    env_file: .env
+  celery_flower:
+    build: .
+    command: bash -c "./setup.sh && ./start_flower.sh"
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    restart: on-failure
+    networks:
+      - calc_network
+    env_file: .env
+  geocode_api:
+    image: "klokantech/osmnames-sphinxsearch:latest"
+    ports:
+      - "80:80"
+    networks:
+      - calc_network
+
+networks:
+  calc_network:
