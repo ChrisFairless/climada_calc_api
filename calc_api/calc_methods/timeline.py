@@ -82,7 +82,7 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
         get_impact_by_return_period.s(
             country=country_iso3,
             hazard_type=request.hazard_type,
-            return_period=request.hazard_rp,
+            return_periods=request.hazard_rp,
             exposure_type=request.exposure_type,
             impact_type=request.impact_type,
             scenario_name=request.scenario_name,
@@ -110,30 +110,20 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
             raise ValueError('Impacts provided to timeline calculation have more than one location')
         job['impact'] = impacts_list[i][0]['value']
 
+    # When multiple return periods are used, cells with impact data contain ARRAYS in this data frame
     df = pd.DataFrame(job_config_list)
+    df['impact'] = pd.Series([np.array(impact) for impact in df['impact']])
     df.sort_values(by=['exp_year', 'haz_year'], inplace=True)
 
     haz_type = job_config_list[0]["hazard_type"]
     year_list = np.sort(np.unique(df['exp_year']))
-    current_climate = float(df[(df['haz_year'] == 2020) & (df['exp_year'] == 2020)]['impact'])
-    future_climate = np.array(df[(df['haz_year'] == df['exp_year'])]['impact'])
-    only_growth = np.array(df[(df['haz_year'] == 2020)]['impact'])
-    population_change_array = only_growth - current_climate
-    climate_change_array = future_climate - only_growth
-    #
-    # LOGGER.debug(df)
-    # LOGGER.debug('ARRAYS')
-    # LOGGER.debug('current_climate')
-    # LOGGER.debug(current_climate)
-    # LOGGER.debug('future_climate')
-    # LOGGER.debug(future_climate)
-    # LOGGER.debug('only_growth')
-    # LOGGER.debug(only_growth)
-    # LOGGER.debug('population_change')
-    # LOGGER.debug(population_change_array)
-    # LOGGER.debug('climate_change')
-    # LOGGER.debug(climate_change_array)
-
+    current_climate = np.array(df[(df['haz_year'] == 2020) & (df['exp_year'] == 2020)]['impact'][0])
+    future_climate = pd.Series(df[(df['haz_year'] == df['exp_year'])]['impact'])
+    only_growth = pd.Series(df[(df['haz_year'] == 2020)]['impact'])
+    growth_change = pd.Series(scenario_growth - current_climate for scenario_growth in only_growth)
+    climate_change = pd.Series(
+        scenario_future - scenario_growth for scenario_future, scenario_growth in zip(future_climate, only_growth)
+    )
 
     # population_change_list= [job['impact'] for job in impacts_list if job['haz_year']==2020]
     # climate_change_list = [job['impact'] for job in impacts_list if job['haz_year']==job['exp_year']]
@@ -141,65 +131,60 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
     if job_config_list[0]['units_response'] not in ['dollars', 'people']:
         raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {job_config_list[0]["units_response"]}')
 
-    timeline_bars = [
-        schemas.TimelineBar(
-            year_label=str(year),
-            year_value=int(year),
-            temperature=-999.0,
-            current_climate=float(current_climate),
-            future_climate=float(fut),
-            population_change=float(pop),
-            climate_change=float(clim),
-        )
-        for year, fut, pop, clim in zip(year_list, future_climate, population_change_array, climate_change_array)
-    ]
-    #
-    # LOGGER.debug('dumping timelinebar')
-    # LOGGER.debug(timeline_bars[0].__dict__)
-    # LOGGER.debug(json.dumps(timeline_bars[0].yearLabel))
-    # LOGGER.debug(json.dumps(timeline_bars[0].yearValue))
-    # LOGGER.debug(json.dumps(timeline_bars[0].temperature))
-    # LOGGER.debug(json.dumps(timeline_bars[0].current_climate))
-    # LOGGER.debug(json.dumps(timeline_bars[0].future_climate))
-    # LOGGER.debug(json.dumps(timeline_bars[0].population_change))
-    # LOGGER.debug('internal dump method')
-    # LOGGER.debug(timeline_bars[0].json(exclude_unset=True))
-    # LOGGER.debug('internal include unset')
-    # LOGGER.debug(timeline_bars[0].json())
-    # LOGGER.debug('let us try the new dumps method then')
+    timeline_list = []
 
-    rp_description = get_rp_options(
-        hazard_type=haz_type,
-        get_value='name',
-        parameters={'value': job_config_list[0]['hazard_rp']}
-    )[0]
+    # Create a timeline item for each input return period:
+    for i, rp in enumerate(job_config_list[0]['hazard_rp']):
 
-    title = f'Components of {haz_type} risk: {rp_description}'
-    description = f'Components of {haz_type} risk: {rp_description}'  # TODO expand
-    example_value = millify(max(df['impact']))
-
-    legend = schemas.CategoricalLegend(
-        title=title,
-        units=job_config_list[0]['units_response'],
-        items=[
-            schemas.CategoricalLegendItem(label="Risk today", slug="risk_today", value=example_value),
-            schemas.CategoricalLegendItem(label="+ growth", slug="plus_growth", value=example_value),
-            schemas.CategoricalLegendItem(label="+ climate change", slug="plus_climate_change", value=example_value)
+        # Create a list of bar items for each return period
+        timeline_bars = [
+            schemas.TimelineBar(
+                year_label=str(year),
+                year_value=int(year),
+                temperature=-999.0,
+                current_climate=float(current_climate[i]),
+                future_climate=float(fut[i]),
+                growth_change=float(pop[i]),
+                climate_change=float(clim[i]),
+            )
+            for year, fut, pop, clim in zip(year_list, future_climate, growth_change, climate_change)
         ]
-    )
 
-    timeline = schemas.Timeline(
-        items=timeline_bars,
-        legend=legend,
-        units_temperature=job_config_list[0]['units_warming'],
-        units_response=job_config_list[0]['units_response']
-    )
+        rp_description = get_rp_options(
+            hazard_type=haz_type,
+            get_value='name',
+            parameters={'value': rp}
+        )[0]
 
-    metadata = schemas.TimelineMetadata(
-        description=description
-    )
+        title = f'Components of {haz_type} risk: {rp_description}'
+        description = f'Components of {haz_type} risk: {rp_description}'  # TODO expand
+        example_value = millify(max(df['impact'][0]))
+
+        legend = schemas.CategoricalLegend(
+            title=title,
+            units=job_config_list[0]['units_response'],
+            items=[
+                schemas.CategoricalLegendItem(label="Risk today", slug="risk_today", value=example_value),
+                schemas.CategoricalLegendItem(label="+ growth", slug="plus_growth", value=example_value),
+                schemas.CategoricalLegendItem(label="+ climate change", slug="plus_climate_change", value=example_value)
+            ]
+        )
+
+        timeline = schemas.Timeline(
+            items=timeline_bars,
+            legend=legend,
+            units_temperature=job_config_list[0]['units_warming'],
+            units_response=job_config_list[0]['units_response']
+        )
+
+        metadata = schemas.TimelineMetadata(
+            description=description
+        )
+
+        output_timeline = schemas.TimelineResponse(data=timeline, metadata=metadata)
+        timeline_list.append(output_timeline)
 
     # LOGGER.debug('RESPONSE')
     # LOGGER.debug(schemas.TimelineResponse(data=timeline, metadata=metadata))
 
-    return schemas.TimelineResponse(data=timeline, metadata=metadata)
+    return timeline_list

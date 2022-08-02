@@ -126,7 +126,7 @@ def map_impact_climate(request: schemas.MapImpactClimateRequest):
         get_impact_by_return_period.s(
             country_list=country_iso,
             hazard_type=request.hazard_type,
-            return_period=request.hazard_rp,
+            return_periods=request.hazard_rp,
             exposure_type=request.exposure_type,
             impact_type=None,
             scenario_name=request.scenario_name,

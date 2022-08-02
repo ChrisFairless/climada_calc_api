@@ -31,7 +31,7 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 def get_impact_by_return_period(
         country,
         hazard_type,
-        return_period,
+        return_periods,
         exposure_type=None,
         impact_type=None,
         scenario_name=None,
@@ -58,34 +58,55 @@ def get_impact_by_return_period(
     save_mat = (aggregation_scale != 'country')
     imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, save_mat)
 
-    if aggregation_scale:
+    return_periods = np.array(return_periods)
+    return_periods_aai = return_periods == 'aai'
+    return_periods_int = return_periods != 'aai'
 
+    if aggregation_scale:
         if aggregation_scale == 'country':
-            if return_period == 'aai':
-                imp_rp = imp.aai_agg
-            else:
-                imp_rp = imp.calc_freq_curve((int(return_period))).impact
+            combined_rp_imp = np.full(len(return_periods), None, dtype=float)
+            if any(return_periods_aai):
+                imp_rp_aai = imp.aai_agg
+                combined_rp_imp[return_periods == 'aai'] = imp_rp_aai
+            if any(return_periods_int):
+                rps = [int(rp) for rp in return_periods[return_periods_int]]
+                imp_rp_int = imp.calc_freq_curve(rps).impact
+                combined_rp_imp[return_periods != 'aai'] = imp_rp_int
         else:
             raise ValueError("Can't yet deal with aggregation scales that aren't country.")
+
+        # TODO is this the right way to assess change in intensity/impacts?
+        # TODO make the return values for this function consistent! (the pointwise return data doesn't have this)
+        total_freq = sum(imp.frequency)
+        mean_imp = np.average(imp.at_event, weights=imp.frequency)
 
         return [
             {"lat": float(np.median(exp.gdf['latitude'])),
              "lon": float(np.median(exp.gdf['longitude'])),
-             "value": float(imp_rp)}
+             "value": list(combined_rp_imp),
+             "total_freq": total_freq,
+             "mean_imp": mean_imp}
         ]
 
 
-
     # TODO should this be a separate celery job? with the (admittedly large) result above cached?
-    if return_period == 'aai':
-        imp_rp = imp.eai_exp
+    if any(return_periods_aai):
+        imp_rp_aai = imp.eai_exp
     else:
-        imp_rp = imp.local_exceedance_imp(return_periods=(int(return_period)))[0]
+        imp_rp_aai = []
+
+    if any(return_periods_int):
+        imp_rp_int = imp.local_exceedance_imp(return_periods=return_periods)
+    else:
+        imp_rp_int = []
+    combined_rp_imp = np.empty_like(return_periods)
+    combined_rp_imp[return_periods == 'aai'] = imp_rp_aai
+    combined_rp_imp[return_periods == 'aai'] = imp_rp_int
 
     return [
-        {"lat": float(coords[0]), "lon": float(coords[1]), "value": float(value)}
-        for value, coords
-        in zip(imp_rp, imp.coord_exp)
+        {"lat": float(coords[0]), "lon": float(coords[1]), "value": np.array(value)}
+        for coords, value
+        in zip(imp.coord_exp, zip(combined_rp_imp))
     ]
 
 
@@ -131,12 +152,12 @@ def _make_impact(haz,
 
     # TODO make into another lookup
     if exposure_type == 'economic_assets':
-        if impact_type == 'economic_loss':
+        if impact_type == 'economic_impact':
             impf = ImpfTropCyclone.from_emanuel_usa()
         elif impact_type == 'assets_affected':
             impf = ImpactFunc.set_step_impf(intensity=(0, 33, 500))  # Cat 1 storm
         else:
-            raise ValueError(f'impact_type with economic_assets must be economic_loss or assets_affected. Type = {impact_type}')
+            raise ValueError(f'impact_type with economic_assets must be economic_impact or assets_affected. Type = {impact_type}')
     elif exposure_type == 'people':
         if hazard_type == 'tropical_cyclone':
             impf = ImpactFunc.from_step_impf(intensity=(0, 54, 300))

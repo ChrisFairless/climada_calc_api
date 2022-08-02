@@ -257,7 +257,7 @@ class TimelineExposureRequest(Schema):
 class TimelineImpactRequest(Schema):
     hazard_type: str
     hazard_event_name: str = None
-    hazard_rp: str = None
+    hazard_rp: List[str] = None
     exposure_type: str = None
     impact_type: str = None
     scenario_name: str = None
@@ -278,7 +278,7 @@ class TimelineBar(Schema):
     temperature: float = None
     current_climate: float = None
     future_climate: float = None
-    population_change: float = None
+    growth_change: float = None
     climate_change: float = None
 
 
@@ -362,8 +362,11 @@ class GeocodePlace(Schema):
     id: str
     scale: str = None   # -> Enum
     country: str = None
+    country_id: str = None
     admin1: str = None
+    admin1_id: str = None
     admin2: str = None
+    admin2_id: str = None
     bbox: List[float] = None
     poly: List[dict] = None
 
