@@ -1,6 +1,7 @@
 setup:
   addons:
     - plan: heroku-redis:hobby-dev
+    - plan: heroku-postgresql:hobby-dev
 build:
   docker:
     web:
