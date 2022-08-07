@@ -16,6 +16,7 @@ from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.enums import exposure_type_from_impact_type
 from calc_api.calc_methods.util import standardise_scenario
 from calc_api.vizz.enums import ScenarioGrowthEnum, ExposureTypeEnum, ApiExposureTypeEnum
+from calc_api.job_management.job_management import database_job
 
 conf = ClimadaCalcApiConfig()
 
@@ -25,6 +26,7 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 # TODO organise these functions better. get_exposure should just be admin, get_exposure_from_api should do the work
 @shared_task(base=Singleton)
+@database_job
 # @profile()
 # @cache_memoize(timeout=conf.CACHE_TIMEOUT)
 def get_exposure(

@@ -6,13 +6,15 @@ import uuid
 import json
 
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.models import Measure
+from calc_api.vizz.models import Job, Measure
 from climada_calc import celery_app as app
 from calc_api.vizz import enums
 
 conf = ClimadaCalcApiConfig()
 
 # TODO extend schemas to include 'impact type' as well as exposure type
+# TODO add 'standardise' methods to each of these classes (possibly as part of an __init__)
+
 
 # We don't actually use this: we create similar schema later with typed responses.
 class JobSchema(Schema):
@@ -20,6 +22,7 @@ class JobSchema(Schema):
     location: str
     status: str
     request: dict
+    submitted_at: datetime.datetime = None
     completed_at: datetime.datetime = None
     expires_at: datetime.datetime = None
     response: dict = None  # This will be replaced in child classes

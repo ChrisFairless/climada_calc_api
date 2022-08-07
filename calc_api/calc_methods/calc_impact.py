@@ -17,6 +17,7 @@ from calc_api.calc_methods.calc_hazard import get_hazard_from_api
 from calc_api.calc_methods.calc_exposure import get_exposure, get_exposure_from_api, determine_api_exposure_type
 from calc_api.vizz.enums import exposure_type_from_impact_type, HAZARD_TO_ABBREVIATION
 from calc_api.calc_methods.util import standardise_scenario
+from calc_api.job_management.job_management import database_job
 
 conf = ClimadaCalcApiConfig()
 
@@ -26,6 +27,7 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
 @shared_task(base=Singleton)
+@database_job
 # @profile()
 # @cache_memoize(timeout=conf.CACHE_TIMEOUT)
 def get_impact_by_return_period(

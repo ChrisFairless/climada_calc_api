@@ -20,6 +20,7 @@ from calc_api.calc_methods.calc_hazard import get_hazard_event, get_hazard_by_re
 from calc_api.calc_methods.calc_exposure import get_exposure
 from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_return_period
 from calc_api.calc_methods.colourmaps import PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
+from calc_api.job_management.job_management import database_job
 
 conf = ClimadaCalcApiConfig()
 

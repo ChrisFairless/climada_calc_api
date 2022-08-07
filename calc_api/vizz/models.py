@@ -11,7 +11,6 @@ from calc_api.config import ClimadaCalcApiConfig
 conf = ClimadaCalcApiConfig()
 
 
-# Not currently used
 class Job(models.Model):
     job_id = models.TextField(primary_key=True, db_index=True)
     location = models.TextField()
@@ -31,6 +30,15 @@ class Job(models.Model):
         if time_to_expiry < 0.7 * conf.JOB_TIMEOUT:
             new_expiry = datetime.datetime.now() + datetime.timedelta(seconds=conf.JOB_TIMEOUT)
             self.update(expires_at=new_expiry)
+
+
+# TODO see if this can be combined with the above somehow through smarter celery management.
+class JobLog(models.Model):
+    job_hash = models.TextField(primary_key=True, db_index=True)
+    func = models.CharField(max_length=30)
+    args = models.TextField()
+    kwargs = models.TextField()
+    result = models.JSONField()
 
 
 class Cobenefit(models.Model):
@@ -70,6 +78,7 @@ class Hazard(models.Model):
     event_name = models.IntegerField()
     lat = models.FloatField()
     lon = models.FloatField()
+
 
 class Exposures(models.Model):
     id = models.AutoField(primary_key=True)

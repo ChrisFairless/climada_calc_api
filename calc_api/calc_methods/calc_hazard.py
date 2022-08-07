@@ -4,6 +4,7 @@ from cache_memoize import cache_memoize
 from celery import shared_task
 from celery_singleton import Singleton
 import pandas as pd
+from typing import List
 
 from climada.hazard import Hazard
 from climada.util.api_client import Client
@@ -13,6 +14,7 @@ from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.calc_methods.util import standardise_scenario
 from calc_api.vizz.enums import ScenarioClimateEnum, HazardTypeEnum
+from calc_api.job_management.job_management import database_job
 
 conf = ClimadaCalcApiConfig()
 
@@ -22,16 +24,18 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 # TODO split this into get_hazard_by_return_period and get_hazard and make get_hazard_from_api an internal function
 # i.e. this handles all the processing and decoding of a mess of different parameters
+# TODO make this work for multiple return periods too
 @shared_task(base=Singleton)
+# @database_job
 # @profile()
 # @cache_memoize(timeout=conf.CACHE_TIMEOUT)
 def get_hazard_by_return_period(
-        country,
-        hazard_type,
-        return_period,
-        scenario_name,
-        scenario_climate,
-        scenario_year,
+        country: str,
+        hazard_type: str,
+        return_period: List[str],
+        scenario_name: str,
+        scenario_climate: str,
+        scenario_year: int,
         location_poly=None,
         aggregation_scale=None):
 
@@ -72,6 +76,7 @@ def get_hazard_by_return_period(
 
 
 @shared_task(base=Singleton)
+@database_job
 # @profile()
 # @cache_memoize(timeout=conf.CACHE_TIMEOUT)
 def get_hazard_by_location(

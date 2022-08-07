@@ -13,3 +13,4 @@ redis
 sqlalchemy
 celery-singleton
 millify
+decorator

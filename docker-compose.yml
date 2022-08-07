@@ -37,19 +37,14 @@ services:
     networks:
       - calc_network
     env_file: .env
-    healthcheck:
-      test: [ "CMD-SHELL", "celery -A calc_api inspect ping" ]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
   celery_flower:
     build: .
-    command: bash -c "./setup.sh && ./start_flower.sh"
+    command: bash -c "./start_flower.sh"
     ports:
       - "5555:5555"
     depends_on:
-      celery:
+      db:
         condition: service_healthy
     restart: on-failure
     networks:
