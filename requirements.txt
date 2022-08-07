@@ -2,6 +2,7 @@ celery[redis]
 Django==4.0
 django-ninja==0.16.1
 django-cors-headers
+dj_database_url
 gunicorn
 psycopg2-binary
 flower

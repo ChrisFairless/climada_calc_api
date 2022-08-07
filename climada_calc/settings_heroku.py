@@ -81,19 +81,10 @@ WSGI_APPLICATION = 'climada_calc.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
-# Construct database location from environment variables
-db_address = os.environ.get('DATABASE_URL')
-if not db_address:
-    db_address = 'postgres://' + \
-                 os.environ.get('POSTGRES_USER') + ':' + os.environ.get('POSTGRES_PASSWORD') + \
-                 '@' + os.environ.get('POSTGRES_HOST') + ':' + os.environ.get('POSTGRES_PORT') + \
-                 '/' + os.environ.get('POSTGRES_DB')
-# https://pypi.org/project/django-database-url/
 DATABASES = {
-    "default": dj_database_url.config(default=db_address, conn_max_age=600)
+    "default": dj_database_url.config()
 }
-DATABASES['default']['ENGINE'] = "django.db.backends.postgresql_psycopg2"
+
 
 # Cache
 # https://docs.djangoproject.com/en/4.0/topics/cache/
