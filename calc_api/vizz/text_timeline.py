@@ -82,6 +82,7 @@ def _generate_timeline_widget_overview_text(
 
     proportional_qualifier = 'all' if affected_present == value_present else ''
     event_description = event_description_from_hazard_type(hazard_type)
+    exposure_units_description = exposure_units + ' of economic assets' if exposure_units == 'dollars' else exposure_units
 
     if return_period == 'aai':
         return_period_description = 'on average each year'
@@ -100,7 +101,7 @@ def _generate_timeline_widget_overview_text(
         schemas_widgets.TextVariable(
             key='exposure_value',
             value=value_present,
-            unit=exposure_units
+            unit=exposure_units_description
         ),
         schemas_widgets.TextVariable(
             key='affected_present',
