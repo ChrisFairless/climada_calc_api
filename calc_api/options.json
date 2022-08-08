@@ -334,6 +334,10 @@
         "name": "Tropical cyclone",
         "value": "tropical_cyclone",
         "default": false,
+        "location_options": [
+          "Haiti",
+          "Saint Kitts and Nevis"
+        ],
         "scenario_options": {
           "year": {
             "description": "Scenario year",
