@@ -113,8 +113,11 @@ def maptiler_to_schema(place):
 
 
 def _get_place_context_type(place, type):
-    name = [context['text'] for context in place['context'] if type in context['id']]
-    return None if len(name) == 0 else name[0]
+    if 'context' in place:
+        name = [context['text'] for context in place['context'] if type in context['id']]
+        return None if len(name) == 0 else name[0]
+    else:
+        return None
 
 
 def query_place(s):
