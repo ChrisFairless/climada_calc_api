@@ -64,13 +64,14 @@
               }
             ]
           },
-          "impact": {
+          "impact_type": {
             "description": "Choice of impact for this hazard",
             "type": "select",
             "default": "people_affected",
             "choices": [
               {
                 "name": "people affected",
+                "exposure_type": "people",
                 "value": "people_affected"
               }
             ]
@@ -397,21 +398,24 @@
               }
             ]
           },
-          "impact": {
+          "impact_type": {
             "description": "Choice of impact for this hazard",
             "type": "select",
             "default": "economic_impact",
             "choices": [
               {
                 "name": "people affected",
+                "exposure_type": "people",
                 "value": "people_affected"
               },
               {
-                "name": "economic loss",
-                "value": "economic_loss"
+                "name": "economic impact",
+                "exposure_type": "economic_assets",
+                "value": "economic_impact"
               },
               {
                 "name": "assets affected",
+                "exposure_type": "economic_assets",
                 "value": "assets_affected"
               }
             ]
