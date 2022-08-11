@@ -80,22 +80,47 @@ def get_exposure(
     ]
 
 
-def determine_api_exposure_type(exposure_type, scenario_name, scenario_year, impact_type=None):
-    if not exposure_type:
-        exposure_type = exposure_type_from_impact_type(impact_type)
+def get_api_exposure_properties(
+        exposure_type,
+        scenario_name,
+        scenario_year,
+        scenario_growth,
+        country):
+
+    properties = {
+        'spatial_coverage': 'country',
+        'country_iso3alpha': country,
+    }
 
     is_historical = (scenario_year == 2020) or (scenario_name == 'historical')
     if exposure_type == 'people':
         if is_historical:
-            return 'litpop_tccentroids', '(0,1)'
+            properties['data_type'] = 'litpop_tccentroids'
+            properties['exponents'] = '(0,1)'
+            properties['fin_mode'] = 'pop'
+            properties['status'] = "preliminary"
+            properties['version'] = "v1"
             # LOGGER.warning('Using 2020 SSP when we should really be getting LitPop')
             # return 'ssp_population', None
         else:
-            return 'ssp_population', None
+            properties['data_type'] = 'ssp_population'
+            properties['ref_year'] = str(scenario_year)
+            properties['ssp'] = scenario_growth
+            properties['res_arcsec'] = '150'
+            properties['status'] = "preliminary"
+            properties['version'] = "v1"
+
     elif exposure_type == 'economic_assets':
-        return 'litpop_tccentroids', '(1,1)'
+        properties['data_type'] = 'litpop_tccentroids'
+        properties['exponents'] = '(1,1)'
+        properties['fin_mode'] = 'pc'
+        properties['status'] = "preliminary"
+        properties['version'] = "v1"
     else:
-        raise ValueError(f'Unrecognised exposure definition: {exposure_type}, {scenario_name}, {scenario_year}, {impact_type}')
+        raise ValueError(f'Unrecognised exposure definition: {exposure_type}, {scenario_name}, {scenario_year}')
+
+
+    return properties
 
 
 def get_gdp_scaling(country, scenario_year):
@@ -120,30 +145,12 @@ def get_exposure_from_api(
     if impact_type and exposure_type is None:
         exposure_type = exposure_type_from_impact_type(impact_type)
 
-    api_exposure_type, exponents = determine_api_exposure_type(exposure_type, scenario_name, scenario_year, impact_type)
+    properties = get_api_exposure_properties(exposure_type, scenario_name, scenario_year, scenario_growth, country)
+    exposures_type = properties.pop('data_type')
+    status = properties.pop('status')
+    version = properties.pop('version')
 
-    request_properties = {
-        'spatial_coverage': 'country',
-        'country_iso3alpha': country,
-    }
-
-    if api_exposure_type != 'litpop_tccentroids':
-        request_properties['ref_year'] = str(scenario_year)
-        request_properties['climate_scenario'] = scenario_growth
-
-    if 'litpop' in api_exposure_type:
-        if exposure_type == 'people':
-            request_properties['exponents'] = '(0,1)'
-            request_properties['fin_mode'] = 'pop'
-        elif exposure_type == 'economic_assets':
-            request_properties['exponents'] = '(1,1)'
-            request_properties['fin_mode'] = 'pc'
-        else:
-            raise ValueError('Exposure only handles people and economic_assets types right now')
-
-    status, version = ("preliminary", "v1") if 'tccentroids' in api_exposure_type else ("active", None)
-
-    LOGGER.debug(f'Requesting {status} {api_exposure_type} {version} exposure from Data API. Request properties: {request_properties}')
+    LOGGER.debug(f'Requesting exposure from Data API. Request properties: {properties}')
     client = Client()
 
     # TODO use a sane way of sharing data across processes
@@ -151,8 +158,8 @@ def get_exposure_from_api(
     while exp is None:
         try:
             exp = client.get_exposures(
-                exposures_type=api_exposure_type,
-                properties=request_properties,
+                exposures_type=exposures_type,
+                properties=properties,
                 status=status,
                 version=version
             )
