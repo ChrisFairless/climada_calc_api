@@ -105,7 +105,7 @@ class AnalysisSchema(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: List[float] = None
+    location_poly: List[List[float]] = None
     aggregation_scale: str = None
     aggregation_method: str = None
 
@@ -238,7 +238,7 @@ class TimelineHazardRequest(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: List[float] = None
+    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -251,7 +251,7 @@ class TimelineExposureRequest(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: List[float] = None
+    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -269,7 +269,7 @@ class TimelineImpactRequest(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: List[float] = None
+    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
@@ -312,7 +312,7 @@ class ExposureBreakdownRequest(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: List[float] = None
+    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units: str = None
 
@@ -370,8 +370,8 @@ class GeocodePlace(Schema):
     admin1_id: str = None
     admin2: str = None
     admin2_id: str = None
-    bbox: List[float] = None
-    poly: List[dict] = None
+    bbox: List[List[float]] = None
+    poly: List[List[float]] = None
 
 
 class GeocodePlaceList(Schema):

@@ -45,13 +45,7 @@ def get_exposure(
     # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
     if location_poly:
         raise ValueError("API doesn't handle polygons yet")
-        # haz = subset_hazard_extent(hazard_type,
-        #                            country,
-        #                            scenario_name,
-        #                            scenario_year,
-        #                            return_period,
-        #                            location_poly,
-        #                            aggregation_scale)
+        exp = subset_exposure_extent(exp, location_poly)
 
     # TODO implement, consider splitting from the chain
     if aggregation_scale:
@@ -177,5 +171,31 @@ def get_exposure_from_api(
     else:
         scaling = 1
     exp.gdf['value'] = exp.gdf['value'] * scaling
+
+    return exp
+
+
+def subset_exposure_extent(
+        exp,
+        location_poly,
+        buffer=150  # arcseconds
+):
+    if len(location_poly) != 4:
+        LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
+
+    buffer_deg = buffer / (60 * 60)
+    latmin = np.min(coord[0] for coord in location_poly) - buffer_deg
+    lonmin = np.min(coord[1] for coord in location_poly) - buffer_deg
+    latmax = np.min(coord[0] for coord in location_poly) + buffer_deg
+    lonmax = np.max(coord[1] for coord in location_poly) + buffer_deg
+
+    idx = exp.gdf['latitude'] >= latmin & \
+        exp.gdf['latitude'] <= latmax & \
+        exp.gdf['longitude'] >= lonmin & \
+        exp.gdf['longitude'] >= lonmax
+    if not any(idx):
+        raise ValueError('Subsetting the exposure went wrong: no exposure points found')
+
+    exp.set_gdf(exp.gdf[idx])
 
     return exp

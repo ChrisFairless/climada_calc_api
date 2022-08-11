@@ -63,6 +63,7 @@ def standardise_location(location_name=None, location_code=None, location_scale=
                                'Code will try again for a non-exact match. '
                                'Error message: {msg}')
         return get_one_place(location_name, exact=False)
+
     elif conf.GEOCODER == 'nominatim_web':
         if location_code:
             url = f'https://nominatim.openstreetmap.org/lookup?q=N{location_name}&format=json'
@@ -70,6 +71,7 @@ def standardise_location(location_name=None, location_code=None, location_scale=
             url = f'https://nominatim.openstreetmap.org/search?q={location_name}&format=json'
         place = requests.request('GET', url)
         return osmnames_to_schema(place.json())
+
     elif conf.GEOCODER == 'maptiler':
         if location_code:
             url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
@@ -77,12 +79,10 @@ def standardise_location(location_name=None, location_code=None, location_scale=
             url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
         place = requests.request.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO split this to a setting?
         return maptiler_to_schema(place.json())
+
     else:
         raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
 
-
-
-### Self-deployed geocoder
 
 def osmnames_to_schema(place):
     return GeocodePlace(
@@ -93,7 +93,7 @@ def osmnames_to_schema(place):
         county=place['county'],
         state=place['state'],
         country=place['country'],
-        bbox=place['boundingbox']
+        bbox=bbox_to_poly(place['boundingbox'], as_dict=False)
     )
 
 
@@ -108,7 +108,7 @@ def maptiler_to_schema(place):
         county=_get_place_context_type(place, 'county'),
         state=_get_place_context_type(place, 'state'),
         country=_get_place_context_type(place, 'country'),
-        bbox=place['bbox']
+        bbox=bbox_to_poly(place['bbox'], as_dict=False)
     )
 
 
@@ -180,7 +180,12 @@ def geocode_autocomplete(s):
     return GeocodePlaceList(data=suggestions)
 
 
-def bbox_to_poly(bbox):
+def bbox_to_poly(bbox, as_dict=True):
+    if len(bbox) != 4:
+        raise ValueError('Expected bbox to be length 4')
     lat_list = [bbox[i] for i in [1, 3, 3, 1]]
     lon_list = [bbox[i] for i in [0, 0, 2, 2]]
-    return [{'lat': lat, 'lon': lon} for lat, lon in zip(lat_list, lon_list)]
+    if as_dict:
+        return [{'lat': lat, 'lon': lon} for lat, lon in zip(lat_list, lon_list)]
+    else:
+        return [[lat, lon] for lat, lon in zip(lat_list, lon_list)]

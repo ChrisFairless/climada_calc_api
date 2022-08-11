@@ -13,8 +13,8 @@ import climada.util.coordinates as u_coord
 
 from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.calc_methods.calc_hazard import get_hazard_from_api
-from calc_api.calc_methods.calc_exposure import get_exposure, get_exposure_from_api, determine_api_exposure_type
+from calc_api.calc_methods.calc_hazard import get_hazard_from_api, subset_hazard_extent
+from calc_api.calc_methods.calc_exposure import get_exposure_from_api, subset_exposure_extent
 from calc_api.vizz.enums import exposure_type_from_impact_type, HAZARD_TO_ABBREVIATION
 from calc_api.calc_methods.util import standardise_scenario
 from calc_api.job_management.job_management import database_job
@@ -51,11 +51,13 @@ def get_impact_by_return_period(
     scenario_climate = scenario_climate if int(hazard_year) != 2020 else 'historical'
     scenario_growth = scenario_growth if int(exposure_year) != 2020 else 'historical'
 
-    api_exposure_type, exponent = determine_api_exposure_type(exposure_type, scenario_growth, exposure_year)
-
-    # TODO: consider making these simultaeous calls?
+    # TODO: consider making these simultaneous calls?
     haz = get_hazard_from_api(hazard_type, country, scenario_climate, hazard_year)
     exp = get_exposure_from_api(country, exposure_type, impact_type, scenario_name, scenario_growth, exposure_year)
+
+    if location_poly:
+        haz = subset_hazard_extent(haz, location_poly)
+        exp = subset_exposure_extent(exp, location_poly)
 
     save_mat = (aggregation_scale != 'country')
     imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, save_mat)
@@ -157,7 +159,7 @@ def _make_impact(haz,
         if impact_type == 'economic_impact':
             impf = ImpfTropCyclone.from_emanuel_usa()
         elif impact_type == 'assets_affected':
-            impf = ImpactFunc.set_step_impf(intensity=(0, 33, 500))  # Cat 1 storm
+            impf = ImpactFunc.from_step_impf(intensity=(0, 33, 500))  # Cat 1 storm
         else:
             raise ValueError(f'impact_type with economic_assets must be economic_impact or assets_affected. Type = {impact_type}')
     elif exposure_type == 'people':

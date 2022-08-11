@@ -47,14 +47,7 @@ def get_hazard_by_return_period(
     haz = get_hazard_from_api(hazard_type, country, scenario_name, scenario_year)
     # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
     if location_poly:
-        raise ValueError("API doesn't handle polygons yet")
-        # haz = subset_hazard_extent(hazard_type,
-        #                            country,
-        #                            scenario_name,
-        #                            scenario_year,
-        #                            return_period,
-        #                            location_poly,
-        #                            aggregation_scale)
+        haz = subset_hazard_extent(haz, location_poly)
 
     # TODO implement, consider splitting from the chain
     if aggregation_scale:
@@ -89,7 +82,7 @@ def get_hazard_by_location(
     haz = get_hazard_from_api(hazard_type, country, scenario_name, scenario_year)
     # TODO the location bit
     if location_poly:
-        raise ValueError("We don't subset by location yet")
+        haz = subset_hazard_extent(location_poly)
 
     return haz
 
@@ -131,5 +124,23 @@ def get_hazard_event(hazard_type,
         raise ValueError("API doesn't aggregate output yet")  # TODO
     return haz.intensity.todense().A1
 
+
+def subset_hazard_extent(
+        haz,
+        location_poly,
+        buffer=300      # arcseconds
+):
+    if len(location_poly) != 4:
+        LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
+
+    buffer_deg = buffer / (60 * 60)
+    latmin = np.min(coord[0] for coord in location_poly) - buffer_deg
+    lonmin = np.min(coord[1] for coord in location_poly) - buffer_deg
+    latmax = np.min(coord[0] for coord in location_poly) + buffer_deg
+    lonmax = np.max(coord[1] for coord in location_poly) + buffer_deg
+
+    extent = (lonmin, lonmax, latmin, latmax)
+
+    return haz.select(extent=extent)
 
 
