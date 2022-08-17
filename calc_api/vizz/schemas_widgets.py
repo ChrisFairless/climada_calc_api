@@ -1,6 +1,7 @@
 from ninja import Schema
 from typing import List
 import calc_api.vizz.schemas as schemas
+from calc_api.vizz import enums
 
 
 # Timeline / Impact over time
@@ -19,19 +20,18 @@ class GeneratedText(Schema):
 
 
 # TODO add polygon functionality?
-class TimelineWidgetRequest(Schema):
+class TimelineWidgetRequest(schemas.AnalysisSchema):
     hazard_type: str
     hazard_rp: int
     exposure_type: str
     impact_type: str
-    scenario_name: str = None
-    scenario_climate: str = None
-    scenario_growth: str = None
-    scenario_year: str = None
-    location_name: str = None
-    location_id: str = None
     units_warming: str = None
     units_response: str = None
+
+    def standardise(self):
+        super().standardise()
+        if not self.exposure_type:
+            self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
 class TimelineWidgetData(Schema):
@@ -51,10 +51,7 @@ class TimelineWidgetJobSchema(schemas.JobSchema):
 # Biodiversity
 # ============
 
-class BiodiversityWidgetRequest(Schema):
-    location_name: str = None
-    location_id: str = None
-    location_poly: str = None
+class BiodiversityWidgetRequest(schemas.PlaceSchema):
     area_units: str = None
 
 
@@ -74,10 +71,7 @@ class BiodiversityWidgetJobSchema(schemas.JobSchema):
 # Population breakdown
 # ====================
 
-class SocialVulnerabilityWidgetRequest(Schema):
-    location_name: str = None
-    location_id: str = None
-    location_poly: str = None
+class SocialVulnerabilityWidgetRequest(schemas.PlaceSchema):
     units_area: str = None
 
 

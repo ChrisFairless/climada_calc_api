@@ -10,9 +10,7 @@ from calc_api.calc_methods.geocode import standardise_location
 
 
 def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
-    location = standardise_location(location_name=data.location_name, location_code=data.location_id)
-    scenario_name, scenario_growth, scenario_climate = standardise_scenario(
-        data.scenario_name, data.scenario_growth, data.scenario_climate, data.scenario_year)
+    data.standardise()
     all_rps = [data.hazard_rp, 10, 100]
 
     request = schemas.TimelineImpactRequest(
@@ -20,33 +18,34 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
         hazard_rp=all_rps,
         exposure_type=data.exposure_type,
         impact_type=data.impact_type,
-        scenario_name=scenario_name,
-        scenario_climate=scenario_climate,
-        scenario_growth=scenario_growth,
-        location_name=location.name,
-        location_scale=location.scale,
-        location_code=location.id,
-        location_poly=location.poly,
-        aggregation_method='sum',
+        scenario_name=data.scenario_name,
+        scenario_climate=data.scenario_climate,
+        scenario_growth=data.scenario_growth,
+        location_name=data.location_name,
+        location_scale=data.location_scale,
+        location_code=data.location_code,
+        location_poly=data.location_poly,
+        aggregation_method=data.aggregation_method,
         units_warming=data.units_warming,
-        units_response=data.units_response
+        units_response=data.units_response,
+        geocoding=data.geocoding
     )
 
     exposure_total_signature = get_exposure.s(
-        country=location.id,
+        country=data.geocoding.country_id,
         exposure_type=request.exposure_type,
         impact_type=request.impact_type,
         scenario_name=request.scenario_name,
         scenario_growth=request.scenario_growth,
         scenario_year=data.scenario_year,
         location_poly=request.location_poly,
-        aggregation_scale=location.scale,
-        aggregation_method=request.aggregation_method)
+        aggregation_scale='all',
+        aggregation_method='sum')
 
     job_config_list, chord_header = set_up_timeline_calculations(request)
 
     chord_header.extend([exposure_total_signature])  # last job total exposure, all the rest impact calc
-    # this is such an ugly way to parallise all this but I am extremely tired
+    # this is such an ugly way to parallelise all this but I am extremely tired
 
     callback_config = {
         'hazard_type': request.hazard_type,

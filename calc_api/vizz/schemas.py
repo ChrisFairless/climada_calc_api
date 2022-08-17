@@ -9,6 +9,9 @@ from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.models import Job, Measure
 from climada_calc import celery_app as app
 from calc_api.vizz import enums
+from calc_api.calc_methods.util import standardise_scenario
+from calc_api.calc_methods.geocode import standardise_location
+from calc_api.vizz import schemas_geocoding
 
 conf = ClimadaCalcApiConfig()
 
@@ -97,17 +100,45 @@ class CategoricalLegend(Schema):
     items: List[CategoricalLegendItem]
 
 
-class AnalysisSchema(Schema):
-    scenario_name: str = None
-    scenario_climate: str = None
-    scenario_growth: str = None
-    scenario_year: int = None
+class PlaceSchema(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
     location_poly: List[List[float]] = None
+    geocoding: schemas_geocoding.GeocodePlace = None   # TODO make this private somehow?
+
+    def standardise(self):
+        geocoded = standardise_location(
+            location_name=self.location_name,
+            location_code=self.location_code,
+            location_scale=self.location_scale,
+            location_poly=self.location_poly)
+        self.location_name = geocoded.name
+        self.location_code = geocoded.id
+        self.location_scale = geocoded.scale
+        self.location_poly = geocoded.poly
+        self.geocoding = geocoded
+
+
+class AnalysisSchema(PlaceSchema):
+    scenario_name: str = None
+    scenario_climate: str = None
+    scenario_growth: str = None
+    scenario_year: int = None
     aggregation_scale: str = None
     aggregation_method: str = None
+
+    def standardise(self):
+        super().standardise()
+        # Scenario
+        self.scenario_name, self.scenario_growth, self.scenario_climate = \
+            standardise_scenario(
+                self.scenario_name,
+                self.scenario_growth,
+                self.scenario_climate,
+                self.scenario_year)
+        if self.aggregation_scale == self.geocoding.scale:
+            self.aggregation_scale = 'all'
 
 
 class MapHazardClimateRequest(AnalysisSchema):
@@ -138,6 +169,11 @@ class MapImpactClimateRequest(AnalysisSchema):
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
 
+    def standardise(self):
+        super().standardise()
+        if not self.exposure_type:
+            self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
+
 
 class MapImpactEventRequest(AnalysisSchema):
     hazard_type: enums.HazardTypeEnum
@@ -146,6 +182,11 @@ class MapImpactEventRequest(AnalysisSchema):
     impact_type: str
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units: str = None
+
+    def standardise(self):
+        super().standardise()
+        if not self.exposure_type:
+            self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
 class MapEntry(Schema):
@@ -228,36 +269,48 @@ class ExceedanceJobSchema(JobSchema):
     response: ExceedanceResponse = None
 
 
-class TimelineHazardRequest(Schema):
+class TimelineHazardRequest(PlaceSchema):
     hazard_type: str
     hazard_event_name: str = None
     hazard_rp: str = None
     scenario_name: str = None
     scenario_climate: str = None
-    scenario_growth: str = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
 
+    def standardise(self):
+        super().standardise()
+        # Scenario
+        self.scenario_name, _, self.scenario_climate = \
+            standardise_scenario(
+                self.scenario_name,
+                None,
+                self.scenario_climate,
+                None)
 
-class TimelineExposureRequest(Schema):
+
+class TimelineExposureRequest(PlaceSchema):
     exposure_type: str = None
     scenario_name: str = None
     scenario_growth: str = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
 
+    def standardise(self):
+        super().standardise()
+        # Scenario
+        self.scenario_name, self.scenario_growth, _ = \
+            standardise_scenario(
+                self.scenario_name,
+                self.scenario_growth,
+                None,
+                None)
 
-class TimelineImpactRequest(Schema):
+
+
+class TimelineImpactRequest(PlaceSchema):
     hazard_type: str
     hazard_event_name: str = None
     hazard_rp: List[str] = None
@@ -266,13 +319,22 @@ class TimelineImpactRequest(Schema):
     scenario_name: str = None
     scenario_climate: str = None
     scenario_growth: str = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units_warming: str = None
     units_response: str = None
+
+    def standardise(self):
+        super().standardise()
+        # Scenario
+        self.scenario_name, self.scenario_growth, self.scenario_climate = \
+            standardise_scenario(
+                self.scenario_name,
+                self.scenario_growth,
+                self.scenario_climate,
+                None)
+
+        if not self.exposure_type:
+            self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
 class TimelineBar(Schema):
@@ -305,14 +367,10 @@ class TimelineJobSchema(JobSchema):
     response: TimelineResponse = None
 
 
-class ExposureBreakdownRequest(Schema):
+class ExposureBreakdownRequest(PlaceSchema):
     exposure_type: str = None
     exposure_categorisation: str
     scenario_year: int = None
-    location_name: str = None
-    location_scale: str = None
-    location_code: str = None
-    location_poly: List[List[float]] = None
     aggregation_method: str = None
     units: str = None
 
@@ -358,23 +416,5 @@ class MeasureRequestSchema(Schema):
     include_defaults: bool = None
     hazard: str = None
 
-
-class GeocodePlace(Schema):
-    """Response data provided in a geocoding query"""
-    name: str
-    id: str
-    scale: str = None   # -> Enum
-    country: str = None
-    country_id: str = None
-    admin1: str = None
-    admin1_id: str = None
-    admin2: str = None
-    admin2_id: str = None
-    bbox: List[List[float]] = None
-    poly: List[List[float]] = None
-
-
-class GeocodePlaceList(Schema):
-    data: List[GeocodePlace]
 
 

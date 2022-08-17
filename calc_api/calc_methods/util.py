@@ -3,6 +3,7 @@ from celery import shared_task
 from climada.util.coordinates import country_to_iso
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.enums import SCENARIO_LOOKUPS
+from calc_api.calc_methods.geocode import standardise_location
 
 conf = ClimadaCalcApiConfig()
 
@@ -27,6 +28,7 @@ def standardise_scenario(scenario_name=None, scenario_growth=None, scenario_clim
     return scenario_name, scenario_growth, scenario_climate
 
 
+# TODO merge this into the standardise_location method
 def country_iso_from_parameters(location_scale,
                                 location_code=None,
                                 location_name=None,
@@ -52,12 +54,9 @@ def country_iso_from_parameters(location_scale,
     if location_poly:
         raise ValueError("API doesn't handle polygon queries yet")
 
-    if not location_scale:
-        raise ValueError("API requires location_scale data (for now)")  # TODO
-
     if location_scale == "global":
         raise ValueError("API doesn't handle global queries yet")  # TODO
-    elif location_scale in ['ISO3', 'admin0', 'country']:
+    elif location_scale in ['admin0', 'country']:
         if location_code:
             country_iso3alpha = country_to_iso(location_code, representation)
             if country_iso3alpha is None:
@@ -73,12 +72,13 @@ def country_iso_from_parameters(location_scale,
                                  f'Provided: {location_name}')
         else:
             raise ValueError("API requires location_code or location_name data")  # TODO
-    elif location_scale == "admin1":
-        raise ValueError("API doesn't handle admin1 data yet")  # TODO
-    elif location_scale == "admin2":
-        raise ValueError("API doesn't handle admin2 data yet")  # TODO
     else:
-        raise ValueError("location_scale parameter must be one of 'ISO3', 'admin0', 'admin1', 'admin2'")
+        geocoded = standardise_location(
+            location_name=location_name,
+            location_code=location_code,
+            location_scale=location_scale,
+            location_poly=location_poly)
+        country_iso3alpha = geocoded.country_id
 
     if not isinstance(country_iso3alpha, list):
         country_iso3alpha = [country_iso3alpha]

@@ -74,6 +74,8 @@ def _generate_timeline_widget_overview_text(
         affected_present,
         return_period
 ):
+    if len(return_period) > 1:
+        return_period = return_period[0]
     text_overview = Template(
         "$location is a $location_type with approximately {{exposure_value}}. "
         "Under current climatic conditions (in 2020), $proportional_qualifier {{affected_present}} "

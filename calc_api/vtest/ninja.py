@@ -20,8 +20,7 @@ from calc_api.config import ClimadaCalcApiConfig
 from calc_api.util import get_client_ip
 from climada_calc.settings import BASE_DIR, STATIC_ROOT
 import calc_api.vizz.models as models
-import calc_api.vizz.schemas as schemas
-import calc_api.vizz.schemas_widgets as schemas_widgets
+from calc_api.vizz import schemas, schemas_widgets, schemas_geocoding
 from calc_api.calc_methods.geocode import geocode_autocomplete
 from calc_api.vizz import schemas_examples
 
@@ -389,7 +388,7 @@ def _api_adaptation_measure_get(request, measure_request: schemas.MeasureRequest
     return [schemas.MeasureSchema(**m.__dict__) for m in measures]
 
 
-@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas.GeocodePlaceList,
+@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas_geocoding.GeocodePlaceList,
           summary="Get suggested locations from a string")
 def _api_geocode_autocomplete(request, query):
     return geocode_autocomplete(query)

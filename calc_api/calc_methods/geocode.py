@@ -3,11 +3,12 @@ import logging
 from typing import List
 from ninja import Schema
 import os
+import re
 
 from climada.util.coordinates import country_to_iso
 
 from climada_calc.settings import GEOCODE_URL, MAPTILER_KEY
-from calc_api.vizz.schemas import GeocodePlaceList, GeocodePlace
+from calc_api.vizz.schemas_geocoding import GeocodePlaceList, GeocodePlace
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz import schemas
 
@@ -17,17 +18,9 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
-# TODO probably make this a class
 def standardise_location(location_name=None, location_code=None, location_scale=None, location_poly=None):
     if not location_name and not location_code:
-        raise ValueError('geocode_from_schema requires location_name or location_code to be properties')
-
-    if not location_scale:
-        LOGGER.warning("Watch out! Assuming location_scale is 'country'")
-        location_scale = 'country'
-
-    if location_scale != 'country':
-        raise ValueError("For now geocoding only works with countries. Sorry!")  # Normally: determine scale
+        raise ValueError('location data requires location_name or location_code to be properties')
 
     if location_poly:
         raise ValueError("For now geocoding can't handle polygons. Sorry!")
@@ -35,7 +28,7 @@ def standardise_location(location_name=None, location_code=None, location_scale=
     if location_scale in ['country', 'admin0']:
         code = location_code if location_code else location_name
         code = country_to_iso(code, representation='alpha3')
-        return schemas.GeocodePlace(
+        return GeocodePlace(
             name=location_name,
             id=code,
             scale='country',
@@ -48,37 +41,69 @@ def standardise_location(location_name=None, location_code=None, location_scale=
             bbox=None,  # TODO
             poly=None  # TODO
         )
+    elif location_scale:
+        LOGGER.warning("For now geocoding can't handle location scales other than country: ignoring!")
 
-    if location_scale in ['admin1']:
-        raise ValueError("For now geocoding can't handle admin1. Sorry!")
+    if not location_code and re.search('[\d]{3}', location_name):
+        LOGGER.warning(f'Looks like location code was provided as location name. Using it as a code: {location_name}')
+        location_code = location_name
 
+    if location_code:
+        return location_from_code(location_code)
+    else:
+        return location_from_name(location_name)
+
+
+# TODO cache these results
+def location_from_code(location_code):
     if conf.GEOCODER == 'osmnames':
-        if location_code:
-            try:
-                return get_one_place(location_code, exact=True)
-            except ValueError as msg:
-                LOGGER.warning(f'Failed to get an exact match from on the location_code parameter '
-                               '{request.location_code}. '
-                               'Did you mean to provide a location_name instead? '
-                               'Code will try again for a non-exact match. '
-                               'Error message: {msg}')
-        return get_one_place(location_name, exact=False)
+        try:
+            return get_one_place(location_code, exact=True)
+        except ValueError as msg:
+            LOGGER.warning(f'Failed to get an exact match from on the location_code parameter '
+                           '{request.location_code}. '
+                           'Did you mean to provide a location_name instead? '
+                           'Code will try again for a non-exact match. '
+                           'Error message: {msg}')
 
     elif conf.GEOCODER == 'nominatim_web':
         if location_code:
-            url = f'https://nominatim.openstreetmap.org/lookup?q=N{location_name}&format=json'
-        else:
-            url = f'https://nominatim.openstreetmap.org/search?q={location_name}&format=json'
+            url = f'https://nominatim.openstreetmap.org/lookup?q=N{location_code}&format=json'
         place = requests.request('GET', url)
         return osmnames_to_schema(place.json())
 
     elif conf.GEOCODER == 'maptiler':
-        if location_code:
-            url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
+        url = f'https://api.maptiler.com/geocoding/{location_code}.json?key={MAPTILER_KEY}'
+        place = requests.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO split this to a setting?
+        place = place.json()['features'][0]
+
+        if 'country' in place:
+            return maptiler_to_schema(place)
         else:
-            url = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
-        place = requests.request.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO split this to a setting?
-        return maptiler_to_schema(place.json())
+            new_place = location_from_name(place['place_name'])  # TODO This isn't ideal - it adds a second query and sometimes will end up with a different result...
+            if new_place.id != place['id']:
+                raise ValueError("Geocoding couldn't determine the country for the request. This is stupid, but let's see how often it happens")
+            return new_place
+
+    else:
+        raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
+
+
+# TODO cache these results
+def location_from_name(location_name):
+    if conf.GEOCODER == 'osmnames':
+        return get_one_place(location_name, exact=False)
+
+    elif conf.GEOCODER == 'nominatim_web':
+        url = f'https://nominatim.openstreetmap.org/search?q={location_name}&format=json'
+        place = requests.request('GET', url)
+        return osmnames_to_schema(place.json())
+
+    elif conf.GEOCODER == 'maptiler':
+        url = f'https://api.maptiler.com/geocoding/{location_name}.json?key={MAPTILER_KEY}'
+        place = requests.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO move this to a setting?
+        place = place.json()['features'][0]
+        return maptiler_to_schema(place)
 
     else:
         raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
@@ -93,6 +118,7 @@ def osmnames_to_schema(place):
         county=place['county'],
         state=place['state'],
         country=place['country'],
+        country_id=country_to_iso(place['country']),
         bbox=bbox_to_poly(place['boundingbox'], as_dict=False)
     )
 
@@ -100,6 +126,9 @@ def osmnames_to_schema(place):
 def maptiler_to_schema(place):
     if len(list(place['place_type'])) > 1:
         LOGGER.debug(f'Geocoder was given multiple place types: {place["place_type"]}')
+
+    country, country_iso3 = _maptiler_establish_country_from_place(place)
+
     return GeocodePlace(
         name=place['place_name'],
         id=place['id'],
@@ -107,14 +136,48 @@ def maptiler_to_schema(place):
         city=_get_place_context_type(place, 'city'),
         county=_get_place_context_type(place, 'county'),
         state=_get_place_context_type(place, 'state'),
-        country=_get_place_context_type(place, 'country'),
+        country=country,
+        country_id=country_iso3,
         bbox=bbox_to_poly(place['bbox'], as_dict=False)
     )
 
 
-def _get_place_context_type(place, type):
+def _maptiler_establish_country_from_place(place):
+    # TODO implement this for osmschema too
+    country = None
+    if 'country' in place['place_type']:
+        try:
+            country = place['place_name']
+            country_iso3 = country_to_iso(country)
+        except LookupError:
+            try:
+                country = place['text']
+                country_iso3 = country_to_iso(country)
+            except LookupError:
+                raise LookupError(f'Could not match Maptiler country name to country. '
+                                  f'Names tried: {place["place_name"]}, {place["text"]} '
+                                  f'\nQuery result:'
+                                  f'\n{place}')
+    else:
+        country = _get_place_context_type(place, 'country')
+        if country:
+            try:
+                country_iso3 = country_to_iso(country)
+            except LookupError:
+                raise LookupError(f'Could not match the Maptiler returned country name to a country code. '
+                                  f'Country: {country}'
+                                  f'\nQuery result:'
+                                  f'\n{place}')
+
+    if not country:
+        raise ValueError(f'No country could be established from this maptiler query:\n{place}')
+
+    return country, country_iso3
+
+
+def _get_place_context_type(place, placetype):
     if 'context' in place:
-        name = [context['text'] for context in place['context'] if type in context['id']]
+        name = [context['text'] for context in place['context'] if placetype in context['id']]
         return None if len(name) == 0 else name[0]
     else:
         return None

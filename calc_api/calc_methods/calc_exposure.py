@@ -51,8 +51,8 @@ def get_exposure(
     if aggregation_scale:
         if not aggregation_method:
             raise ValueError("Need an aggregation method when aggregation_scale is set")
-        if aggregation_scale != 'country':
-            raise ValueError("API doesn't aggregate output to non-country levels yet")
+        if aggregation_scale != 'all':
+            raise ValueError("API doesn't aggregate output to sublevels yet: set aggregation_scale to 'all'")
         else:
             if aggregation_method == 'sum':
                 aggregation_method = np.sum

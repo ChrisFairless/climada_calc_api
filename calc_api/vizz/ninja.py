@@ -14,7 +14,7 @@ from ninja.security import HttpBearer, HttpBasicAuth
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.util import get_client_ip
 from climada_calc.settings import BASE_DIR, STATIC_ROOT
-from calc_api.vizz import schemas, schemas_widgets
+from calc_api.vizz import schemas, schemas_widgets, schemas_geocoding
 from calc_api.vizz.util import get_options
 from calc_api.calc_methods import mapping, geocode, timeline, widget_timeline, widget_social_vulnerability
 
@@ -398,7 +398,7 @@ def _api_exceedance_impact_poll(
     return {}
 
 
-@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas.GeocodePlaceList,
+@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas_geocoding.GeocodePlaceList,
           summary="Get suggested locations from a string")
 def _api_geocode_autocomplete(request, query):
     return geocode.geocode_autocomplete(query)

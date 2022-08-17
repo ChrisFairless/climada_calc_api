@@ -59,25 +59,27 @@ def get_impact_by_return_period(
         haz = subset_hazard_extent(haz, location_poly)
         exp = subset_exposure_extent(exp, location_poly)
 
-    save_mat = (aggregation_scale != 'country')
+    save_mat = (aggregation_scale != 'all')
     imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, save_mat)
 
     return_periods = np.array(return_periods)
     return_periods_aai = return_periods == 'aai'
     return_periods_int = return_periods != 'aai'
 
+    if any(return_periods_int):
+        rps = [int(rp) for rp in return_periods[return_periods_int]]
+
     if aggregation_scale:
-        if aggregation_scale == 'country':
+        if aggregation_scale == 'all':
             combined_rp_imp = np.full(len(return_periods), None, dtype=float)
             if any(return_periods_aai):
                 imp_rp_aai = imp.aai_agg
-                combined_rp_imp[return_periods == 'aai'] = imp_rp_aai
+                combined_rp_imp[return_periods_aai] = imp_rp_aai
             if any(return_periods_int):
-                rps = [int(rp) for rp in return_periods[return_periods_int]]
                 imp_rp_int = imp.calc_freq_curve(rps).impact
-                combined_rp_imp[return_periods != 'aai'] = imp_rp_int
+                combined_rp_imp[return_periods_int] = imp_rp_int
         else:
-            raise ValueError("Can't yet deal with aggregation scales that aren't country.")
+            raise ValueError("Can't yet deal with aggregation scales that aren't 'all'.")
 
         # TODO is this the right way to assess change in intensity/impacts?
         # TODO make the return values for this function consistent! (the pointwise return data doesn't have this)
@@ -100,12 +102,12 @@ def get_impact_by_return_period(
         imp_rp_aai = []
 
     if any(return_periods_int):
-        imp_rp_int = imp.local_exceedance_imp(return_periods=return_periods)
+        imp_rp_int = imp.local_exceedance_imp(return_periods=rps)
     else:
         imp_rp_int = []
     combined_rp_imp = np.empty_like(return_periods)
-    combined_rp_imp[return_periods == 'aai'] = imp_rp_aai
-    combined_rp_imp[return_periods == 'aai'] = imp_rp_int
+    combined_rp_imp[return_periods_aai] = imp_rp_aai
+    combined_rp_imp[return_periods_int] = imp_rp_int
 
     return [
         {"lat": float(coords[0]), "lon": float(coords[1]), "value": np.array(value)}

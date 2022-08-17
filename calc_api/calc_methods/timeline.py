@@ -46,17 +46,12 @@ def timeline_impact(request: schemas.TimelineImpactRequest):
 
 
 def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
+    if not request.geocoding:
+        request.standardise()
     if request.scenario_name == 'historical':
         LOGGER.warning('Making a timeline calculation where all scenario components are historical')
     year_choices = get_year_options(request.hazard_type)
     years_to_calculate = [year['value'] for year in year_choices]
-    country_iso3 = country_iso_from_parameters(
-        location_scale=request.location_scale,
-        location_code=request.location_code,
-        location_name=request.location_name,
-        location_poly=request.location_poly,
-        representation="alpha3"
-    )
 
     def is_historical(haz_year, exp_year):
         return (haz_year == exp_year) and (haz_year == 2020)
@@ -81,7 +76,7 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
 
     chord_header = [
         get_impact_by_return_period.s(
-            country=country_iso3,
+            country=request.geocoding.country_id,
             hazard_type=request.hazard_type,
             return_periods=request.hazard_rp,
             exposure_type=request.exposure_type,
@@ -92,7 +87,7 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
             hazard_year=job_config['haz_year'],
             exposure_year=job_config['exp_year'],
             location_poly=request.location_poly,
-            aggregation_scale=request.location_scale
+            aggregation_scale='all'
         )
         for job_config in job_config_list
     ]
