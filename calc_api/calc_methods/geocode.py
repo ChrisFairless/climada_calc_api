@@ -132,7 +132,7 @@ def maptiler_to_schema(place):
     return GeocodePlace(
         name=place['place_name'],
         id=place['id'],
-        type=place['place_type'][0],
+        scale=place['place_type'][0],
         city=_get_place_context_type(place, 'city'),
         county=_get_place_context_type(place, 'county'),
         state=_get_place_context_type(place, 'state'),

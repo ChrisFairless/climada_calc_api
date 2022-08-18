@@ -44,6 +44,8 @@ def get_impact_by_return_period(
         location_poly=None,
         aggregation_scale=None):
 
+    LOGGER.debug('Starting impact by RP calculation. Locals: ' + str(locals()))
+
     if not exposure_type:
         exposure_type = exposure_type_from_impact_type(impact_type)
 

@@ -12,6 +12,7 @@ from calc_api.vizz import enums
 from calc_api.calc_methods.util import standardise_scenario
 from calc_api.calc_methods.geocode import standardise_location
 from calc_api.vizz import schemas_geocoding
+from calc_api.vizz.enums import get_option_choices, get_option_parameter
 
 conf = ClimadaCalcApiConfig()
 
@@ -119,6 +120,42 @@ class PlaceSchema(Schema):
         self.location_poly = geocoded.poly
         self.geocoding = geocoded
 
+        if hasattr(self, 'hazard_type'):
+            haz_unit_type = get_option_parameter(['data', 'filters', self.hazard_type], parameter="unit_type")
+            allowed_units = get_option_choices(['data', 'units', haz_unit_type], get_value='value')
+            if self.units_hazard not in allowed_units:
+                raise ValueError(f'Units incompatible with hazard in {type(self).__name__}. '
+                                 f'\nHazard type: {self.hazard_type} '
+                                 f'\nUnits provided: {self.units_hazard} '
+                                 f'\nAllowed units: {allowed_units}')
+
+        if hasattr(self, 'exposure_type'):
+            exp_unit_type = get_option_choices(
+                options_path=['data', 'filters', self.hazard_type, "scenario_options", "impact_type"],
+                parameters={'exposure_type': self.exposure_type},
+                get_value='unit_type'
+            )
+            exp_unit_type = list(set(exp_unit_type))
+            if len(exp_unit_type) != 1:
+                raise ValueError(f'Expected exactly one exposure to match with the setup '
+                                 f'{self.hazard_type} (hazard type) and'
+                                 f'{self.exposure_type} (exposure type). '
+                                 f'Matches: {exp_unit_type}')
+            allowed_units = get_option_choices(['data', 'units', exp_unit_type[0]], get_value='value')
+            if self.units_exposure not in allowed_units:
+                raise ValueError(f'Units incompatible with exposure in {type(self).__name__}. '
+                                 f'\nExposure type: {self.exposure_type} '
+                                 f'\nUnits provided: {self.units_exposure} '
+                                 f'\nAllowed units: {allowed_units}')
+
+        if hasattr(self, 'units_warming'):
+            allowed_units = get_option_choices(['data', 'units', 'temperature'], get_value='value')
+            if self.units_warming not in allowed_units:
+                raise ValueError(f'Units incompatible with temperature in {type(self).__name__}. '
+                                 f'\nUnits provided: {self.units_warming} '
+                                 f'\nAllowed units: {allowed_units}')
+
+
 
 class AnalysisSchema(PlaceSchema):
     scenario_name: str = None
@@ -139,26 +176,29 @@ class AnalysisSchema(PlaceSchema):
                 self.scenario_year)
         if self.aggregation_scale == self.geocoding.scale:
             self.aggregation_scale = 'all'
+        enums.assert_in_enum(self.scenario_name, enums.ScenarioNameEnum)
+        enums.assert_in_enum(self.scenario_growth, enums.ScenarioGrowthEnum)
+        enums.assert_in_enum(self.scenario_climate, enums.ScenarioClimateEnum)
 
 
 class MapHazardClimateRequest(AnalysisSchema):
     hazard_type: enums.HazardTypeEnum
     hazard_rp: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
-    units: str = None
+    units_hazard: str = None
 
 
 class MapHazardEventRequest(AnalysisSchema):
     hazard_type: enums.HazardTypeEnum
     hazard_event_name: str
     format: str = conf.DEFAULT_IMAGE_FORMAT
-    units: str = None
+    units_hazard: str = None
 
 
 class MapExposureRequest(AnalysisSchema):
     exposure_type: str
     format: str = conf.DEFAULT_IMAGE_FORMAT
-    units: str = None
+    units_exposure: str = None
 
 
 class MapImpactClimateRequest(AnalysisSchema):
@@ -167,7 +207,8 @@ class MapImpactClimateRequest(AnalysisSchema):
     exposure_type: str
     impact_type: str
     format: str = conf.DEFAULT_IMAGE_FORMAT
-    units: str = None
+    units_hazard: str = None
+    units_exposure: str = None
 
     def standardise(self):
         super().standardise()
@@ -181,7 +222,8 @@ class MapImpactEventRequest(AnalysisSchema):
     exposure_type: str
     impact_type: str
     format: str = conf.DEFAULT_IMAGE_FORMAT
-    units: str = None
+    units_hazard: str = None
+    units_exposure: str = None
 
     def standardise(self):
         super().standardise()
@@ -227,7 +269,7 @@ class MapJobSchema(JobSchema):
 class ExceedanceHazardRequest(AnalysisSchema):
     hazard_type: str
     hazard_event_name: str = None
-    units: str = None
+    units_hazard: str = None
 
 
 class ExceedanceImpactRequest(AnalysisSchema):
@@ -235,7 +277,8 @@ class ExceedanceImpactRequest(AnalysisSchema):
     hazard_event_name: str = None
     exposure_type: str = None
     impact_type: str = None
-    units: str = None
+    units_hazard: str = None
+    units_exposure: str = None
 
 
 class ExceedanceCurvePoint(Schema):
@@ -251,8 +294,8 @@ class ExceedanceCurve(Schema):
 
 class ExceedanceCurveSet(Schema):
     items: List[ExceedanceCurve]
-    return_period_units: str
-    intensity_units: str
+    units_return_period: str
+    units_intensity: str
     legend: CategoricalLegend
 
 
@@ -276,8 +319,8 @@ class TimelineHazardRequest(PlaceSchema):
     scenario_name: str = None
     scenario_climate: str = None
     aggregation_method: str = None
+    units_hazard: str = None
     units_warming: str = None
-    units_response: str = None
 
     def standardise(self):
         super().standardise()
@@ -295,8 +338,8 @@ class TimelineExposureRequest(PlaceSchema):
     scenario_name: str = None
     scenario_growth: str = None
     aggregation_method: str = None
+    units_exposure: str = None
     units_warming: str = None
-    units_response: str = None
 
     def standardise(self):
         super().standardise()
@@ -320,8 +363,9 @@ class TimelineImpactRequest(PlaceSchema):
     scenario_climate: str = None
     scenario_growth: str = None
     aggregation_method: str = None
+    units_hazard: str = None
+    units_exposure: str = None
     units_warming: str = None
-    units_response: str = None
 
     def standardise(self):
         super().standardise()
@@ -350,7 +394,7 @@ class TimelineBar(Schema):
 class Timeline(Schema):
     items: List[TimelineBar]
     legend: CategoricalLegend
-    units_temperature: str
+    units_warming: str
     units_response: str
 
 
@@ -372,7 +416,7 @@ class ExposureBreakdownRequest(PlaceSchema):
     exposure_categorisation: str
     scenario_year: int = None
     aggregation_method: str = None
-    units: str = None
+    units_exposure: str = None
 
 
 class ExposureBreakdownBar(Schema):

@@ -39,11 +39,14 @@ def get_hazard_by_return_period(
         location_poly=None,
         aggregation_scale=None):
 
-    scenario_name, _, scenario_climate = standardise_scenario(
-        scenario_name=scenario_name,
-        scenario_climate=scenario_climate,
-        scenario_year=scenario_year
-    )
+    LOGGER.debug('Starting get_hazard_by_return_period calculation. Locals: ' + str(locals()))
+
+    if not all([scenario_name, scenario_climate, scenario_year]):
+        scenario_name, _, scenario_climate = standardise_scenario(
+            scenario_name=scenario_name,
+            scenario_climate=scenario_climate,
+            scenario_year=scenario_year
+        )
     haz = get_hazard_from_api(hazard_type, country, scenario_name, scenario_year)
     # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
     if location_poly:

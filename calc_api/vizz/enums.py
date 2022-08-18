@@ -19,6 +19,12 @@ class ExposureTypeEnum(str, Enum):
     economic_assets = 'economic_assets'
 
 
+class ImpactTypeEnum(str, Enum):
+    people_affected = 'people_affected'
+    economic_impact = 'economic_impact'
+    assets_affected = 'assets_affected'
+
+
 class ScenarioNameEnum(str, Enum):
     historical = 'historical'
     ssp126 = 'ssp126'
@@ -43,6 +49,10 @@ class ScenarioClimateEnum(str, Enum):
     rcp85 = 'rcp85'
 
 
+def assert_in_enum(value, enum_class):
+    assert value in [e.value for e in enum_class]
+
+
 SCENARIO_LOOKUPS = {
     'historical': {'scenario_name': 'historical', 'scenario_growth': 'historical', 'scenario_climate': 'historical'},
     'ssp126': {'scenario_name': 'rcp126', 'scenario_growth': 'ssp1', 'scenario_climate': 'rcp26'},
@@ -57,6 +67,7 @@ IMPACT_TO_EXPOSURE = {
     'assets_affected': 'economic_assets'
 }
 
+
 HAZARD_TO_ABBREVIATION = {
     'tropical_cyclone': 'TC',
     'extreme_heat': 'EH'
@@ -67,6 +78,13 @@ def exposure_type_from_impact_type(impact_type):
     if impact_type not in IMPACT_TO_EXPOSURE.keys():
         raise ValueError('impact type must be one of: ' + str(list(IMPACT_TO_EXPOSURE.keys())))
     return IMPACT_TO_EXPOSURE[impact_type]
+
+
+def get_option_parameter(options_path: List[str], parameter):
+    options = get_options()
+    for opt in options_path:
+        options = options[opt]
+    return options[parameter]
 
 
 def get_option_choices(options_path: List[str], get_value: str = None, parameters: dict = None):

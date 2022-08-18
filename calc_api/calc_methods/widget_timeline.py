@@ -2,11 +2,9 @@ from celery import chain, chord, group, shared_task
 from celery_singleton import Singleton
 
 from calc_api.vizz import schemas, schemas_widgets
-from calc_api.calc_methods.util import standardise_scenario
 from calc_api.vizz.text_timeline import generate_timeline_widget_text
 from calc_api.calc_methods.calc_exposure import get_exposure
 from calc_api.calc_methods.timeline import set_up_timeline_calculations, combine_impacts_to_timeline, combine_impacts_to_timeline_no_celery
-from calc_api.calc_methods.geocode import standardise_location
 
 
 def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
@@ -27,7 +25,7 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
         location_poly=data.location_poly,
         aggregation_method=data.aggregation_method,
         units_warming=data.units_warming,
-        units_response=data.units_response,
+        units_exposure=data.units_exposure,
         geocoding=data.geocoding
     )
 
@@ -40,7 +38,8 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
         scenario_year=data.scenario_year,
         location_poly=request.location_poly,
         aggregation_scale='all',
-        aggregation_method='sum')
+        aggregation_method='sum'
+    )
 
     job_config_list, chord_header = set_up_timeline_calculations(request)
 
@@ -53,14 +52,14 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
         'location_scale': request.location_scale,
         'scenario_name': request.scenario_name,
         'impact_type': request.impact_type,
-        'units_response': request.units_response,
+        'units_exposure': request.units_exposure,
         'hazard_rp': all_rps
     }
 
     chord_callback = combine_impacts_to_timeline_widget.s(
-        job_config_list,
-        data.scenario_year,
-        callback_config
+        job_config_list=job_config_list,
+        report_year=data.scenario_year,
+        config=callback_config
     )
 
     # with transaction.atomic():
@@ -91,23 +90,23 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
 
     # TODO make this deal with differing economic and climate scenarios
     generated_text = generate_timeline_widget_text(
-        config['hazard_type'],
-        config['location_name'],
-        config['location_scale'],
-        config['scenario_name'],
-        config['impact_type'],
-        config['units_response'],
-        0.0,
-        future_analysis.current_climate,
-        future_analysis.future_climate,
-        future_analysis.growth_change,
-        future_analysis.climate_change,
-        report_year,
-        config['hazard_rp'],
-        frequency_change,
-        intensity_change,
-        future_impact['value'][1],
-        future_impact['value'][2]
+        hazard_type=config['hazard_type'],
+        location=config['location_name'],
+        location_type=config['location_scale'],
+        scenario=config['scenario_name'],
+        impact_type=config['impact_type'],
+        exposure_units=config['units_exposure'],
+        value_present=exposure_total[0]['value'],
+        affected_present=future_analysis.current_climate,
+        affected_future=future_analysis.future_climate,
+        affected_future_exposure_change=future_analysis.growth_change,
+        affected_future_climate_change=future_analysis.climate_change,
+        future_year=report_year,
+        return_period=config['hazard_rp'],
+        frequency_change=frequency_change,
+        intensity_change=intensity_change,
+        new_10yr_return=future_impact['value'][1],
+        new_100yr_return=future_impact['value'][2]
     )
     timeline_data = schemas_widgets.TimelineWidgetData(
         text=generated_text,

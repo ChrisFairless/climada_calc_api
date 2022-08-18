@@ -4,6 +4,7 @@
       "extreme_heat": {
         "name": "Extreme Heat",
         "value": "extreme_heat",
+        "unit_type": "temperature",
         "default": true,
         "scenario_options": {
           "year": {
@@ -72,6 +73,7 @@
               {
                 "name": "people affected",
                 "exposure_type": "people",
+                "unit_type": "people",
                 "value": "people_affected"
               }
             ]
@@ -197,6 +199,12 @@
               }
             ]
           },
+          "cost": {
+            "description": "Cost of the measure",
+            "type": "number",
+            "default": 0,
+            "unit_type": "currency"
+          },
           "priority": {
             "description": "What to prioritise when implementing the measure",
             "type": "select",
@@ -247,6 +255,7 @@
           "max_distance_from_coast": {
             "description": "For coastal adaptation measures, how close to the coast must you be to benefit?",
             "type": "slider",
+            "unit_type": "distance",
             "default": {
               "miles": 0,
               "kilometers": 0
@@ -267,6 +276,7 @@
           "hazard_cutoff": {
             "description": "What degree of hazard does this completely prevent impact from?",
             "type": "slider",
+            "unit_type": "temperature",
             "default": {
               "celsius": 25,
               "fahrenheit": 75
@@ -307,6 +317,7 @@
           "hazard_change_constant": {
             "description": "How much does this measure adjust the effective experienced hazard?",
             "type": "slider",
+            "unit_type": "temperature",
             "default": {
               "celsius": 0,
               "fahrenheit": 0
@@ -334,6 +345,7 @@
       "tropical_cyclone": {
         "name": "Tropical cyclone",
         "value": "tropical_cyclone",
+        "unit_type": "speed",
         "default": false,
         "location_options": [
           "Haiti",
@@ -406,16 +418,19 @@
               {
                 "name": "people affected",
                 "exposure_type": "people",
+                "unit_type": "people",
                 "value": "people_affected"
               },
               {
                 "name": "economic impact",
                 "exposure_type": "economic_assets",
+                "unit_type": "currency",
                 "value": "economic_impact"
               },
               {
                 "name": "assets affected",
                 "exposure_type": "economic_assets",
+                "unit_type": "currency",
                 "value": "assets_affected"
               }
             ]
@@ -541,6 +556,12 @@
               }
             ]
           },
+          "cost": {
+            "description": "Cost of the measure",
+            "type": "number",
+            "default": 0,
+            "unit_type": "currency"
+          },
           "priority": {
             "description": "What to prioritise when implementing the measure",
             "type": "select",
@@ -591,6 +612,7 @@
           "max_distance_from_coast": {
             "description": "For coastal adaptation measures, how close to the coast must you be to benefit?",
             "type": "slider",
+            "unit_type": "distance",
             "default": {
               "miles": 0,
               "kilometers": 0
@@ -611,6 +633,7 @@
           "hazard_cutoff": {
             "description": "What degree of hazard does this completely prevent impact from?",
             "type": "slider",
+            "unit_type": "speed",
             "default": {
               "mph": 39,
               "kmh": 63,
@@ -663,6 +686,7 @@
           "intensity_change_constant": {
             "description": "How much does this measure adjust the effective experienced hazard?",
             "type": "slider",
+            "unit_type": "speed",
             "default": {
               "mph": 0,
               "kmh": 0,
@@ -709,6 +733,17 @@
           {
             "name": "dollars",
             "value": "dollars"
+          }
+        ]
+      },
+      "people": {
+        "description": "People",
+        "type": "select",
+        "default": "people",
+        "choices": [
+          {
+            "name": "people",
+            "value": "people"
           }
         ]
       },

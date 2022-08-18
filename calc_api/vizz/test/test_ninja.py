@@ -28,7 +28,7 @@ calculation_endpoints = {
     # 'rest/vizz/exceedance/hazard': 'ExceedanceHazardRequest',
     # 'rest/vizz/exceedance/impact': 'ExceedanceImpactRequest',
 }
-
+# TODO add vtest endpoints
 
 def dynamic_request_create(endpoint, class_string, request_dict):
     if 'widgets' in endpoint:
@@ -59,7 +59,18 @@ class TestEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     @staticmethod
-    def submit_job(endpoint, haz_name, exposure_type, impact_type, year, climate_scenario, return_period, aggregation_scale, aggregation_method, units):
+    def submit_job(
+            endpoint,
+            haz_name,
+            exposure_type,
+            impact_type,
+            year,
+            climate_scenario,
+            return_period,
+            aggregation_scale,
+            aggregation_method,
+            units_hazard,
+            units_exposure):
         key = endpoint + ' ' + haz_name + ' ' + str(year) + ' ' + \
               climate_scenario + ' ' + return_period
 
@@ -80,9 +91,9 @@ class TestEndpoints(unittest.TestCase):
             'aggregation_scale': aggregation_scale,
             'aggregation_method': aggregation_method,
             'format': 'tif',
-            'units': units,
+            'units_hazard': units_hazard,
             'units_warming': 'degrees Fahrenheit',
-            'units_response': units,
+            'units_exposure': units_exposure,
             'units_area': 'square miles'
         }
 
@@ -115,8 +126,10 @@ class TestEndpoints(unittest.TestCase):
                         'impact_type': 'people_affected',
                         'units': 'people'
                     }]
+                    haz_unit = 'fahrenheit'
                     continue
                 elif haz_name == 'tropical_cyclone':
+                    haz_unit = 'mph'
                     exposures = [
                         {
                             'exposure_type': 'economic_assets',
@@ -150,7 +163,7 @@ class TestEndpoints(unittest.TestCase):
                             for return_period in rp_list:
                                 key, response = self.submit_job(endpoint, haz_name, exp['exposure_type'], exp['impact_type'], year,
                                                                 climate_scenario, return_period, aggregation_scale,
-                                                                aggregation_method, exp['units'])
+                                                                aggregation_method, haz_unit, exp['units'])
                                 job_details = f"""
     Endpoint:\n
     {endpoint}\n

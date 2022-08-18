@@ -25,8 +25,9 @@ class TimelineWidgetRequest(schemas.AnalysisSchema):
     hazard_rp: int
     exposure_type: str
     impact_type: str
+    units_hazard: str = None
+    units_exposure: str = None
     units_warming: str = None
-    units_response: str = None
 
     def standardise(self):
         super().standardise()
@@ -52,7 +53,7 @@ class TimelineWidgetJobSchema(schemas.JobSchema):
 # ============
 
 class BiodiversityWidgetRequest(schemas.PlaceSchema):
-    area_units: str = None
+    units_area: str = None
 
 
 class BiodiversityWidgetData(Schema):

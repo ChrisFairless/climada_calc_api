@@ -145,7 +145,7 @@ def make_dummy_mapjobschema_impact(request, job_id=None):
         palette=PALETTE_IMPACT_COLORCET,
         title="Dummy impact dataset",
         description="Test impact/risk climatology map",
-        units="people affected",
+        units="people",
         location=location,
         example_value="121 k",
         raster_uri=raster_uri,
@@ -179,8 +179,8 @@ def make_dummy_exceedance(
     ]
     outdata = schemas.ExceedanceCurveSet(
         items=curves,
-        return_period_units='years',
-        intensity_units=intensity_units,
+        units_return_period='years',
+        units_intensity=intensity_units,
         legend=schemas.CategoricalLegend(
             title=title,
             units=intensity_units,
@@ -217,7 +217,7 @@ def make_dummy_exceedance_hazard(job_id=None):
         exceedance_path=exceedance_path,
         title="Example hazard exceedance curve",
         description='Dummy data for a hazard exceedance curve',
-        intensity_units='m/s',
+        units_intensity='m/s',
         example_value='22.2',
         location="/exceedance/hazard?job_id=" + str(job_id),
         job_id=job_id
@@ -230,7 +230,7 @@ def make_dummy_exceedance_impact(job_id=None):
         exceedance_path=exceedance_path,
         title="Example impact exceedance curve",
         description='Dummy data for a risk/impact exceedance curve',
-        intensity_units='people affected',
+        units_intensity='people affected',
         example_value='121 k',
         location="/exceedance/impact?job_id=" + str(job_id),
         job_id=job_id
@@ -275,7 +275,7 @@ def make_dummy_exposure_breakdown(job_id=None):
 def make_dummy_timeline(
         response_units,
         scale,
-        units_temperature='degrees Fahrenheit',
+        units_warming='degrees Fahrenheit',
         units_response='people affected',
         description="Dummy data from tests API",
         location_root="/timeline/impact?job_id=",
@@ -313,7 +313,7 @@ def make_dummy_timeline(
                     value=millify(scale, precision=1))
             ],
         ),
-        units_temperature=units_temperature,
+        units_warming=units_warming,
         units_response=units_response
     )
 
@@ -358,7 +358,7 @@ def make_dummy_timelinewidget_risk(job_id=None):
     timeline_job = make_dummy_timeline(
         response_units=response_units,
         scale=scale,
-        units_temperature='degrees Fahrenheit',
+        units_warming='degrees Fahrenheit',
         units_response='people affected',
         description='Dummy data for timeline widget',
         location_root="/timeline/impact?job_id="

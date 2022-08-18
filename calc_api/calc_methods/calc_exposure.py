@@ -40,6 +40,8 @@ def get_exposure(
         aggregation_scale=None,
         aggregation_method=None):
 
+    LOGGER.debug('Starting get_exposure calculation. Locals: ' + str(locals()))
+
     exp = get_exposure_from_api(country, exposure_type, impact_type, scenario_name, scenario_growth, scenario_year)
 
     # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
@@ -139,11 +141,12 @@ def get_exposure_from_api(
         exposure_type = exposure_type_from_impact_type(impact_type)
 
     properties = get_api_exposure_properties(exposure_type, scenario_name, scenario_year, scenario_growth, country)
+
+    LOGGER.debug(f'Requesting exposure from Data API. Request details: {properties}')
     exposures_type = properties.pop('data_type')
     status = properties.pop('status')
     version = properties.pop('version')
 
-    LOGGER.debug(f'Requesting exposure from Data API. Request properties: {properties}')
     client = Client()
 
     # TODO use a sane way of sharing data across processes

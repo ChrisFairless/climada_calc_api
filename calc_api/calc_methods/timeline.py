@@ -67,7 +67,7 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
         'hazard_type': request.hazard_type,
         'hazard_rp': request.hazard_rp,
         'impact_type': request.impact_type,
-        'units_response': request.units_response,
+        'units_exposure': request.units_exposure,
         'units_warming': request.units_warming
         }
         for exp_year in years_to_calculate
@@ -125,8 +125,8 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
     # population_change_list= [job['impact'] for job in impacts_list if job['haz_year']==2020]
     # climate_change_list = [job['impact'] for job in impacts_list if job['haz_year']==job['exp_year']]
 
-    if job_config_list[0]['units_response'] not in ['dollars', 'people']:
-        raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {job_config_list[0]["units_response"]}')
+    if job_config_list[0]['units_exposure'] not in ['dollars', 'people']:
+        raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {job_config_list[0]["units_exposure"]}')
 
     timeline_list = []
 
@@ -159,7 +159,7 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
 
         legend = schemas.CategoricalLegend(
             title=title,
-            units=job_config_list[0]['units_response'],
+            units=job_config_list[0]['units_exposure'],
             items=[
                 schemas.CategoricalLegendItem(label="Risk today", slug="risk_today", value=example_value),
                 schemas.CategoricalLegendItem(label="+ growth", slug="plus_growth", value=example_value),
@@ -170,8 +170,8 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
         timeline = schemas.Timeline(
             items=timeline_bars,
             legend=legend,
-            units_temperature=job_config_list[0]['units_warming'],
-            units_response=job_config_list[0]['units_response']
+            units_warming=job_config_list[0]['units_warming'],
+            units_response=job_config_list[0]['units_exposure']
         )
 
         metadata = schemas.TimelineMetadata(
