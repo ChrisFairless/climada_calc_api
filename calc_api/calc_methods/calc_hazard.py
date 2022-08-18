@@ -97,14 +97,16 @@ def get_hazard_from_api(
         'spatial_coverage': 'country',
         'country_iso3alpha': country,
         'nb_synth_tracks': str(conf.DEFAULT_N_TRACKS),
-        'climate_scenario': scenario_climate}
+        'climate_scenario': scenario_climate
+    }
     if scenario_climate != 'historical':
         request_properties['ref_year'] = str(scenario_year)
 
     status = 'preliminary' if hazard_type == "extreme_heat" else "active"
+    version = 'latest'
 
     LOGGER.debug(f'Requesting {status} {hazard_type} hazard from Data API. Request properties: {request_properties}')
-    return client.get_hazard(hazard_type, properties=request_properties, status=status)
+    return client.get_hazard(hazard_type, properties=request_properties, status=status, version=version)
 
 
 def get_hazard_event(hazard_type,
