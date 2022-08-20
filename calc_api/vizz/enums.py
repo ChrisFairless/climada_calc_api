@@ -124,6 +124,10 @@ def get_rp_options(hazard_type, get_value=None, parameters=None):
     return get_option_choices(['data', 'filters', hazard_type, 'scenario_options', 'return_period'], get_value, parameters)
 
 
+def get_currency_options():
+    return get_option_choices(['data', 'units', 'currency'], get_value='value')
+
+
 def get_exposure_types(hazard_type):
     impact_list = get_impact_options(hazard_type, get_value='value')
     return list(set([exposure_type_from_impact_type[impact] for impact in impact_list]))

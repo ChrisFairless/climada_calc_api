@@ -87,7 +87,8 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
             hazard_year=job_config['haz_year'],
             exposure_year=job_config['exp_year'],
             location_poly=request.location_poly,
-            aggregation_scale='all'
+            aggregation_scale='all',
+            save_frequency_curve=True
         )
         for job_config in job_config_list
     ]

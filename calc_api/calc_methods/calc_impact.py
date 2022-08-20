@@ -42,7 +42,8 @@ def get_impact_by_return_period(
         hazard_year=None,
         exposure_year=None,
         location_poly=None,
-        aggregation_scale=None):
+        aggregation_scale=None,
+        save_frequency_curve=False):
 
     LOGGER.debug('Starting impact by RP calculation. Locals: ' + str(locals()))
 
@@ -61,8 +62,13 @@ def get_impact_by_return_period(
         haz = subset_hazard_extent(haz, location_poly)
         exp = subset_exposure_extent(exp, location_poly)
 
-    save_mat = (aggregation_scale != 'all')
-    imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, save_mat)
+    save_mat = save_frequency_curve or aggregation_scale != 'all'
+    impact_funcs = infer_impactfuncset(hazard_type, exposure_type, impact_type)
+    impf_name = impact_funcs.get_func(haz_type=haz.tag.haz_type, fun_id=1).name
+    exp.gdf[impf_name] = 1
+
+    imp = Impact()
+    imp.calc(exp, impact_funcs, haz, save_mat=save_mat)
 
     return_periods = np.array(return_periods)
     return_periods_aai = return_periods == 'aai'
@@ -73,13 +79,21 @@ def get_impact_by_return_period(
 
     if aggregation_scale:
         if aggregation_scale == 'all':
-            combined_rp_imp = np.full(len(return_periods), None, dtype=float)
+            imp_by_rp = np.full(len(return_periods), None, dtype=float)
             if any(return_periods_aai):
                 imp_rp_aai = imp.aai_agg
-                combined_rp_imp[return_periods_aai] = imp_rp_aai
+                imp_by_rp[return_periods_aai] = imp_rp_aai
             if any(return_periods_int):
-                imp_rp_int = imp.calc_freq_curve(rps).impact
-                combined_rp_imp[return_periods_int] = imp_rp_int
+                freq_curve = imp.calc_freq_curve()
+                new_impact_by_return_period = np.interp(rps, freq_curve.return_per, freq_curve.impact)
+                imp_by_rp[return_periods_int] = new_impact_by_return_period
+
+                # Reduce the amount of data in the frequency curve
+                ix = [rp > 1 for rp in freq_curve.return_per]
+                freq_curve_dict = {
+                    "return_per": list(freq_curve.return_per[ix]),
+                    "impact": list(freq_curve.impact[ix])
+                }
         else:
             raise ValueError("Can't yet deal with aggregation scales that aren't 'all'.")
 
@@ -91,10 +105,12 @@ def get_impact_by_return_period(
         return [
             {"lat": float(np.median(exp.gdf['latitude'])),
              "lon": float(np.median(exp.gdf['longitude'])),
-             "value": list(combined_rp_imp),
+             "value": list(imp_by_rp),
              "total_freq": total_freq,
-             "mean_imp": mean_imp}
+             "mean_imp": mean_imp,
+             "freq_curve": freq_curve_dict if save_frequency_curve else None}
         ]
+
 
 
     # TODO should this be a separate celery job? with the (admittedly large) result above cached?
@@ -134,7 +150,8 @@ def get_impact_event(
     exp = get_exposure_from_api(exposure_type, country, scenario_name, scenario_year)
 
     haz = haz.select(event_names=[event_name])
-    imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type, location_poly, aggregation_scale)
+    # TODO update this calculation request!
+    #imp = _make_impact(haz, exp, hazard_type, exposure_type, impact_type)
 
     # TODO test this
     return [
@@ -145,47 +162,40 @@ def get_impact_event(
     ]
 
 
-
-def _make_impact(haz,
-                 exp,
-                 hazard_type,
-                 exposure_type,
-                 impact_type,
-                 location_poly,
-                 save_mat):
-
-    # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
-    if location_poly:
-        raise ValueError("API doesn't handle polygons yet")
+def infer_impactfuncset(
+        hazard_type,
+        exposure_type,
+        impact_type
+):
 
     # TODO make into another lookup
     if exposure_type == 'economic_assets':
         if impact_type == 'economic_impact':
             impf = ImpfTropCyclone.from_emanuel_usa()
         elif impact_type == 'assets_affected':
-            impf = ImpactFunc.from_step_impf(intensity=(0, 33, 500))  # Cat 1 storm
+            impf = ImpactFunc.from_step_impf(intensity=(0, 33, 500))  # Cat 1 storm in m/s
+            impf.haz_type = 'TC'
         else:
             raise ValueError(f'impact_type with economic_assets must be economic_impact or assets_affected. Type = {impact_type}')
     elif exposure_type == 'people':
         if hazard_type == 'tropical_cyclone':
-            impf = ImpactFunc.from_step_impf(intensity=(0, 54, 300))
+            impf = ImpactFunc.from_step_impf(intensity=(0, 33, 300))
+            impf.haz_type = 'TC'
         elif hazard_type == 'extreme_heat':
             impf = ImpactFunc.from_step_impf(intensity=(0, 1, 100))
+            impf.haz_type = 'EH'
         else:
             raise ValueError("hazard_type must be either 'tropical_cyclone' or 'extreme_heat'")
     else:
         raise ValueError("exposure_type must be either 'economic_assets' or 'people'")
+
+    abbrv = HAZARD_TO_ABBREVIATION[hazard_type]
+    impf.name = 'impf_' + abbrv
+
     impact_funcs = ImpactFuncSet()
     impact_funcs.append(impf)
 
-    abbrv = HAZARD_TO_ABBREVIATION[hazard_type]
-    haz.tag.haz_type = abbrv
-    impf_name = 'impf_' + abbrv
-    exp.gdf[impf_name] = 1
-
-    imp = Impact()
-    imp.calc(exp, impact_funcs, haz, save_mat=save_mat)
-    return imp
+    return impact_funcs
 
 
 

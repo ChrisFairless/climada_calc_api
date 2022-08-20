@@ -30,7 +30,7 @@ defaults:
      currency: "dollars"
    image_format: "tif"
    api_parameters:
-     scenario_name: "hist"
+     scenario_name: "historical"
      scenario_year: 2020
      n_tracks: 10
      min_dist_to_centroids: 20

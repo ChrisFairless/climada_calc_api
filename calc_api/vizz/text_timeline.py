@@ -4,6 +4,7 @@ import numpy as np
 
 from calc_api.vizz.util import options_return_period_to_description, options_scenario_to_description
 from calc_api.vizz import schemas_widgets
+from calc_api.vizz.enums import get_currency_options
 
 
 def generate_timeline_widget_text(
@@ -53,13 +54,13 @@ def generate_timeline_widget_text(
     )
 
     frequency_intensity_text = _generate_timeline_widget_frequency_intensity_text(
-        hazard_type,
-        location,
-        future_year,
-        frequency_change,
-        intensity_change,
-        new_10yr_return,
-        new_100yr_return
+        hazard_type=hazard_type,
+        location_name=location,
+        future_year=future_year,
+        frequency_change=frequency_change,
+        intensity_change=intensity_change,
+        new_10yr_return=new_10yr_return,
+        new_100yr_return=new_100yr_return
     )
 
     return [overview_text, change_text, hazard_overview_text, frequency_intensity_text]
@@ -78,13 +79,15 @@ def _generate_timeline_widget_overview_text(
         return_period = return_period[0]
     text_overview = Template(
         "$location is a $location_type with approximately {{exposure_value}}. "
-        "Under current climatic conditions (in 2020), $proportional_qualifier {{affected_present}} "
+        "Under current climatic conditions, $proportional_qualifier {{affected_present}} "
         "may be exposed to $event_description $return_period_description. "
     )
 
     proportional_qualifier = 'all' if affected_present == value_present else ''
     event_description = event_description_from_hazard_type(hazard_type)
-    exposure_units_description = exposure_units + ' of economic assets' if exposure_units == 'dollars' else exposure_units
+
+    is_currency = exposure_units in get_currency_options()
+    exposure_units_description = exposure_units + ' of economic assets' if is_currency else exposure_units
 
     if return_period == 'aai':
         return_period_description = 'on average each year'
@@ -103,12 +106,12 @@ def _generate_timeline_widget_overview_text(
         schemas_widgets.TextVariable(
             key='exposure_value',
             value=value_present,
-            unit=exposure_units_description
+            units=exposure_units_description
         ),
         schemas_widgets.TextVariable(
             key='affected_present',
             value=affected_present,
-            unit=exposure_units
+            units=exposure_units
         )
     ]
 
@@ -126,7 +129,7 @@ def _generate_timeline_widget_no_change_text(
         "Under the $scenario scenario this is not projected to change. "
     )
     final_text = text_no_components_change.substitute(
-        scenario=options_scenario_to_description(scenario, hazard_type)
+        scenario=options_scenario_to_description(scenario, hazard_type).lower()
     )
     return schemas_widgets.GeneratedText(
         template=final_text,
@@ -145,6 +148,7 @@ def _generate_timeline_widget_change_text(
         affected_future_climate_change,
         future_year,
 ):
+    scenario = scenario.lower()
 
     if affected_future_exposure_change == 0 and affected_future_climate_change == 0:
         return _generate_timeline_widget_no_change_text(
@@ -182,12 +186,16 @@ def _generate_timeline_widget_with_change_text(
         "This change is $cause_description. "
     )
 
+    # TODO put all of these lookups into a big dictionary somewhere so it's easy to add new types
     if impact_type == 'people_affected':
         exposure_description = 'population'
         affected_description = 'number of people affected'
     elif impact_type == 'economic_impact':
         exposure_description = 'economic assets'
         affected_description = 'loss'
+    elif impact_type == 'assets_affected':
+        exposure_description = 'economic assets'
+        affected_description = 'number of assets affected'
     else:
         raise ValueError(f'{impact_type} is not in my list of pre-prepared impact types for text generation')
 
@@ -199,7 +207,7 @@ def _generate_timeline_widget_with_change_text(
     if affected_future_climate_change == 0:
         if impact_type == 'people_affected':
             cause_description = 'entirely due to population change'
-        elif impact_type == 'economic_impact':
+        elif impact_type in ['economic_impact', 'assets_affected']:
             if affected_future_exposure_change < 0:
                 cause_description = 'entirely due to a shrinking economy'
             else:
@@ -209,7 +217,7 @@ def _generate_timeline_widget_with_change_text(
 
     # Case: no exposure change
     elif affected_future_exposure_change == 0:
-        affected_description = 'entirely due to a changing climate'
+        cause_description = 'entirely due to a changing climate'
 
     # Case: opposing signs
     elif sign_climate_change == -1 and sign_exposure_change == 1:
@@ -277,9 +285,10 @@ def _generate_timeline_widget_frequency_intensity_text(
         new_10yr_return,
         new_100yr_return
 ):
+    location_name_short = location_name.split(',')[0]
 
     text_freq_intense_change = Template(
-        '$event_description in $location $frequency_change_desc $intensity_change_desc by {{future_year}}. $rp_text'
+        'In $location $event_description $frequency_change_desc $intensity_change_desc by {{future_year}}. $rp_text'
     )
     values = [schemas_widgets.TextVariable(
         key='frequency_change',
@@ -349,19 +358,19 @@ def _generate_timeline_widget_frequency_intensity_text(
     if not is_new_rp_100yr and not is_new_rp_10yr:
         rp_text = ''
     elif not is_new_rp_100yr:
-        rp_text = f'The impacts of a {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, but the impacts of 1-in-100-year events are not projected to change much by {{year}}.'
+        rp_text = f'The impacts of {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, but the impacts of 1-in-100-year events are not projected to change much by {{year}}.'
         values.extend(value_new_10yr)
     elif not is_new_rp_10yr:
-        rp_text = f'The impacts of 1-in-10-year events are not projected to change much, but the impacts of a {event_description} that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
+        rp_text = f'The impacts of 1-in-10-year events are not projected to change much, but the impacts of {event_description} that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
         values.extend(value_new_100yr)
     else:
-        rp_text = f'The impacts of a {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, and impacts that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
+        rp_text = f'The impacts of {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, and impacts that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
         values.extend(value_new_10yr)
         values.extend(value_new_100yr)
 
     final_text = text_freq_intense_change.substitute(
         event_description=event_description,
-        location=location_name,
+        location=location_name_short,
         future_year=future_year,
         frequency_change_desc=frequency_change_desc,
         intensity_change_desc=intensity_change_desc,
@@ -386,7 +395,7 @@ def prettify_exposure(value, units):
 def growth_description(current, future, units):
     ratio = np.nan if current == 0 else future/current
     if current == 0 or future/current > 100:
-        text = f'grow to {{future_value}}'
+        text = 'grow to {{future_value}}'
         values = [
             schemas_widgets.TextVariable(
                 key='future_value',
@@ -401,7 +410,7 @@ def growth_description(current, future, units):
 
     if ratio > 1:
         growth_pct = 100*(ratio-1)
-        text = f'grow by {{future_percent}} to {{future_value}}', ['future_percent', 'future_value']
+        text = 'grow by {{future_percent}} to {{future_value}}'
         values = [
             schemas_widgets.TextVariable(
                 key='future_percent',
@@ -418,7 +427,7 @@ def growth_description(current, future, units):
 
     if ratio < 1:
         shrink_pct = 100*(1-ratio)
-        text = f'shrink by {{future_percent}} to {{future_value}}', ['future_percent', 'future_value']
+        text = 'shrink by {{future_percent}} to {{future_value}}', ['future_percent', 'future_value']
         values = [
             schemas_widgets.TextVariable(
                 key='future_percent',

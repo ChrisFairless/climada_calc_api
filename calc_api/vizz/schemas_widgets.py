@@ -11,7 +11,7 @@ from calc_api.vizz import enums
 class TextVariable(Schema):
     key: str
     value: str
-    unit: str = None
+    units: str = None
 
 
 class GeneratedText(Schema):

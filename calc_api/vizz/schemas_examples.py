@@ -346,14 +346,14 @@ def make_dummy_timelinewidget_risk(job_id=None):
     scale = 1000000
     text_template = "London is a city with about {{current_population}}. In the current climate, {{affected_qualifier}} {{current_affected}} may be exposed to extreme heat events each year. The number of people affected is projected to grow by about {{affected_growth}} to {{future_affected}} by {{future_year}} under the {{scenario_name}} scenario. This change is {{reason}}."
     values = [
-        schemas_widgets.TextVariable(key="current_population", value=8, unit="million people"),
-        schemas_widgets.TextVariable(key="affected_qualifier", value="all", unit=None),
-        schemas_widgets.TextVariable(key="current_affected", value=8, unit="million people"),
-        schemas_widgets.TextVariable(key="affected_growth", value=12, unit="%"),
-        schemas_widgets.TextVariable(key="future_affected", value=8.8, unit="million"),
-        schemas_widgets.TextVariable(key="future_year", value=2080, unit=None),
-        schemas_widgets.TextVariable(key="scenario_name", value="moderate_action", unit=None),
-        schemas_widgets.TextVariable(key="reason", value="entirely due to population growth", unit=None)
+        schemas_widgets.TextVariable(key="current_population", value=8, units="million people"),
+        schemas_widgets.TextVariable(key="affected_qualifier", value="all", units=None),
+        schemas_widgets.TextVariable(key="current_affected", value=8, units="million people"),
+        schemas_widgets.TextVariable(key="affected_growth", value=12, units="%"),
+        schemas_widgets.TextVariable(key="future_affected", value=8.8, units="million"),
+        schemas_widgets.TextVariable(key="future_year", value=2080, units=None),
+        schemas_widgets.TextVariable(key="scenario_name", value="moderate_action", units=None),
+        schemas_widgets.TextVariable(key="reason", value="entirely due to population growth", units=None)
     ]
     timeline_job = make_dummy_timeline(
         response_units=response_units,
@@ -394,27 +394,27 @@ def make_dummy_biodiversitywidget(job_id=None):
             schemas_widgets.GeneratedText(
                 template="As a city, {{location}} is densely populated. Its green spaces are hugely important to its biodiversity and community wellbeing. {{prop_protected_land}} of the land and {{prop_protected_green}} of the area classified as 'green' is protected in some way.",
                 values=[
-                    schemas_widgets.TextVariable(key="location", value="Cancún", unit=None),
-                    schemas_widgets.TextVariable(key="prop_protected_land", value="1", unit="%"),
-                    schemas_widgets.TextVariable(key="prop_protected_green", value="15", unit="%"),
+                    schemas_widgets.TextVariable(key="location", value="Cancún", units=None),
+                    schemas_widgets.TextVariable(key="prop_protected_land", value="1", units="%"),
+                    schemas_widgets.TextVariable(key="prop_protected_green", value="15", units="%"),
                 ]
             ),
             schemas_widgets.GeneratedText(
                 template="{{location}} is also home to endangered species with very limited habitats, including {{endangered_species_1}} {{endangered_species_2}} (click here for the full list), and has {{biodiverse_area}} of land classified as 'highly biodiverse'.",
                 values=[
-                    schemas_widgets.TextVariable(key="location", value="Cancún", unit=None),
-                    schemas_widgets.TextVariable(key="endangered_species_1", value="XXX", unit=None),
-                    schemas_widgets.TextVariable(key="endangered_species_1", value="and YYY", unit=None),
-                    schemas_widgets.TextVariable(key="biodiverse_area", value="ZZZ", unit="km2"),
+                    schemas_widgets.TextVariable(key="location", value="Cancún", units=None),
+                    schemas_widgets.TextVariable(key="endangered_species_1", value="XXX", units=None),
+                    schemas_widgets.TextVariable(key="endangered_species_1", value="and YYY", units=None),
+                    schemas_widgets.TextVariable(key="biodiverse_area", value="ZZZ", units="km2"),
                 ]
             ),
             schemas_widgets.GeneratedText(
                 template="The low amounts of green space mean that it's critical to preserve and expand them to support local species, mitigate heat and boost community wellbeing. {{location}}’s coastline has {{coastline_feature_1}} {{coastline_feature_2}}, {{coastline_conjunction}} rich biodiversity and protect the area from coastal hazards.",
                 values=[
-                    schemas_widgets.TextVariable(key="location", value="Cancún", unit=None),
-                    schemas_widgets.TextVariable(key="coastline_feature_1", value="mangroves", unit=None),
-                    schemas_widgets.TextVariable(key="coastline_feature_1", value="and coral reefs", unit=None),
-                    schemas_widgets.TextVariable(key="coastline_conjunction", value="both of which have", unit=None),
+                    schemas_widgets.TextVariable(key="location", value="Cancún", units=None),
+                    schemas_widgets.TextVariable(key="coastline_feature_1", value="mangroves", units=None),
+                    schemas_widgets.TextVariable(key="coastline_feature_1", value="and coral reefs", units=None),
+                    schemas_widgets.TextVariable(key="coastline_conjunction", value="both of which have", units=None),
                 ]
             )
         ]
@@ -465,8 +465,8 @@ def make_dummy_socialvulnerability_widget(job_id=None):
             schemas_widgets.GeneratedText(
                 template="Communities in {{location}} are on average more wealthy than the whole of {{country}}. {{location}} has more particularly rich communities than other regions but also more particularly poor communities than other regions of Great Britain, meaning that adaptation measures must be targeted carefully in order to maximise their benefits.",
                 values=[
-                    schemas_widgets.TextVariable(key="location", value="London", unit=None),
-                    schemas_widgets.TextVariable(key="country", value="Great Britain", unit=None),
+                    schemas_widgets.TextVariable(key="location", value="London", units=None),
+                    schemas_widgets.TextVariable(key="country", value="Great Britain", units=None),
                 ]
             )
         ],

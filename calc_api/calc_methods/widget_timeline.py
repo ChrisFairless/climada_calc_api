@@ -1,5 +1,6 @@
 from celery import chain, chord, group, shared_task
 from celery_singleton import Singleton
+import numpy as np
 
 from calc_api.vizz import schemas, schemas_widgets
 from calc_api.vizz.text_timeline import generate_timeline_widget_text
@@ -85,8 +86,25 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
         imp
         for imp, job in zip(impacts_list, job_config_list)
         if job['haz_year'] == int(report_year) and job['exp_year'] == int(report_year)][0][0]
-    frequency_change = future_impact['total_freq'] - present_impact['total_freq']
-    intensity_change = future_impact['mean_imp'] - present_impact['mean_imp']
+
+    if present_impact['total_freq'] == 0:
+        raise ValueError('Uh oh: trying to generate a widget with a total event set frequency of zero. Fix this.')
+    frequency_change = (future_impact['total_freq'] - present_impact['total_freq']) / present_impact['total_freq']
+
+    if present_impact['mean_imp'] == 0:
+        raise ValueError('Uh oh: trying to generate a widget with a mean event set impact of zero. Fix this.')
+    intensity_change = (future_impact['mean_imp'] - present_impact['mean_imp']) / present_impact['mean_imp']
+
+    new_10yr_return = np.interp(
+        present_impact['value'][1],
+        future_impact['freq_curve']['impact'],
+        future_impact['freq_curve']['return_per']
+    )
+    new_100yr_return = np.interp(
+        present_impact['value'][2],
+        future_impact['freq_curve']['impact'],
+        future_impact['freq_curve']['return_per']
+    )
 
     # TODO make this deal with differing economic and climate scenarios
     generated_text = generate_timeline_widget_text(
@@ -105,8 +123,8 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
         return_period=config['hazard_rp'],
         frequency_change=frequency_change,
         intensity_change=intensity_change,
-        new_10yr_return=future_impact['value'][1],
-        new_100yr_return=future_impact['value'][2]
+        new_10yr_return=new_10yr_return,
+        new_100yr_return=new_100yr_return
     )
     timeline_data = schemas_widgets.TimelineWidgetData(
         text=generated_text,
