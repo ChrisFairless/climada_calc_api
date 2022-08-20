@@ -20,11 +20,30 @@ def database_job(func, *args, **kwargs):
     args_dict.update(kwargs)
     job_hash = get_hash(args_dict)
 
-    try:
-        existing_result = JobLog.objects.get(job_hash=job_hash)
-        return existing_result.result
-    except JobLog.DoesNotExist:
+    if conf.DATABASE_MODE == 'off':
+        return func(*args, **kwargs)
+
+    elif conf.DATABASE_MODE == 'read':
+        try:
+            existing_result = JobLog.objects.get(job_hash=job_hash)
+            return existing_result.result
+        except JobLog.DoesNotExist:
+            return func(*args, **kwargs)
+
+    elif conf.DATABASE_MODE == 'create':
+        try:
+            existing_result = JobLog.objects.get(job_hash=job_hash)
+            return existing_result.result
+        except JobLog.DoesNotExist:
+            result = func(*args, **kwargs)
+            job = JobLog(job_hash=job_hash, func=func.__name__, args=str(args_dict), kwargs=str(kwargs), result=result)
+            job_id = job.save()
+            return result
+
+    elif conf.DATABASE_MODE == 'update':
         result = func(*args, **kwargs)
-        job = JobLog(job_hash=job_hash, func=func.__name__, args=str(args_dict), kwargs=str(kwargs), result=result)
-        job_id = job.save()
+        job, _ = JobLog.objects.update_or_create(job_hash=job_hash, func=func.__name__, args=str(args_dict), kwargs=str(kwargs), result=result)
         return result
+
+    else:
+        raise ValueError(f'Could not process the configuration parameter database_mode. Value: {conf.DATABASE_MODE}')
