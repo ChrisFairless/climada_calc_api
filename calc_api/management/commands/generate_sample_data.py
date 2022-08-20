@@ -25,7 +25,7 @@ LOGGER.setLevel(logging.INFO)
 sample_settings = {
     'country': 'HTI',  # Haiti
     'hazard_type': 'tropical_cyclone',
-    'exposure_type': 'people',
+    'exposure_type': 'economic_assets',
     'scenario_name': 'rcp45',
     'scenario_year': 2060,
     'n_tracks': 10,
@@ -150,7 +150,7 @@ class Command(BaseCommand):
 
         # Set up exposures
         LOGGER.info('Getting exposure data')
-        if sample_settings['exposure_type'] == 'assets':
+        if sample_settings['exposure_type'] == 'economic_assets':
             exponents = '(1,1)'
             fin_mode = 'pc'
             impf = ImpfTropCyclone.from_emanuel_usa()
@@ -161,13 +161,18 @@ class Command(BaseCommand):
             impf = ImpactFunc.from_step_impf(intensity=(0, step_threshold, 200))  # TODO make this better
             impf.name = 'Step function ' + str(step_threshold) + ' m/s'
         else:
-            raise ValueError("exposure_type must be either 'assets' or 'people'")
+            raise ValueError("exposure_type must be either 'economic_assets' or 'people'")
 
         # Query exposure data
-        exp = client.get_exposures(exposures_type='litpop', properties={'spatial_coverage': 'country',
-                                                                        'country_iso3alpha': sample_settings['country'],
-                                                                        'exponents': exponents,
-                                                                        'fin_mode': fin_mode})
+        exp = client.get_exposures(
+            exposures_type='litpop_tccentroids',
+            properties={'spatial_coverage': 'country',
+                        'country_iso3alpha': sample_settings['country'],
+                        'exponents': exponents,
+                        'fin_mode': fin_mode},
+            version='newest',
+            status='preliminary'
+        )
 
         exp_df = pd.DataFrame({'lat': exp.gdf.latitude,
                                'lon': exp.gdf.longitude,
@@ -187,6 +192,8 @@ class Command(BaseCommand):
 
         impf_set = ImpactFuncSet()
         impf_set.append(impf)
+
+        exp.gdf['impf_TC'] = 1
 
         # Calculate impacts
         imp = Impact()
