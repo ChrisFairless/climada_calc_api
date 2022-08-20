@@ -95,7 +95,7 @@ def get_api_exposure_properties(
             properties['exponents'] = '(0,1)'
             properties['fin_mode'] = 'pop'
             properties['status'] = "preliminary"
-            properties['version'] = "latest"
+            properties['version'] = "newest"
             # LOGGER.warning('Using 2020 SSP when we should really be getting LitPop')
             # return 'ssp_population', None
         else:
@@ -104,14 +104,14 @@ def get_api_exposure_properties(
             properties['ssp'] = scenario_growth
             properties['res_arcsec'] = '150'
             properties['status'] = "preliminary"
-            properties['version'] = "latest"
+            properties['version'] = "newest"
 
     elif exposure_type == 'economic_assets':
         properties['data_type'] = 'litpop_tccentroids'
         properties['exponents'] = '(1,1)'
         properties['fin_mode'] = 'pc'
         properties['status'] = "preliminary"
-        properties['version'] = "latest"
+        properties['version'] = "newest"
     else:
         raise ValueError(f'Unrecognised exposure definition: {exposure_type}, {scenario_name}, {scenario_year}')
 

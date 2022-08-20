@@ -106,7 +106,7 @@ def get_hazard_from_api(
         request_properties['ref_year'] = str(scenario_year)
 
     status = 'preliminary' if hazard_type == "extreme_heat" else "active"
-    version = 'latest'
+    version = 'newest'
 
     LOGGER.debug(f'Requesting {status} {hazard_type} hazard from Data API. Request properties: {request_properties}')
     return client.get_hazard(hazard_type, properties=request_properties, status=status, version=version)
