@@ -348,8 +348,9 @@
         "unit_type": "speed",
         "default": false,
         "location_options": [
-          "Haiti",
-          "Saint Kitts and Nevis"
+          "Havana",
+          "Saint Kitts and Nevis",
+          "Port-au-Prince, Haiti"
         ],
         "scenario_options": {
           "year": {
