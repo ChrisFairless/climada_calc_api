@@ -97,10 +97,12 @@ DATABASES['default']['ENGINE'] = "django.db.backends.postgresql_psycopg2"
 
 # Cache
 # https://docs.djangoproject.com/en/4.0/topics/cache/
+# TODO optimise settings for Redis (see above url)
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL')
+        'LOCATION': os.environ.get('REDIS_URL'),
+        'TIMEOUT': 60 * 24
     }
 }
 
