@@ -12,3 +12,6 @@ REDIS_URL=redis://redis:6379
 
 GEOCODE_URL=http://geocode_api:80/
 MAPTILER_KEY=replace_with_maptiler_key_if_using
+
+CELERY_BROKER_URL=redis://redis:6379
+CELERY_RESULT_BACKEND=redis://redis:6379
