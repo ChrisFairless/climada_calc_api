@@ -92,21 +92,24 @@ def location_from_code(location_code):
 # TODO cache these results
 def location_from_name(location_name):
     if conf.GEOCODER == 'osmnames':
-        return get_one_place(location_name, exact=False)
+        out = get_one_place(location_name, exact=False)
 
     elif conf.GEOCODER == 'nominatim_web':
         url = f'https://nominatim.openstreetmap.org/search?q={location_name}&format=json'
         place = requests.request('GET', url)
-        return osmnames_to_schema(place.json())
+        out = osmnames_to_schema(place.json())
 
     elif conf.GEOCODER == 'maptiler':
         url = f'https://api.maptiler.com/geocoding/{location_name}.json?key={MAPTILER_KEY}'
         place = requests.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO move this to a setting?
         place = place.json()['features'][0]
-        return maptiler_to_schema(place)
+        out = maptiler_to_schema(place)
 
     else:
         raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
+
+    LOGGER.debug(f'Geocoding location with {conf.GEOCODER}.\n    Input: {location_name}\n    Found: {out.name}')
+    return out
 
 
 def osmnames_to_schema(place):
