@@ -97,7 +97,7 @@ class CategoricalLegendItem(Schema):
 
 class CategoricalLegend(Schema):
     title: str
-    units: str
+    units: str = None
     items: List[CategoricalLegendItem]
 
 
