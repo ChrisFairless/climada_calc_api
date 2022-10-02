@@ -4,6 +4,7 @@ from celery import shared_task
 from celery_singleton import Singleton
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 from pathlib import Path
 from time import sleep
 
@@ -25,6 +26,8 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
 # TODO organise these functions better. get_exposure should just be admin, get_exposure_from_api should do the work
+# TODO split this into two functions, once that gets aggregated exposure, one that gets gridded exposure.
+#  We don't want to be saving gridded results to our database, and besides, they return different sorts of objects.
 @shared_task(base=Singleton)
 @database_job
 # @profile()
@@ -38,15 +41,20 @@ def get_exposure(
         scenario_year=None,
         location_poly=None,
         aggregation_scale=None,
-        aggregation_method=None):
+        aggregation_method=None,
+        drop_zeroes=True):
 
     LOGGER.debug('Starting get_exposure calculation. Locals: ' + str(locals()))
 
     exp = get_exposure_from_api(country, exposure_type, impact_type, scenario_name, scenario_growth, scenario_year)
 
+    if drop_zeroes:
+        exp.gdf = exp.gdf[exp.gdf['value'] != 0]
+
     # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
     if location_poly:
-        raise ValueError("API doesn't handle polygons yet")
+        if len(location_poly) != 4:
+            raise ValueError("API doesn't handle polygons yet")
         exp = subset_exposure_extent(exp, location_poly)
 
     # TODO implement, consider splitting from the chain
@@ -65,14 +73,14 @@ def get_exposure(
             elif aggregation_method == 'max':
                 aggregation_method = np.max
             else:
-                raise ValueError('aggregation method must be either ')
+                raise ValueError('aggregation method must be one of sum, mean, median or max')
         return [{'lat': float(np.median(exp.gdf['latitude'])),
                  'lon': float(np.median(exp.gdf['longitude'])),
                  'value': float(aggregation_method(exp.gdf['value']))}]
 
     return [
         {"lat": float(row['latitude']), "lon": float(row['longitude']), "value": float(row['value'])}
-        for row in exp.gdf.iterrows()
+        for _, row in exp.gdf.iterrows()
     ]
 
 
@@ -177,6 +185,7 @@ def get_exposure_from_api(
     return exp
 
 
+# TODO make this work with a GeocodePlace object as well
 def subset_exposure_extent(
         exp,
         location_poly,
@@ -186,18 +195,19 @@ def subset_exposure_extent(
         LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
 
     buffer_deg = buffer / (60 * 60)
-    latmin = np.min(coord[0] for coord in location_poly) - buffer_deg
-    lonmin = np.min(coord[1] for coord in location_poly) - buffer_deg
-    latmax = np.min(coord[0] for coord in location_poly) + buffer_deg
-    lonmax = np.max(coord[1] for coord in location_poly) + buffer_deg
+    latmin = np.min([coord[0] for coord in location_poly]) - buffer_deg
+    lonmin = np.min([coord[1] for coord in location_poly]) - buffer_deg
+    latmax = np.max([coord[0] for coord in location_poly]) + buffer_deg
+    lonmax = np.max([coord[1] for coord in location_poly]) + buffer_deg
 
-    idx = exp.gdf['latitude'] >= latmin & \
-        exp.gdf['latitude'] <= latmax & \
-        exp.gdf['longitude'] >= lonmin & \
-        exp.gdf['longitude'] >= lonmax
-    if not any(idx):
+    df_query = f'latitude >= {latmin} & \
+        latitude <= {latmax} & \
+        longitude >= {lonmin} & \
+        longitude <= {lonmax}'
+
+    exp.set_gdf(gpd.GeoDataFrame(exp.gdf.query(df_query)))
+
+    if exp.gdf.shape[0] == 0:
         raise ValueError('Subsetting the exposure went wrong: no exposure points found')
-
-    exp.set_gdf(exp.gdf[idx])
 
     return exp

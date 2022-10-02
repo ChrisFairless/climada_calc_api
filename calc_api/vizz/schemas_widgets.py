@@ -73,12 +73,14 @@ class BiodiversityWidgetJobSchema(schemas.JobSchema):
 # ====================
 
 class SocialVulnerabilityWidgetRequest(schemas.PlaceSchema):
+    hazard_type: str
+    units_hazard: str = None
     units_area: str = None
 
 
 class SocialVulnerabilityWidgetData(Schema):
     text: List[GeneratedText]
-    chart: schemas.ExposureBreakdown
+    chart: schemas.ExposureBreakdown = None
 
 
 class SocialVulnerabilityWidgetResponse(Schema):
