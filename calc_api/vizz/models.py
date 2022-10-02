@@ -64,7 +64,7 @@ class Measure(models.Model):
     return_period_cutoff = models.FloatField(null=True)
     hazard_change_multiplier = models.FloatField(null=True)
     hazard_change_constant = models.FloatField(null=True)
-    cobenefits = models.ManyToManyField(Cobenefit)
+    cobenefits = models.ManyToManyField(Cobenefit, null=True)
     units_currency = models.TextField()
     units_hazard = models.TextField()
     units_distance = models.TextField()

@@ -35,6 +35,7 @@ class JobSchema(Schema):
     message: str = None
 
     @classmethod
+    # TODO refactor so that location_root is a class attribute
     def from_task_id(cls, task_id, location_root):
         # task = TaskResult.objects.get(task_id=task_id)
         # response_schema = globals().copy()
@@ -312,6 +313,9 @@ class ExceedanceJobSchema(JobSchema):
     response: ExceedanceResponse = None
 
 
+# Timelines
+# =========
+
 class TimelineHazardRequest(PlaceSchema):
     hazard_type: str
     hazard_event_name: str = None
@@ -352,7 +356,6 @@ class TimelineExposureRequest(PlaceSchema):
                 None)
 
 
-
 class TimelineImpactRequest(PlaceSchema):
     hazard_type: str
     hazard_event_name: str = None
@@ -381,18 +384,21 @@ class TimelineImpactRequest(PlaceSchema):
             self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
-class TimelineBar(Schema):
+class BreakdownBar(Schema):
     year_label: str
     year_value: float
     temperature: float = None
     current_climate: float = None
-    future_climate: float = None
     growth_change: float = None
     climate_change: float = None
+    future_climate: float = None
+    measure_names: List[str] = None
+    measure_change: List[float] = None
+    combined_measure_change: float = None
 
 
 class Timeline(Schema):
-    items: List[TimelineBar]
+    items: List[BreakdownBar]
     legend: CategoricalLegend
     units_warming: str
     units_response: str
@@ -409,6 +415,72 @@ class TimelineResponse(Schema):
 
 class TimelineJobSchema(JobSchema):
     response: TimelineResponse = None
+
+
+# CostBenefit
+# ===========
+
+class MeasureSchema(ModelSchema):
+    class Config:
+        model = Measure
+        model_fields = ["name", "description", "hazard_type", "exposure_type", "cost_type", "cost", "annual_upkeep",
+                        "priority", "percentage_coverage", "percentage_effectiveness", "is_coastal",
+                        "max_distance_from_coast", "hazard_cutoff", "return_period_cutoff", "hazard_change_multiplier",
+                        "hazard_change_constant", "cobenefits", "units_currency", "units_hazard", "units_distance",
+                        "user_generated"]
+
+    # Don't understand why these are necessary here but...
+    def to_dict(self):
+        return self.__dict__
+
+    @classmethod
+    def from_dict(cls, dict):
+        return cls(**dict)
+
+class CreateMeasureSchema(ModelSchema):
+    class Config:
+        model = Measure
+        model_exclude = ['id', 'user_generated']
+
+
+# class MeasureRequestSchema(Schema):
+#     ids: List[uuid.UUID] = None
+#     include_defaults: bool = None
+#     hazard: str = None
+
+
+class CostBenefitRequest(AnalysisSchema):
+    hazard_type: str
+    hazard_event_name: str = None
+    hazard_rp: int = None
+    exposure_type: str = None
+    impact_type: str = None
+    measures: List[dict] = None
+    units_hazard: str = None
+    units_exposure: str = None
+    units_warming: str = None
+
+
+class CostBenefit(Schema):
+    items: List[BreakdownBar]
+    legend: CategoricalLegend
+    units_warming: str
+    units_response: str
+
+
+class CostBenefitMetadata(Schema):
+    description: str
+
+
+class CostBenefitResponse(Schema):
+    data: CostBenefit
+    metadata: CostBenefitMetadata
+
+
+class CostBenefitJobSchema(JobSchema):
+    response: CostBenefitResponse = None
+
+
 
 
 class ExposureBreakdownRequest(PlaceSchema):
@@ -438,27 +510,6 @@ class ExposureBreakdownResponse(Schema):
 class ExposureBreakdownJob(JobSchema):
     response: ExposureBreakdownResponse = None
 
-
-class MeasureSchema(ModelSchema):
-    class Config:
-        model = Measure
-        model_fields = ["name", "description", "hazard_type", "exposure_type", "cost_type", "cost", "annual_upkeep",
-                        "priority", "percentage_coverage", "percentage_effectiveness", "is_coastal",
-                        "max_distance_from_coast", "hazard_cutoff", "return_period_cutoff", "hazard_change_multiplier",
-                        "hazard_change_constant", "cobenefits", "units_currency", "units_hazard", "units_distance",
-                        "user_generated"]
-
-
-class CreateMeasureSchema(ModelSchema):
-    class Config:
-        model = Measure
-        model_exclude = ['id', 'user_generated']
-
-
-class MeasureRequestSchema(Schema):
-    ids: List[uuid.UUID] = None
-    include_defaults: bool = None
-    hazard: str = None
 
 
 

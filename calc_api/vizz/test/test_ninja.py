@@ -8,10 +8,10 @@ import importlib
 LOGGER = logging.getLogger(__name__)
 
 server_address = 'http://0.0.0.0:8000/'
-#server_address = 'https://reca-api.herokuapp.com/'
+# server_address = 'https://reca-api.herokuapp.com/'
 
-location_name = 'Saint Kitts and Nevis'
-#location_name = 'Honduras'
+location_list = ['Saint Kitts and Nevis', 'Port-au-Prince', 'Havana, Cuba']
+#location_list = ['Havana, Cuba']
 
 calculation_endpoints = {
     # 'rest/vizz/map/hazard/climate': 'MapHazardClimateRequest',
@@ -22,9 +22,10 @@ calculation_endpoints = {
     # 'rest/vizz/timeline/hazard': 'TimelineHazardRequest',
     # 'rest/vizz/timeline/exposure': 'TimelineExposureRequest',
     # 'rest/vizz/timeline/impact': 'TimelineImpactRequest',
-    'rest/vizz/widgets/risk-timeline': 'TimelineWidgetRequest',
     # 'rest/vizz/widgets/biodiversity': 'BiodiversityWidgetRequest',
-    # 'rest/vizz/widgets/social-vulnerability': 'SocialVulnerabilityWidgetRequest',
+    'rest/vizz/widgets/cost-benefit': 'CostBenefitWidgetRequest',
+    'rest/vizz/widgets/social-vulnerability': 'SocialVulnerabilityWidgetRequest',
+    'rest/vizz/widgets/risk-timeline': 'TimelineWidgetRequest',
     # 'rest/vizz/exceedance/hazard': 'ExceedanceHazardRequest',
     # 'rest/vizz/exceedance/impact': 'ExceedanceImpactRequest',
 }
@@ -61,6 +62,7 @@ class TestEndpoints(unittest.TestCase):
     @staticmethod
     def submit_job(
             endpoint,
+            location_name,
             haz_name,
             exposure_type,
             impact_type,
@@ -84,7 +86,8 @@ class TestEndpoints(unittest.TestCase):
             'scenario_climate': None,  # Test these later
             'scenario_growth': None,
             'scenario_year': year,
-            'location_scale': 'country',
+            'measure': [12],
+            # 'location_scale': 'country',
             'location_code': None,
             'location_poly': None,
             'location_name': location_name,
@@ -92,7 +95,7 @@ class TestEndpoints(unittest.TestCase):
             'aggregation_method': aggregation_method,
             'format': 'tif',
             'units_hazard': units_hazard,
-            'units_warming': 'degrees Fahrenheit',
+            'units_warming': 'fahrenheit',
             'units_exposure': units_exposure,
             'units_area': 'square miles'
         }
@@ -111,93 +114,96 @@ class TestEndpoints(unittest.TestCase):
         url = server_address + 'rest/vizz/options'
         options = requests.request("GET", url, headers={}, data={})
         options = options.json()['data']['filters']
-        for endpoint in calculation_endpoints.keys():
-            if 'map' in endpoint:
-                aggregation_scale = None
-                # LOGGER.warning(f"Skipping map endpoints for now: {endpoint}")
-                # continue
-            else:
-                aggregation_scale = 'country'
-            for haz_name, haz_options in options.items():
-                if haz_name == "extreme_heat":
-                    LOGGER.warning("Skipping extreme heat for now")
-                    exposures = [{
-                        'exposure_type': 'people',
-                        'impact_type': 'people_affected',
-                        'units': 'people'
-                    }]
-                    haz_unit = 'fahrenheit'
-                    continue
-                elif haz_name == 'tropical_cyclone':
-                    haz_unit = 'mph'
-                    exposures = [
-                        {
-                            'exposure_type': 'economic_assets',
-                            'impact_type': 'economic_impact',
-                            'units': 'dollars'
-                        },
-                        {
+        for location_name in location_list:
+            for endpoint in calculation_endpoints.keys():
+                if 'map' in endpoint:
+                    aggregation_scale = None
+                    # LOGGER.warning(f"Skipping map endpoints for now: {endpoint}")
+                    # continue
+                else:
+                    aggregation_scale = 'country'
+                for haz_name, haz_options in options.items():
+                    if haz_name == "extreme_heat":
+                        LOGGER.warning("Skipping extreme heat for now")
+                        exposures = [{
                             'exposure_type': 'people',
                             'impact_type': 'people_affected',
                             'units': 'people'
-                        }
-                    ]
-                else:
-                    raise ValueError('haz_name must be extreme_heat or tropical_cyclone')
+                        }]
+                        haz_unit = 'fahrenheit'
+                        continue
+                    elif haz_name == 'tropical_cyclone':
+                        haz_unit = 'mph'
+                        exposures = [
+                            {
+                                'exposure_type': 'economic_assets',
+                                'impact_type': 'economic_impact',
+                                'units': 'dollars'
+                            },
+                            {
+                                'exposure_type': 'people',
+                                'impact_type': 'people_affected',
+                                'units': 'people'
+                            }
+                        ]
+                    else:
+                        raise ValueError('haz_name must be extreme_heat or tropical_cyclone')
 
-                year_options = [yr['value'] for yr in haz_options['scenario_options']['year']['choices']]
-                scenario_options = [scen['value'] for scen in haz_options['scenario_options']['climate_scenario']['choices']]
-                rp_options = [rp['value'] for rp in haz_options['scenario_options']['return_period']['choices']]
-                if 'impact' not in endpoint:
-                    rp_options = [rp for rp in rp_options if rp != "aai"]
-                aggregation_method = 'max' if 'hazard' in endpoint else 'sum'
-                for exp in exposures:
-                    for year in year_options:
-                        for climate_scenario in scenario_options:
-                            if climate_scenario == 'historical' and 'timeline' in endpoint:
-                                continue
-                            if climate_scenario == scenario_options[1]:
-                                rp_list = rp_options
-                            else:
-                                rp_list = [rp_options[-1]]
-                            for return_period in rp_list:
-                                key, response = self.submit_job(endpoint, haz_name, exp['exposure_type'], exp['impact_type'], year,
-                                                                climate_scenario, return_period, aggregation_scale,
-                                                                aggregation_method, haz_unit, exp['units'])
-                                job_details = f"""
-    Endpoint:\n
-    {endpoint}\n
-    Request:\n
-    {str(response.request.body)}\n
-    Response:\n
-    {response.json()}
-                                """
-                                LOGGER.debug(job_details)
-                                if response.status_code != 200:
-                                    LOGGER.warning(f'Job submission had trouble: {response}')
-                                self.assertEqual(response.status_code, 200)
+                    year_options = [yr['value'] for yr in haz_options['scenario_options']['year']['choices']]
+                    scenario_options = [scen['value'] for scen in haz_options['scenario_options']['climate_scenario']['choices']]
+                    rp_options = [rp['value'] for rp in haz_options['scenario_options']['return_period']['choices']]
+                    if 'impact' not in endpoint:
+                        rp_options = [rp for rp in rp_options if rp != "aai"]
+                    aggregation_method = 'max' if 'hazard' in endpoint else 'sum'
+                    for exp in exposures:
+                        for year in year_options:
+                            for climate_scenario in scenario_options:
+                                if climate_scenario == 'historical' and 'timeline' in endpoint:
+                                    continue
+                                if climate_scenario == scenario_options[1]:
+                                    rp_list = rp_options
+                                else:
+                                    rp_list = [rp_options[-1]]
+                                for return_period in rp_list:
+                                    key, response = self.submit_job(endpoint, location_name, haz_name,
+                                                                    exp['exposure_type'], exp['impact_type'], year,
+                                                                    climate_scenario, return_period, aggregation_scale,
+                                                                    aggregation_method, haz_unit, exp['units'])
+                                    job_details = f"""
+        Endpoint:\n
+        {endpoint}\n
+        Request:\n
+        {str(response.request.body)}\n
+        Response:\n
+        {response.json()}
+                                    """
+                                    LOGGER.debug(job_details)
+                                    if response.status_code != 200:
+                                        LOGGER.warning(f'Job submission had trouble: {response}')
+                                    self.assertEqual(response.status_code, 200)
 
-                                job_dict[key] = {'endpoint': endpoint,
-                                                 'job_id': response.json()['job_id'],
-                                                 'request': response.request.body,
-                                                 'response': response.json()}
+                                    job_dict[key] = {'endpoint': endpoint,
+                                                     'job_id': response.json()['job_id'],
+                                                     'request': response.request.body,
+                                                     'response': response.json()}
 
-                                value = job_dict[key]
-                                url = server_address + value['endpoint'] + '/' + value['job_id']
-                                status = ''
-                                response = requests.request('GET', url, headers={})
-                                status = response.json()['status']
-                                if status not in ['SUCCESS', 'FAILURE', 'PENDING']:
-                                    LOGGER.warning(f"Job submission not a success: {response.json()}")
-                                # time.sleep(30)
-                            # self.assertEqual(response.status_code, 200)
-                            # self.assertEqual(status, 'SUCCESS')
-            #                   break
-            #                 break
-            #             break
-            #         break
-            #     break
-            # break
+                                    value = job_dict[key]
+                                    url = server_address + value['endpoint'] + '/' + value['job_id']
+                                    status = ''
+                                    response = requests.request('GET', url, headers={})
+                                    status = response.json()['status']
+                                    if status not in ['SUCCESS', 'FAILURE', 'PENDING']:
+                                        LOGGER.warning(f"Job submission not a success: {response.json()}")
+                                #    time.sleep(30)
+                                # self.assertEqual(response.status_code, 200)
+                                # self.assertEqual(status, 'SUCCESS')
+        #                      break
+        #                  break
+        #              break
+        #          break
+        #       break
+        #    break
+        # break
 
 
         for key, value in job_dict.items():
@@ -206,9 +212,9 @@ class TestEndpoints(unittest.TestCase):
             status = response.json()['status']
             poll_count = 0
             if status != 'SUCCESS':
-                while status not in ['SUCCESS', 'FAILURE'] and poll_count < 20:
+                while status not in ['SUCCESS', 'FAILURE'] and poll_count < 8:
                     poll_count += 1
-                    time.sleep(3)
+                    time.sleep(10)
                     LOGGER.info(f"...polling. Status: {status}  URL: {url}")
                     response = requests.request('GET', url, headers={})
                     status = response.json()['status']

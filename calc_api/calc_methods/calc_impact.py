@@ -4,9 +4,11 @@ from celery import shared_task
 from celery_singleton import Singleton
 import pandas as pd
 import numpy as np
+import copy
+from scipy import interpolate
 
 from climada.hazard import Hazard
-from climada.entity import Exposures, ImpactFunc, ImpactFuncSet, ImpfTropCyclone
+from climada.entity import Exposures, ImpactFunc, ImpactFuncSet, ImpfTropCyclone, Entity, MeasureSet, Measure
 from climada.engine import Impact
 from climada.util.api_client import Client
 import climada.util.coordinates as u_coord
@@ -41,6 +43,7 @@ def get_impact_by_return_period(
         scenario_climate=None,
         hazard_year=None,
         exposure_year=None,
+        measures=None,
         location_poly=None,
         aggregation_scale=None,
         save_frequency_curve=False):
@@ -67,12 +70,74 @@ def get_impact_by_return_period(
     impf_name = impact_funcs.get_func(haz_type=haz.tag.haz_type, fun_id=1).name
     exp.gdf[impf_name] = 1
 
-    imp = Impact()
-    imp.calc(exp, impact_funcs, haz, save_mat=save_mat)
+    if not measures:
+        imp = Impact()
+        imp.calc(exp, impact_funcs, haz, save_mat=save_mat)
+    else:
+        measure_set = MeasureSet()
+        basic_impf = impact_funcs.get_func(fun_id=1)
+        if len(measures) > 1:
+            LOGGER.warning('Currently we only apply the first measure. Combined measures comes later.')
+        for measure_dict in measures:
+            # TODO wrap this in another method (or write an __init__ for the climada class)
+            gonna_need_a_new_impf = measure_dict['hazard_cutoff'] is not None and measure_dict['hazard_cutoff'] > 0
+            if gonna_need_a_new_impf:
+                new_impf = copy.deepcopy(basic_impf)
+                new_impf.id = 2
+                cutoff = measure_dict['hazard_cutoff']
+                extra_points = np.array(cutoff, cutoff)
+                new_impf.intensity = np.sort(np.append(basic_impf.intensity, extra_points))
+                interpolated_mdd = interpolate.interp1d(basic_impf.intensity, cutoff)
+                ix = np.array(basic_impf.intensity <= cutoff)
+                new_impf.mdd = np.append(np.append(np.zeros(sum(ix) + 1), interpolated_mdd), basic_impf.mdd[~ix])
+                impact_funcs.append(new_impf)
 
-    return_periods = np.array(return_periods)
-    return_periods_aai = return_periods == 'aai'
-    return_periods_int = return_periods != 'aai'
+            m = Measure()
+            m.name = measure_dict['name']
+            haz_abbrv = HAZARD_TO_ABBREVIATION[measure_dict['hazard_type']]
+            m.haz_type = haz_abbrv
+            m.cost = measure_dict['cost']  # TODO fix measure costs and implement scaling elsewhere
+            if measure_dict['return_period_cutoff']:
+                m.hazard_freq_cutoff = 1 / measure_dict['return_period_cutoff']
+
+            hazard_scaling = [1, 0]
+            if measure_dict['hazard_change_multiplier']:
+                hazard_scaling[0] = measure_dict['hazard_change_multiplier']
+            if measure_dict['hazard_change_constant']:
+                hazard_scaling[1] = measure_dict['hazard_change_constant']
+            m.hazard_inten_imp = tuple(hazard_scaling)
+
+            if gonna_need_a_new_impf:
+                m.imp_fun_map = '1to2'
+
+            # m.mdd_impact = (1, 0)  # parameter a and b
+            # m.paa_impact = (1, 0)  # parameter a and b
+
+            if measure_dict['percentage_coverage'] != 100:
+                raise ValueError('Percentage coverage not yet implemented')
+            if measure_dict['percentage_effectiveness'] != 100:
+                raise ValueError('Percentage assets affected not yet implemented')
+
+            measure_set.append(m)
+
+            for name in measure_set.get_names():
+                LOGGER.info("\nMEASURES:")
+                LOGGER.info(name)
+                for property, value in m.__dict__.items():
+                    LOGGER.info((property, ":", value))
+
+            # TODO use CostBenefit module here
+            LOGGER.warning('Not doing a full cost benefit calculation - no discounting')
+
+            imp, _ = m.calc_impact(exposures=exp, imp_fun_set=impact_funcs, hazard=haz)
+
+    if isinstance(return_periods, list):
+        return_periods = np.array(return_periods)
+    if isinstance(return_periods, (int, float)):
+        return_periods = np.array([return_periods])
+
+    return_periods_aai = np.array([rp == 'aai' for rp in return_periods])
+    return_periods_int = ~return_periods_aai
 
     if any(return_periods_int):
         rps = [int(rp) for rp in return_periods[return_periods_int]]
@@ -108,7 +173,7 @@ def get_impact_by_return_period(
              "value": list(imp_by_rp),
              "total_freq": total_freq,
              "mean_imp": mean_imp,
-             "freq_curve": freq_curve_dict if save_frequency_curve else None}
+             "freq_curve": None if not save_frequency_curve else freq_curve_dict}
         ]
 
 
@@ -171,6 +236,7 @@ def infer_impactfuncset(
     # TODO make into another lookup
     if exposure_type == 'economic_assets':
         if impact_type == 'economic_impact':
+            # TODO use Eberenz globally calibrated functions
             impf = ImpfTropCyclone.from_emanuel_usa()
         elif impact_type == 'assets_affected':
             impf = ImpactFunc.from_step_impf(intensity=(0, 33, 500))  # Cat 1 storm in m/s
@@ -191,6 +257,7 @@ def infer_impactfuncset(
 
     abbrv = HAZARD_TO_ABBREVIATION[hazard_type]
     impf.name = 'impf_' + abbrv
+    impf.id = 1
 
     impact_funcs = ImpactFuncSet()
     impact_funcs.append(impf)

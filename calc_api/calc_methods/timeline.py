@@ -1,5 +1,4 @@
 import logging
-import json
 import pandas as pd
 import numpy as np
 from millify import millify
@@ -8,18 +7,10 @@ from django.db import transaction
 from celery import chain, chord, shared_task
 from celery_singleton import Singleton
 
-from climada.engine.impact import Impact
-from climada.entity import ImpactFunc, ImpactFuncSet, ImpfTropCyclone, Exposures
-from climada.hazard import Hazard
-
 import calc_api.vizz.schemas as schemas
-from calc_api.calc_methods.util import country_iso_from_parameters
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.enums import get_year_options, get_rp_options
-from calc_api.calc_methods.calc_hazard import get_hazard_event, get_hazard_by_return_period
-from calc_api.calc_methods.calc_exposure import get_exposure
 from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_return_period
-from calc_api.calc_methods.mapping import points_to_map_response
 from calc_api.calc_methods.colourmaps import Legend, PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
 from calc_api.vizz.util import options_return_period_to_description
 from calc_api.job_management.job_management import database_job
@@ -62,8 +53,8 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
         # 'scenario_name': 'historical' if is_historical(haz_year, exp_year) else request.scenario_name,
         # 'scenario_growth': 'historical' if is_historical(haz_year, exp_year) else request.scenario_growth,
         # 'scenario_climate': 'historical' if is_historical(haz_year, exp_year) else request.scenario_climate,
-        'climate_change': int(haz_year) != 2020,
         'economic_growth': int(exp_year) != 2020,
+        'climate_change': int(haz_year) != 2020,
         'hazard_type': request.hazard_type,
         'hazard_rp': request.hazard_rp,
         'impact_type': request.impact_type,
@@ -103,10 +94,10 @@ def combine_impacts_to_timeline(impacts_list, job_config_list):
 
 
 def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
-    for i, job in enumerate(job_config_list):
+    for i, _ in enumerate(job_config_list):
         if len(impacts_list[i]) != 1:
             raise ValueError('Impacts provided to timeline calculation have more than one location')
-        job['impact'] = impacts_list[i][0]['value']
+        job_config_list[i]['impact'] = impacts_list[i][0]['value']
 
     # When multiple return periods are used, cells with impact data contain ARRAYS in this data frame
     df = pd.DataFrame(job_config_list)
@@ -136,14 +127,14 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
 
         # Create a list of bar items for each return period
         timeline_bars = [
-            schemas.TimelineBar(
+            schemas.BreakdownBar(
                 year_label=str(year),
                 year_value=int(year),
                 temperature=-999.0,
                 current_climate=float(current_climate[i]),
-                future_climate=float(fut[i]),
                 growth_change=float(pop[i]),
                 climate_change=float(clim[i]),
+                future_climate=float(fut[i])
             )
             for year, fut, pop, clim in zip(year_list, future_climate, growth_change, climate_change)
         ]

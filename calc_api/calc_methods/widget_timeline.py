@@ -12,23 +12,26 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
     data.standardise()
     all_rps = [data.hazard_rp, 10, 100]
 
-    request = schemas.TimelineImpactRequest(
-        hazard_type=data.hazard_type,
-        hazard_rp=all_rps,
-        exposure_type=data.exposure_type,
-        impact_type=data.impact_type,
-        scenario_name=data.scenario_name,
-        scenario_climate=data.scenario_climate,
-        scenario_growth=data.scenario_growth,
-        location_name=data.location_name,
-        location_scale=data.location_scale,
-        location_code=data.location_code,
-        location_poly=data.location_poly,
-        aggregation_method=data.aggregation_method,
-        units_warming=data.units_warming,
-        units_exposure=data.units_exposure,
-        geocoding=data.geocoding
-    )
+    # request = schemas.TimelineImpactRequest(
+    #     hazard_type=data.hazard_type,
+    #     hazard_rp=all_rps,
+    #     exposure_type=data.exposure_type,
+    #     impact_type=data.impact_type,
+    #     scenario_name=data.scenario_name,
+    #     scenario_climate=data.scenario_climate,
+    #     scenario_growth=data.scenario_growth,
+    #     location_name=data.location_name,
+    #     location_scale=data.location_scale,
+    #     location_code=data.location_code,
+    #     location_poly=data.location_poly,
+    #     aggregation_method=data.aggregation_method,
+    #     units_warming=data.units_warming,
+    #     units_exposure=data.units_exposure,
+    #     geocoding=data.geocoding
+    # )
+    data_dict = data.dict()
+    data_dict.update({'hazard_rp': all_rps})
+    request = schemas.TimelineImpactRequest(**data_dict)
 
     exposure_total_signature = get_exposure.s(
         country=data.geocoding.country_id,

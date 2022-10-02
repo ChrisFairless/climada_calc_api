@@ -18,12 +18,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         LOGGER.info("Creating database entries for cobenefits and measures")
 
-        data_directory = Path(BASE_DIR, "staticfiles", "data")
+        data_directory = Path(BASE_DIR, "static", "data")
         cobenefits_file = Path(data_directory, "cobenefits.csv")
         measures_file = Path(data_directory, "measures.csv")
 
         # Create cobenefits
-        [Cobenefit.objects.get_or_create(**row) for row in DictReader(open(cobenefits_file))]
+        for row in DictReader(open(cobenefits_file)):
+            _, _ = Cobenefit.objects.get_or_create(**row)
 
         for row in DictReader(open(measures_file)):
             row = {key: (None if value == '' else value) for (key, value) in row.items()}

@@ -37,12 +37,12 @@ def database_job(func, *args, **kwargs):
         except JobLog.DoesNotExist:
             result = func(*args, **kwargs)
             job = JobLog(job_hash=job_hash, func=func.__name__, args=str(args_dict), kwargs=str(kwargs), result=result)
-            job_id = job.save()
+            _ = job.save()
             return result
 
     elif conf.DATABASE_MODE == 'update':
         result = func(*args, **kwargs)
-        job, _ = JobLog.objects.update_or_create(job_hash=job_hash, func=func.__name__, args=str(args_dict), kwargs=str(kwargs), result=result)
+        _, _ = JobLog.objects.update_or_create(job_hash=job_hash, func=func.__name__, args=str(args_dict), kwargs=str(kwargs), result=result)
         return result
 
     else:

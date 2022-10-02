@@ -3,6 +3,8 @@ import json
 from time import sleep
 from pathlib import Path
 import logging
+import uuid
+from typing import List
 
 from django.contrib import auth
 from django.middleware import csrf
@@ -16,7 +18,8 @@ from calc_api.util import get_client_ip
 from climada_calc.settings import BASE_DIR, STATIC_ROOT
 from calc_api.vizz import schemas, schemas_widgets, schemas_geocoding
 from calc_api.vizz.util import get_options
-from calc_api.calc_methods import mapping, geocode, timeline, widget_timeline, widget_social_vulnerability
+from calc_api.calc_methods import mapping, geocode, timeline
+from calc_api.calc_methods import widget_timeline, widget_social_vulnerability, widget_costbenefit
 
 conf = ClimadaCalcApiConfig()
 
@@ -410,6 +413,39 @@ def _api_geocode_autocomplete(request, query):
 #
 #######################################
 
+
+@_api.get(
+    "/widgets/default-measures",
+    tags=["widget"],
+    response=List[schemas.MeasureSchema],
+    summary="Get predefined adaptation measures"
+)
+def _api_default_measures(request, measure_ids: int = None, hazard_type: str = None, exposure_type: str = None):
+    return widget_costbenefit.get_default_measures(measure_ids, hazard_type, exposure_type)
+
+
+@_api.post(
+    "/widgets/cost-benefit",
+    tags=["widget"],
+    response=schemas_widgets.CostBenefitWidgetJobSchema,
+    summary="Create data for the cost-benefit section of the RECA site"
+)
+def _api_widget_costbenefit_submit(request, data: schemas_widgets.CostBenefitWidgetRequest):
+    job_id = widget_costbenefit.widget_costbenefit(data)
+    return schemas_widgets.CostBenefitWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/cost-benefit')
+
+
+@_api.get(
+    "/widgets/cost-benefit/{uuid:job_id}",
+    tags=["widget"],
+    response=schemas_widgets.CostBenefitWidgetJobSchema,
+    summary="Poll for data for the risk over time section of the RECA site"
+)
+def _api_widget_costbenefit_poll(request, job_id):
+    return schemas_widgets.CostBenefitWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/cost-benefit')
+
+
+
 @_api.post(
     "/widgets/risk-timeline",
     tags=["widget"],
@@ -425,7 +461,7 @@ def _api_widget_risk_timeline_submit(request, data: schemas_widgets.TimelineWidg
     "/widgets/risk-timeline/{uuid:job_id}",
     tags=["widget"],
     response=schemas_widgets.TimelineWidgetJobSchema,
-    summary="Create data for the risk over time section of the RECA site"
+    summary="Poll for data for the risk over time section of the RECA site"
 )
 def _api_widget_risk_timeline_poll(request, job_id):
     return schemas_widgets.TimelineWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/risk-timeline')

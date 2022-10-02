@@ -284,7 +284,7 @@ def make_dummy_timeline(
     job_id = uuid.uuid4() if not job_id else job_id
     timeline = schemas.Timeline(
         items=[
-            schemas.TimelineBar(
+            schemas.BreakdownBar(
                 yearLabel=str(2020 + 20 * i),
                 yearValue=2020 + 20 * i,
                 temperature=1 + 0.25 * i,
