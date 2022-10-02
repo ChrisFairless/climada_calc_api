@@ -18,6 +18,10 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
+COUNTRY_NAME_CORRECTIONS = {
+    'Ayiti': 'Haiti'
+}
+
 def standardise_location(location_name=None, location_code=None, location_scale=None, location_poly=None):
     if not location_name and not location_code:
         raise ValueError('location data requires location_name or location_code to be properties')
@@ -72,6 +76,7 @@ def location_from_code(location_code):
         place = requests.request('GET', url)
         return osmnames_to_schema(place.json())
 
+    # TODO see if maptiler responses are sorted by the 'relevance' property or if we need to do that
     elif conf.GEOCODER == 'maptiler':
         url = f'https://api.maptiler.com/geocoding/{location_code}.json?key={MAPTILER_KEY}'
         place = requests.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO split this to a setting?
@@ -164,18 +169,16 @@ def _maptiler_establish_country_from_place(place):
     else:
         country = _get_place_context_type(place, 'country')
         if country:
+            if country in COUNTRY_NAME_CORRECTIONS.keys():
+                country = COUNTRY_NAME_CORRECTIONS[country]
             try:
                 country_iso3 = country_to_iso(country)
-            except LookupError:
-                try:
-                    country = _get_country_from_matching_name(place['matching_place_name'])
-                    country_iso3 = country_to_iso(country)
-                    LOGGER.warning(f'Could not match the Maptiler returned country name to a country code, but the matched text is ok: {country}')
-                except LookupError:
-                    raise LookupError(f'Could not match the Maptiler returned country name to a country code. '
-                                      f'Country: {country}'
-                                      f'\nQuery result:'
-                                      f'\n{place}')
+            except LookupError as e:
+                raise LookupError(f'Could not match the Maptiler returned country name to a country code. '
+                                  f'Country: {country}.'
+                                  f'\nError 1: \n{e}'
+                                  f'\nQuery result:'
+                                  f'\n{place}')
 
     if not country:
         raise ValueError(f'No country could be established from this maptiler query:\n{place}')
