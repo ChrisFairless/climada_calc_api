@@ -36,6 +36,7 @@ def costbenefit(request: schemas.CostBenefitRequest):
 
 
 def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
+    LOGGER.debug('Setting up costbenefit celery tasks')
     job_config_list = []
     baseline_config = {
         'job_name': 'baseline risk',
@@ -152,6 +153,7 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
         measure_names = [m[0]['name'] for m in df.loc[ix_single_measures]['measures']]
         measure_change = [m - climate_change for m in measure_impacts]
     else:
+        measure_impacts = None
         measure_names = None
         measure_change = None
 
@@ -176,7 +178,9 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
         future_climate=float(future_climate),
         measure_names=measure_names,
         measure_change=measure_change,
-        combined_measure_change=None
+        measure_climate=list(measure_impacts),
+        combined_measure_change=None,
+        combined_measure_climate=None
     )
 
     # TODO allow for any return period - the options limitations should happen somewhere else?

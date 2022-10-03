@@ -75,7 +75,7 @@ def get_impact_by_return_period(
         imp.calc(exp, impact_funcs, haz, save_mat=save_mat)
     else:
         measure_set = MeasureSet()
-        basic_impf = impact_funcs.get_func(fun_id=1)
+        basic_impf = impact_funcs.get_func(fun_id=1)[0]
         if len(measures) > 1:
             LOGGER.warning('Currently we only apply the first measure. Combined measures comes later.')
         for measure_dict in measures:
@@ -85,11 +85,13 @@ def get_impact_by_return_period(
                 new_impf = copy.deepcopy(basic_impf)
                 new_impf.id = 2
                 cutoff = measure_dict['hazard_cutoff']
-                extra_points = np.array(cutoff, cutoff)
+                extra_points = np.array([cutoff, cutoff])
                 new_impf.intensity = np.sort(np.append(basic_impf.intensity, extra_points))
-                interpolated_mdd = interpolate.interp1d(basic_impf.intensity, cutoff)
-                ix = np.array(basic_impf.intensity <= cutoff)
-                new_impf.mdd = np.append(np.append(np.zeros(sum(ix) + 1), interpolated_mdd), basic_impf.mdd[~ix])
+                f_interpolate_mdd = interpolate.interp1d(basic_impf.intensity, basic_impf.mdd)
+                cutoff_mdd_value = f_interpolate_mdd(cutoff)
+                ix = np.array(basic_impf.intensity < cutoff)
+                new_impf.mdd = np.append(np.append(np.zeros(sum(ix) + 1), cutoff_mdd_value), basic_impf.mdd[~ix])
+                new_impf.paa = np.ones_like(new_impf.mdd)
                 impact_funcs.append(new_impf)
 
             m = Measure()
@@ -120,11 +122,11 @@ def get_impact_by_return_period(
 
             measure_set.append(m)
 
-            for name in measure_set.get_names():
-                LOGGER.info("\nMEASURES:")
-                LOGGER.info(name)
-                for property, value in m.__dict__.items():
-                    LOGGER.info((property, ":", value))
+            # for name in measure_set.get_names():
+            #     LOGGER.info("\nMEASURES:")
+            #     LOGGER.info(name)
+            #     for property, value in m.__dict__.items():
+            #         LOGGER.info((property, ":", value))
 
             # TODO use CostBenefit module here
             LOGGER.warning('Not doing a full cost benefit calculation - no discounting')

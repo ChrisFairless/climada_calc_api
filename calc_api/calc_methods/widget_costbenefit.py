@@ -32,6 +32,7 @@ def get_default_measures(measure_id=None, hazard_type: str = None, exposure_type
 
 
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
+    LOGGER.debug('Starting cost-benefit widget calculation')
     data.standardise()
     data_dict = data.dict()
     if data.measure_ids and len(data.measure_ids) > 0:
@@ -52,7 +53,10 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
                          f'\nValid names: {[m.name for m in valid_measures]}'
                          )
 
+    LOGGER.debug('Contructing cost-benefit request')
     request = schemas.CostBenefitRequest(**data_dict)
+    LOGGER.debug(request.__dict__)
+
 
     # from calc_api.calc_methods.timeline import set_up_timeline_calculations
     job_config_list, chord_header = costbenefit.set_up_costbenefit_calculations(request)
@@ -61,12 +65,14 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     # with transaction.atomic():
     res = chord(chord_header)(callback)
 
+    LOGGER.debug('Costbenefit calculation submitted')
     out = res.id
     return out
 
 
 @shared_task(base=Singleton)
 def combine_impacts_to_costbenefit_widget(impacts_list, job_config_list):
+    LOGGER.debug('Combining impacts to costbenefit widget')
     costbenefit_data = costbenefit.combine_impacts_to_costbenefit_no_celery(
         impacts_list=impacts_list,
         job_config_list=job_config_list

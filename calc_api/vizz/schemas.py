@@ -394,7 +394,9 @@ class BreakdownBar(Schema):
     future_climate: float = None
     measure_names: List[str] = None
     measure_change: List[float] = None
+    measure_climate: List[float] = None
     combined_measure_change: float = None
+    combined_measure_climate: float = None
 
 
 class Timeline(Schema):
