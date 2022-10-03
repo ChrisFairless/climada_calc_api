@@ -36,6 +36,7 @@ A `MeasureSchema` has the following properties. It was designed as a schema wher
 
 | Property | Type | Default | Description | Notes |
 | -------- | ---- | ------- | ----------- |------ |
+| `id` | integer | | Measure ID | Looks like this isn't currently returned - I'll update that today!! Use 12 for testing. |
 | `name` | string | | Measure name | |
 | `description`	| string | | A text description of the measure | |
 | `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat` |
@@ -70,3 +71,24 @@ Queries are made to the `/rest/vizz/widgets/cost-benefit` POST endpoint availabl
 
 A query is structured using the `CostBenefitRequest` schema, documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_widget_costbenefit_submit
 
+
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- | ------- | ----------- |------ |
+| `location_name` |	string | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
+| `location_scale` | string | | Information on the type of location. Determined automatically if not provided | No need to provide this |
+| `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
+| `location_poly` |	list of list of numbers | `[]` | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
+| `geocoding` | GeocodePlace schema | None | For internal use: ignore! I'll remove it later. | |
+| `scenario_name` | string | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
+| `scenario_climate` | string | | Climate scenario. Overrides `scenario_name` | Currently unused |
+| `scenario_growth` | string | | Growth scenario. Overrides `scenario_name` | Currently unused |
+| `scenario_year` | integer | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
+| `aggregation_scale` |	string | | | For internal use: ignore! I'll remove it later
+| `aggregation_method` | string | | | For internal use: ignore! I'll remove it later
+| `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+| `exposure_type` | string | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. |
+| `impact_type` | string | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
+| `units_hazard` | string | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
+| `units_exposure` | string | | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
+| `units_warming` |	string | | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+| `measure_ids`	| list of integers | `[]` | IDs of adaptation measures to be implemented (see above). |
