@@ -6,6 +6,7 @@
         "value": "extreme_heat",
         "unit_type": "temperature",
         "default": true,
+        "location_options": [],
         "scenario_options": {
           "year": {
             "description": "Scenario year",
@@ -350,7 +351,8 @@
         "location_options": [
           "Havana",
           "Saint Kitts and Nevis",
-          "Port-au-Prince, Haiti"
+          "Port-au-Prince, Haiti",
+          "Jamaica"
         ],
         "scenario_options": {
           "year": {
