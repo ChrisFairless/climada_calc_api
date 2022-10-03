@@ -92,3 +92,17 @@ A query is structured using the `CostBenefitRequest` schema, documented below an
 | `units_exposure` | string | | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
 | `units_warming` |	string | | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
 | `measure_ids`	| list of integers | `[]` | IDs of adaptation measures to be implemented (see above). |
+
+
+### Returned values
+
+A CostBenefit is communicated as several components.
+- `current_climate`: The baseline (2020) climate risk
+- `growth_change`: The change in risk from the baseline year to the analysis year due to economic or population growth
+- `climate_change`: The change in risk from the baseline year to the analysis year due to climate change
+- `future_climate`: The climate risk in the analysis year. Equal to the sum of the previous three values.
+- `measure_change`: The change in risk in the analysis year from introducing the selected adaptation measure.
+
+The response is a `CostBenefitJobSchema` object. The response is contained in its `response.data` properties, where the `text` property has the generated text and the `chart` contains the data.
+
+The above components are contained in the chart's `items` property. Each is a `BreakdownBar` schema with the following properties:
