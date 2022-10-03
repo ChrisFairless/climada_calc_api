@@ -368,24 +368,24 @@ def _api_timeline_impact_poll(request, job_id: uuid.UUID = None):
 
 
 
-@_api.post("/measures",
-           tags=["adaptation measures"],
-           response=schemas.MeasureSchema,
-           summary="Create an adaptation measure")
-def _api_adaptation_measure_create(request, measure_request: schemas.CreateMeasureSchema):
-    d = measure_request.__dict__
-    d['id'] = uuid.uuid4()
-    d['user_generated'] = True
-    return schemas.MeasureSchema(**d)
-
-
-@_api.get("/measures",
-          tags=["adaptation measures"],
-          response=List[schemas.MeasureSchema],
-          summary="Get adaptation measures")
-def _api_adaptation_measure_get(request, measure_request: schemas.MeasureRequestSchema = None):
-    measures = models.Measure.objects.filter(user_generated=False)
-    return [schemas.MeasureSchema(**m.__dict__) for m in measures]
+# @_api.post("/measures",
+#            tags=["adaptation measures"],
+#            response=schemas.MeasureSchema,
+#            summary="Create an adaptation measure")
+# def _api_adaptation_measure_create(request, measure_request: schemas.CreateMeasureSchema):
+#     d = measure_request.__dict__
+#     d['id'] = uuid.uuid4()
+#     d['user_generated'] = True
+#     return schemas.MeasureSchema(**d)
+#
+#
+# @_api.get("/measures",
+#           tags=["adaptation measures"],
+#           response=List[schemas.MeasureSchema],
+#           summary="Get adaptation measures")
+# def _api_adaptation_measure_get(request, measure_request: schemas.MeasureRequestSchema = None):
+#     measures = models.Measure.objects.filter(user_generated=False)
+#     return [schemas.MeasureSchema(**m.__dict__) for m in measures]
 
 
 @_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas_geocoding.GeocodePlaceList,
