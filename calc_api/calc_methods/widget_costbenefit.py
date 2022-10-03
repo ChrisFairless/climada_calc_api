@@ -34,12 +34,23 @@ def get_default_measures(measure_id=None, hazard_type: str = None, exposure_type
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     data.standardise()
     data_dict = data.dict()
-
     if data.measure_ids and len(data.measure_ids) > 0:
         measures = get_default_measures(measure_id=data.measure_ids)
         measures = [m.to_dict() for m in measures]
         data_dict.update({'measures': measures})
         costbenefit.check_valid_measures(data_dict['measures'], data.hazard_type, data.exposure_type)
+    else:
+        measures = []
+
+    if len(measures) == 0:
+        valid_measures = get_default_measures(hazard_type=data.hazard_type, exposure_type=data.exposure_type)
+        raise ValueError(f'No valid measures found for the cost-benefit calculation'
+                         f'\nMeasure ids provided: {data.measure_ids}'
+                         f'\nHazard type: {data.hazard_type}'
+                         f'\nExposure type: {data.exposure_type}'
+                         f'\nValid IDs: {[m.id for m in valid_measures]}'
+                         f'\nValid names: {[m.name for m in valid_measures]}'
+                         )
 
     request = schemas.CostBenefitRequest(**data_dict)
 

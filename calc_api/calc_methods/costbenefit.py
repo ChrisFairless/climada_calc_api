@@ -87,10 +87,6 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
         #     })
         #     job_config_list = job_config_list.append(all_measures)
 
-    # print("JOB CONFIG")
-    # print(str(job_config_list))
-    # print(json.dumps(job_config_list))
-
     chord_header = [
         get_impact_by_return_period.s(
             country=request.geocoding.country_id,
@@ -135,10 +131,6 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     future_year = max(df['exp_year'])
     haz_type = df['hazard_type'][0]
     rp = df['hazard_rp'][0]
-
-    print("RESULTS TABLE")
-    for row in df.iterrows():
-        print(str(row))
 
     # This could maybe be simpler, but I was having bugs with celery duplicating jobs so we're copying the timeline code
     # Come back and simplify this maybe, but not now.
