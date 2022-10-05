@@ -206,7 +206,8 @@ def query_place(s):
         query = f'https://nominatim.openstreetmap.org/search?q={s}&format=json'
         response = requests.get(query).json()
     elif conf.GEOCODER == 'maptiler':
-        query = f'https://api.maptiler.com/geocoding/{s}.json?key={MAPTILER_KEY}'
+        language = 'en'
+        query = f'https://api.maptiler.com/geocoding/{s}.json?language={language}&key={MAPTILER_KEY}'
         response = requests.get(query, headers={'Origin': 'reca-api.herokuapp.com'}).json()['features']
     else:
         ValueError(
@@ -245,6 +246,7 @@ def get_place_hierarchy(s, exact=True):
     return GeocodePlaceList(data=out)
 
 
+# TODO there's no real reason to have this separate from query_place is there?
 def geocode_autocomplete(s):
     response = query_place(s)
     if not response:
