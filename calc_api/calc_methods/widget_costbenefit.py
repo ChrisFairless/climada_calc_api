@@ -18,12 +18,16 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
-def get_default_measures(measure_id=None, hazard_type: str = None, exposure_type: str = None):
+def get_default_measures(measure_id, slug: str = None, hazard_type: str = None, exposure_type: str = None):
     measures = models.Measure.objects.filter(user_generated=False)
     if measure_id:
         if isinstance(measure_id, (int, float)):
             measure_id = [measure_id]
         measures = measures.filter(id__in=tuple(measure_id))
+    if slug:
+        if isinstance(slug, str):
+            slug = [slug]
+        measures = measures.filter(slug__in=tuple(slug))
     if hazard_type:
         measures = measures.filter(hazard_type=hazard_type)
     if exposure_type:

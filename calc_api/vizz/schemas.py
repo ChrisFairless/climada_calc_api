@@ -425,8 +425,8 @@ class TimelineJobSchema(JobSchema):
 class MeasureSchema(ModelSchema):
     class Config:
         model = Measure
-        model_fields = ["id", "name", "description", "hazard_type", "exposure_type", "cost_type", "cost", "annual_upkeep",
-                        "priority", "percentage_coverage", "percentage_effectiveness", "is_coastal",
+        model_fields = ["id", "name", "slug", "description", "hazard_type", "exposure_type", "cost_type", "cost",
+                        "annual_upkeep", "priority", "percentage_coverage", "percentage_effectiveness", "is_coastal",
                         "max_distance_from_coast", "hazard_cutoff", "return_period_cutoff", "hazard_change_multiplier",
                         "hazard_change_constant", "cobenefits", "units_currency", "units_hazard", "units_distance",
                         "user_generated"]

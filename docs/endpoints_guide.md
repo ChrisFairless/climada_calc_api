@@ -21,6 +21,7 @@ Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-
 | Parameter | Type | Used | Description |
 | --------- | ---- | ---- | ----------- | 
 | `measure_ids` | integer | Y | ID(s) of the measures you are requesting, if known |
+| `slug` | string | Y | The sligs of the measures you are requesting, if known |
 | `hazard_type` | string | Y | Filter to measures for a particular hazard. Currently one of `tropical_cyclone` or `extreme_heat` |
 | `exposure_type` | string | Y | Filter to measures for a particular type of exposures. Currently one of `economic_assets` or `people` |
 
@@ -50,6 +51,7 @@ A `MeasureSchema` has the following properties. It was designed as a schema wher
 | -------- | ---- | ------- | ----------- |------ |
 | `id` | integer | | Measure ID | Looks like this isn't currently returned - I'll update that today!! Use 12 for testing. |
 | `name` | string | | Measure name | |
+| `slug` | string | | A slug for the measure name | |
 | `description`	| string | | A text description of the measure | |
 | `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat` |
 | `exposure_type` | string | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people` |

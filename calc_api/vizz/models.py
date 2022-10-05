@@ -49,6 +49,7 @@ class Cobenefit(models.Model):
 
 class Measure(models.Model):
     name = models.TextField()
+    slug = models.TextField()
     description = models.TextField(null=True)
     hazard_type = models.TextField()
     exposure_type = models.TextField(null=True)
