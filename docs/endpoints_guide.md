@@ -16,15 +16,27 @@ Parameters for the request are passed in the URL and are used to filter the retu
 
 Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_default_measures.
 
+*Note: the 'Used' column for tables in this document specifies whether the parameter is needed for the (expected) API widgets.*
 
-| Parameter | Type | Description |
-| --------- | ---- | ------- |
-| `measure_ids` | integer | ID(s) of the measures you are requesting, if known |
-| `hazard_type` | string | Filter to measures for a particular hazard. Currently one of `tropical_cyclone` or `extreme_heat` |
-| `exposure_type` | string | Filter to measures for a particular type of exposures. Currently one of `economic_assets` or `people` |
+| Parameter | Type | Used | Description |
+| --------- | ---- | ---- | ----------- | 
+| `measure_ids` | integer | Y | ID(s) of the measures you are requesting, if known |
+| `hazard_type` | string | Y | Filter to measures for a particular hazard. Currently one of `tropical_cyclone` or `extreme_heat` |
+| `exposure_type` | string | Y | Filter to measures for a particular type of exposures. Currently one of `economic_assets` or `people` |
 
 *Note: I think we will need to add units information to this request*
 
+#### Example query
+
+```
+curl --location --request GET 'https://reca-api.herokuapp.com/rest/vizz/widgets/default-measures?hazard_type=tropical_cyclone&exposure_type=economic_assets' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "hazard_type": "tropical_cyclone",
+    "location_name": "Saint Kitts and Nevis",
+    "units_area": "km2"
+}'
+```
 
 ### Returned values
 
@@ -72,37 +84,72 @@ Queries are made to the `/rest/vizz/widgets/cost-benefit` POST endpoint availabl
 A query is structured using the `CostBenefitRequest` schema, documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_widget_costbenefit_submit
 
 
-| Parameter | Type | Default | Description | Notes |
-| --------- | ---- | ------- | ----------- |------ |
-| `location_name` |	string | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
-| `location_scale` | string | | Information on the type of location. Determined automatically if not provided | No need to provide this |
-| `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
-| `location_poly` |	list of list of numbers | `[]` | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
-| `geocoding` | GeocodePlace schema | None | For internal use: ignore! I'll remove it later. | |
-| `scenario_name` | string | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
-| `scenario_climate` | string | | Climate scenario. Overrides `scenario_name` | Currently unused |
-| `scenario_growth` | string | | Growth scenario. Overrides `scenario_name` | Currently unused |
-| `scenario_year` | integer | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
-| `aggregation_scale` |	string | | | For internal use: ignore! I'll remove it later
-| `aggregation_method` | string | | | For internal use: ignore! I'll remove it later
-| `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
-| `exposure_type` | string | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. |
-| `impact_type` | string | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
-| `units_hazard` | string | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
-| `units_exposure` | string | | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
-| `units_warming` |	string | | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
-| `measure_ids`	| list of integers | `[]` | IDs of adaptation measures to be implemented (see above). |
+| Parameter | Type | Used | Default | Description | Notes |
+| --------- | ---- | ---- | ------- | ----------- |------ |
+| `location_name` |	string | Y | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
+| `location_scale` | string | N | | Information on the type of location. Determined automatically if not provided | No need to provide this |
+| `location_code` |	string | N | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
+| `location_poly` |	list of list of numbers | N | `[]` | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
+| `geocoding` | GeocodePlace schema | N | None | For internal use: ignore! I'll remove it later. | |
+| `scenario_name` | string | Y | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
+| `scenario_climate` | string | N | | Climate scenario. Overrides `scenario_name` | Currently unused |
+| `scenario_growth` | string | N | | Growth scenario. Overrides `scenario_name` | Currently unused |
+| `scenario_year` | integer | Y | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
+| `aggregation_scale` |	string | N | | | For internal use: ignore! I'll remove it later
+| `aggregation_method` | string | N | | | For internal use: ignore! I'll remove it later
+| `hazard_type` | string | Y | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+| `exposure_type` | string | Y | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. |
+| `impact_type` | string | Y | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
+| `units_hazard` | string | Y | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
+| `units_exposure` | string | Y | | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
+| `units_warming` |	string | Y | | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+| `measure_ids`	| list of integers | Y | `[]` | IDs of adaptation measures to be implemented (see above). |
 
+#### Example query
+
+```
+curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets/cost-benefit' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "hazard_type": "tropical_cyclone",
+    "hazard_rp": "10",
+    "exposure_type": "economic_assets",
+    "impact_type": "economic_impact",
+    "scenario_name": "ssp585",
+    "scenario_year": 2080,
+    "location_name": "Jamaica",
+    "measure_ids": [74],
+    "units_hazard": "ms",
+    "units_exposure": "dollars",
+    "units_warming": "celsius"
+}'
+```
 
 ### Returned values
 
 A CostBenefit is communicated as several components.
-- `current_climate`: The baseline (2020) climate risk
-- `growth_change`: The change in risk from the baseline year to the analysis year due to economic or population growth
-- `climate_change`: The change in risk from the baseline year to the analysis year due to climate change
-- `future_climate`: The climate risk in the analysis year. Equal to the sum of the previous three values.
-- `measure_change`: The change in risk in the analysis year from introducing the selected adaptation measure.
+- `current_climate`: The baseline (2020) climate impacts
+- `growth_change`: The change in impacts from the baseline year to the analysis year due to economic or population growth
+- `climate_change`: The change in impacts from the baseline year to the analysis year due to climate change
+- `future_climate`: The climate impacts in the analysis year. Equal to the sum of the previous three values.
+- `measure_change`: The change in impacts in the analysis year from introducing the selected adaptation measure.
+- `measure_climate`: The climate impacts in the analysis year with the adaptation measure applied. Equal to the sum of the previous two values.
 
 The response is a `CostBenefitJobSchema` object. The response is contained in its `response.data` properties, where the `text` property has the generated text and the `chart` contains the data.
 
 The above components are contained in the chart's `items` property. Each is a `BreakdownBar` schema with the following properties:
+
+| Property | Type | Description | Notes |
+| -------- | ---- | ----------- |------ |
+| `year_label` | string | The year the analysis is valid for | | 
+| `year_value` | integer | The year the analysis is valid for | | 
+| `temperature`	| number | Currently unused | |
+| `current_climate` | number | The calculated baseline impacts in the present day (2020) climate | |
+| `growth_change` |	number | The change in impacts from the baseline to the year of analysis due to economic/population growth | | 
+| `climate_change` | number | The change in impacts from the baseline to the year of analysis due to climate change (includes compounding effects of growth) | | 
+| `future_climate` | number | The calculated impacts for the year of analysis. Equal to the sum of the previous three properties | |
+| `measure_names` | list of strings | The names of the measures applied | Currently limited to one measure |
+| `measure_change` | list of numbers | The change in impacts for the analysis year when each adaptation measure is applied | Currently limited to one measure | 
+| `measure_climate` | list of numbers | The calculated impact for the analysis year when each adaptation measure is applied. Equal to the sum of the previous two properties. | Currently limited to one measure |
+| `combined_measure_change` | number | The change in impacts for the analysis year when all adaptation measures are applied | Not in use | 
+| `combined_measure_climate` | number | The calculated impact for the analysis year when all adaptation measures are applied | Not in use |
