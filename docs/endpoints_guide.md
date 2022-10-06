@@ -1,5 +1,82 @@
 # Quick guide to the Vizzuality endpoints
 
+## Risk Timelines
+
+The `risk-timeline` endpoint returns all the information needed to construct a bar chart breaking down risk between 2020 and 2080 for the selected setup. The chart has a bar for each year of the timeline (2020, 2040, 2060, 2080) and each bar is broken down into components: the 2020 baseline risk, and changes due to population/economic growth and changes due to climate change.
+
+Note that changes can be positive or negative depending on the hazard and location.
+
+### Query structure
+
+Queries are made to the `/rest/vizz/widgets/risk-timeline` POST endpoint available at https://reca-api.herokuapp.com/rest/vizz/widgets/risk-timeline.
+
+Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_risk_timeline_submit.
+
+*Note: the 'Used' column for tables in this document tells you whether the parameter is needed for the (expected) API widgets.*
+
+| Parameter | Type | Used | Default | Description | Notes |
+| --------- | ---- | ---- | ------- | ----------- |------ |
+| `location_name` |	string | Y | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
+| `location_scale` | string | N | | Information on the type of location. Determined automatically if not provided | No need to provide this |
+| `location_code` |	string | N | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
+| `location_poly` |	list of list of numbers | N | `[]` | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
+| `geocoding` | GeocodePlace schema | N | None | For internal use: ignore! I'll remove it later. | |
+| `scenario_name` | string | Y | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
+| `scenario_climate` | string | N | | Climate scenario. Overrides `scenario_name` | Currently unused |
+| `scenario_growth` | string | N | | Growth scenario. Overrides `scenario_name` | Currently unused |
+| `scenario_year` | integer | Y | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
+| `aggregation_scale` |	string | N | | | For internal use: ignore! I'll remove it later
+| `aggregation_method` | string | N | | | For internal use: ignore! I'll remove it later
+| `hazard_type` | string | Y | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+| `hazard_rp` | string | Y | | The return period to use for this analysis. | This will be retired soon, replacing all calculations with average annual impact instead |
+| `exposure_type` | string | Y | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. |
+| `impact_type` | string | Y | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
+| `units_hazard` | string | Y | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
+| `units_exposure` | string | Y | | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
+| `units_warming` |	string | Y | | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+
+#### Example request
+
+This is a request for a risk timeline showing the expected impacts from a 1-in-10 year tropical cyclone on economic assets in Havana in 2080 under the RCP 8.5 warming scenario and the SSP5 population growth scenario.
+
+```
+curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets/risk-timeline' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "hazard_type": "tropical_cyclone",
+    "hazard_rp": "10",
+    "exposure_type": "economic_assets",
+    "impact_type": "economic_impact",
+    "scenario_name": "ssp585",
+    "scenario_year": 2080,
+    "location_name": "Havana, Cuba",
+    "units_hazard": "ms",
+    "units_exposure": "dollars",
+    "units_warming": "celsius"
+}'
+```
+
+### Response
+
+The response is a `TimelineWidgetJobSchema` object, which you can see at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_widget_risk_timeline_poll.
+
+The response is contained in its `response.data` properties, where the `text` property has the generated text and the `chart` contains the data.
+
+The chart gives legend information and a series of bars, contained in the chart's `items` property. Each is a `BreakdownBar` schema with the following properties:
+
+*Note: the BreakdownBar class has other properties, but they are not used in this response*
+
+| Property | Type | Description | Notes |
+| -------- | ---- | ----------- |------ |
+| `year_label` | string | The year the analysis is valid for | | 
+| `year_value` | integer | The year the analysis is valid for | | 
+| `temperature`	| number | Currently unused | |
+| `current_climate` | number | The calculated baseline impacts in the present day (2020) climate | |
+| `growth_change` |	number | The change in impacts from the baseline to the year of analysis due to economic/population growth | | 
+| `climate_change` | number | The change in impacts from the baseline to the year of analysis due to climate change (includes compounding effects of growth) | | 
+| `future_climate` | number | The calculated impacts for the year of analysis. Equal to the sum of the previous three properties | |
+
+
 ## Adaptation measures
 
 The RECA tool provides data on a number of out-of-the-box adaptation measures for illustration purposes.
@@ -16,8 +93,6 @@ Parameters for the request are passed in the URL and are used to filter the retu
 
 Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_default_measures.
 
-*Note: the 'Used' column for tables in this document specifies whether the parameter is needed for the (expected) API widgets.*
-
 | Parameter | Type | Used | Description |
 | --------- | ---- | ---- | ----------- | 
 | `measure_ids` | integer | Y | ID(s) of the measures you are requesting, if known |
@@ -29,14 +104,10 @@ Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-
 
 #### Example query
 
+This is a request for pre-defined adaptation measures for tropical cyclones affecting economic assets.
+
 ```
-curl --location --request GET 'https://reca-api.herokuapp.com/rest/vizz/widgets/default-measures?hazard_type=tropical_cyclone&exposure_type=economic_assets' \
---header 'Content-Type: text/plain' \
---data-raw '{
-    "hazard_type": "tropical_cyclone",
-    "location_name": "Saint Kitts and Nevis",
-    "units_area": "km2"
-}'
+curl --location --request GET 'https://reca-api.herokuapp.com/rest/vizz/widgets/default-measures?hazard_type=tropical_cyclone&exposure_type=economic_assets'
 ```
 
 ### Returned values
@@ -100,6 +171,7 @@ A query is structured using the `CostBenefitRequest` schema, documented below an
 | `aggregation_scale` |	string | N | | | For internal use: ignore! I'll remove it later
 | `aggregation_method` | string | N | | | For internal use: ignore! I'll remove it later
 | `hazard_type` | string | Y | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+| `hazard_rp` | string | Y | | The return period to use for this analysis. | |
 | `exposure_type` | string | Y | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. |
 | `impact_type` | string | Y | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
 | `units_hazard` | string | Y | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
@@ -108,6 +180,10 @@ A query is structured using the `CostBenefitRequest` schema, documented below an
 | `measure_ids`	| list of integers | Y | `[]` | IDs of adaptation measures to be implemented (see above). |
 
 #### Example query
+
+This is a request for a cost-benefit analysis for introducing mangroves in Jamaica, looking at the benefits out to 2080 under the RCP 8.5 climate and SSP 5 growth scenarios.
+
+*Note: the measure IDs will keep changing (at the moment), so you'll need to query them each time.*
 
 ```
 curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets/cost-benefit' \
@@ -137,7 +213,9 @@ A CostBenefit is communicated as several components.
 - `measure_change`: The change in impacts in the analysis year from introducing the selected adaptation measure.
 - `measure_climate`: The climate impacts in the analysis year with the adaptation measure applied. Equal to the sum of the previous two values.
 
-The response is a `CostBenefitJobSchema` object. The response is contained in its `response.data` properties, where the `text` property has the generated text and the `chart` contains the data.
+The response is a `CostBenefitJobSchema` object which you can see at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_widget_risk_timeline_poll.
+
+The response is contained in its `response.data` properties, where the `text` property has the generated text and the `chart` contains the data.
 
 The above components are contained in the chart's `items` property. Each is a `BreakdownBar` schema with the following properties:
 
