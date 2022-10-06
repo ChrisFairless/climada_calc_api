@@ -1,6 +1,13 @@
 # Quick guide to the Vizzuality endpoints
 
-## Risk Timelines
+In this document:
+- Risk timeline
+- Adaptation measures
+- Cost-benefit
+- Social vulnerability
+
+
+## Risk Timeline
 
 The `risk-timeline` endpoint returns all the information needed to construct a bar chart breaking down risk between 2020 and 2080 for the selected setup. The chart has a bar for each year of the timeline (2020, 2040, 2060, 2080) and each bar is broken down into components: the 2020 baseline risk, and changes due to population/economic growth and changes due to climate change.
 
@@ -14,26 +21,35 @@ Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-
 
 *Note: the 'Used' column for tables in this document tells you whether the parameter is needed for the (expected) API widgets.*
 
-| Parameter | Type | Used | Default | Description | Notes |
-| --------- | ---- | ---- | ------- | ----------- |------ |
-| `location_name` |	string | Y | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
-| `location_scale` | string | N | | Information on the type of location. Determined automatically if not provided | No need to provide this |
-| `location_code` |	string | N | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
-| `location_poly` |	list of list of numbers | N | `[]` | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
-| `geocoding` | GeocodePlace schema | N | None | For internal use: ignore! I'll remove it later. | |
-| `scenario_name` | string | Y | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
-| `scenario_climate` | string | N | | Climate scenario. Overrides `scenario_name` | Currently unused |
-| `scenario_growth` | string | N | | Growth scenario. Overrides `scenario_name` | Currently unused |
-| `scenario_year` | integer | Y | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
-| `aggregation_scale` |	string | N | | | For internal use: ignore! I'll remove it later
-| `aggregation_method` | string | N | | | For internal use: ignore! I'll remove it later
-| `hazard_type` | string | Y | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
-| `hazard_rp` | string | Y | | The return period to use for this analysis. | This will be retired soon, replacing all calculations with average annual impact instead |
-| `exposure_type` | string | Y | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. |
-| `impact_type` | string | Y | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
-| `units_hazard` | string | Y | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
-| `units_exposure` | string | Y | | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
-| `units_warming` |	string | Y | | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+#### Required parameters 
+
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- | -------- | ------- | ----------- |------ |
+| `location_name` |	string | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
+| `scenario_name` | string | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
+| `scenario_year` | integer | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
+| `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+| `hazard_rp` | string | | The return period to use for this analysis. | |
+| `impact_type` | string | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
+| `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (default tropical cyclones) or `celsius` (default heat). To be expanded |
+| `units_exposure` | string | See notes | Units the exposure is measured in | Currently one of `dollars` (default economic assets) or `people` (default people). To be expanded |
+| `units_warming` |	string | `celsius` | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+
+#### Not required parameters
+
+These are not needed for the current functioning of the API.
+
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- | ------- | ----------- |------ |
+| `location_scale` | string | | Information on the type of location. Determined automatically if not provided | |
+| `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | |
+| `location_poly` |	list of list of numbers | | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | |
+| `geocoding` | GeocodePlace schema | None | For internal use: ignore! I'll remove it later. | |
+| `scenario_climate` | string | Climate scenario. Overrides `scenario_name` | |
+| `scenario_growth` | string | | Growth scenario. Overrides `scenario_name` | |
+| `aggregation_scale` |	string | | | For internal use: ignore! I'll remove it later
+| `aggregation_method` | string | | | For internal use: ignore! I'll remove it later
+
 
 #### Example request
 
@@ -85,20 +101,20 @@ The measures should be used to populate the web tool's selection of available ad
 
 ### Query structure
 
-*Note: the pre-populated database currently only has data for the measure with ID 12 (Mangroves, for tropical cyclones and economic assets)* 
-
 Queries are made to the `/rest/vizz/widgets/default-measures` POST endpoint available at https://reca-api.herokuapp.com/rest/vizz/widgets/cost-benefit.
 
 Parameters for the request are passed in the URL and are used to filter the returned adaptation measures. If no parameters are passed, all available measures are returned.
 
 Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_default_measures.
 
-| Parameter | Type | Used | Description |
-| --------- | ---- | ---- | ----------- | 
-| `measure_ids` | integer | Y | ID(s) of the measures you are requesting, if known |
-| `slug` | string | Y | The sligs of the measures you are requesting, if known |
-| `hazard_type` | string | Y | Filter to measures for a particular hazard. Currently one of `tropical_cyclone` or `extreme_heat` |
-| `exposure_type` | string | Y | Filter to measures for a particular type of exposures. Currently one of `economic_assets` or `people` |
+Each parameter applies a filter to the queried measures. If no parameters are supplied, all available measures are returned.
+
+| Parameter | Type | Description |
+| --------- | ---- | ----------- | 
+| `measure_ids` | integer | ID(s) of the measures you are requesting, if known |
+| `slug` | string | The slugs of the measures you are requesting, if known |
+| `hazard_type` | string | Filter to measures for a particular hazard. Currently one of `tropical_cyclone` or `extreme_heat` |
+| `exposure_type` | string | Filter to measures for a particular type of exposures. Currently one of `economic_assets` or `people` |
 
 *Note: I think we will need to add units information to this request*
 
@@ -140,7 +156,7 @@ A `MeasureSchema` has the following properties. It was designed as a schema wher
 | `hazard_change_constant` | number | 0 | The measure reduces the hazard intensity by this amount | |
 | `cobenefits` | list of Cobenefits | `[]` | A list of Cobenefit objects. | Still being implemented |
 | `units_currency` | string | `dollars` | Currency | Currently always dollars
-| `units_hazard` | string | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
+| `units_hazard` | string | | Units the hazard is measured in | Currently one of `ms` (default tropical cyclones) or `celsius` (default heat). To be expanded |
 | `units_distance` | string | `kilometres` | Units to measure distance | Currently `kilometres`. To be expanded. |
 | user_generated |	boolean | `false` | Flag for custom measures | Not enabled: always `false` |
 
@@ -156,28 +172,35 @@ Queries are made to the `/rest/vizz/widgets/cost-benefit` POST endpoint availabl
 
 A query is structured using the `CostBenefitRequest` schema, documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_widget_costbenefit_submit
 
+### Required parameters
 
-| Parameter | Type | Used | Default | Description | Notes |
-| --------- | ---- | ---- | ------- | ----------- |------ |
-| `location_name` |	string | Y | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
-| `location_scale` | string | N | | Information on the type of location. Determined automatically if not provided | No need to provide this |
-| `location_code` |	string | N | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
-| `location_poly` |	list of list of numbers | N | `[]` | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
-| `geocoding` | GeocodePlace schema | N | None | For internal use: ignore! I'll remove it later. | |
-| `scenario_name` | string | Y | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
-| `scenario_climate` | string | N | | Climate scenario. Overrides `scenario_name` | Currently unused |
-| `scenario_growth` | string | N | | Growth scenario. Overrides `scenario_name` | Currently unused |
-| `scenario_year` | integer | Y | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
-| `aggregation_scale` |	string | N | | | For internal use: ignore! I'll remove it later
-| `aggregation_method` | string | N | | | For internal use: ignore! I'll remove it later
-| `hazard_type` | string | Y | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
-| `hazard_rp` | string | Y | | The return period to use for this analysis. | |
-| `exposure_type` | string | Y | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. |
-| `impact_type` | string | Y | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
-| `units_hazard` | string | Y | | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
-| `units_exposure` | string | Y | | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
-| `units_warming` |	string | Y | | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
-| `measure_ids`	| list of integers | Y | `[]` | IDs of adaptation measures to be implemented (see above). |
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- | ------- | ----------- |------ |
+| `location_name` |	string | | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
+| `scenario_name` | string | | Combined climate and growth scenario | One of `historical`, `rcp126`, `rcp245`, `rcp585` | 
+| `scenario_year` | integer | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
+| `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+| `hazard_rp` | string | | The return period to use for this analysis. | |
+| `exposure_type` | string | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. Will be removed in future. |
+| `impact_type` | string | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
+| `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
+| `units_exposure` | string | See notes | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
+| `units_warming` |	string | `celsius` | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+| `measure_ids`	| list of integers | | IDs of adaptation measures to be implemented (see above). |
+
+### Not required parameters
+
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- | ------- | ----------- |------ |
+| `location_scale` | string | | Information on the type of location. Determined automatically if not provided | |
+| `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | |
+| `location_poly` |	list of list of numbers | `[]` | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | |
+| `geocoding` | GeocodePlace schema | None | For internal use: ignore! I'll remove it later. | |
+| `scenario_climate` | string | | Climate scenario. Overrides `scenario_name` | |
+| `scenario_growth` | string | | Growth scenario. Overrides `scenario_name` | |
+| `aggregation_scale` |	string | | | For internal use: ignore! I'll remove it later |
+| `aggregation_method` | string | | | For internal use: ignore! I'll remove it later |
+
 
 #### Example query
 
@@ -233,3 +256,5 @@ The above components are contained in the chart's `items` property. Each is a `B
 | `measure_climate` | list of numbers | The calculated impact for the analysis year when each adaptation measure is applied. Equal to the sum of the previous two properties. | Currently limited to one measure |
 | `combined_measure_change` | number | The change in impacts for the analysis year when all adaptation measures are applied | Not in use | 
 | `combined_measure_climate` | number | The calculated impact for the analysis year when all adaptation measures are applied | Not in use |
+
+
