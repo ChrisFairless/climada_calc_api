@@ -420,8 +420,8 @@ def _api_geocode_autocomplete(request, query):
     response=List[schemas.MeasureSchema],
     summary="Get predefined adaptation measures"
 )
-def _api_default_measures(request, measure_ids: int = None, slug: str = None, hazard_type: str = None, exposure_type: str = None):
-    return widget_costbenefit.get_default_measures(measure_ids, slug, hazard_type, exposure_type)
+def _api_default_measures(request, measure_id: int = None, slug: str = None, hazard_type: str = None, exposure_type: str = None):
+    return widget_costbenefit.get_default_measures(measure_id, slug, hazard_type, exposure_type)
 
 
 @_api.post(
