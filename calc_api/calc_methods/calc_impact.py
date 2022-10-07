@@ -135,14 +135,14 @@ def get_impact_by_return_period(
 
     if isinstance(return_periods, list):
         return_periods = np.array(return_periods)
-    if isinstance(return_periods, (int, float)):
+    if isinstance(return_periods, (int, float, str)):
         return_periods = np.array([return_periods])
 
     return_periods_aai = np.array([rp == 'aai' for rp in return_periods])
     return_periods_int = ~return_periods_aai
 
     if any(return_periods_int):
-        rps = [int(rp) for rp in return_periods[return_periods_int]]
+        rps = [int(rp) for i, rp in enumerate(return_periods) if return_periods_int[i]]
 
     if aggregation_scale:
         if aggregation_scale == 'all':
@@ -161,6 +161,10 @@ def get_impact_by_return_period(
                     "return_per": list(freq_curve.return_per[ix]),
                     "impact": list(freq_curve.impact[ix])
                 }
+            else:
+                if save_frequency_curve:
+                    LOGGER.warning("Can't save a frequency curve for an AAI calculation. Ignoring.")
+                    freq_curve_dict = None
         else:
             raise ValueError("Can't yet deal with aggregation scales that aren't 'all'.")
 
@@ -181,6 +185,7 @@ def get_impact_by_return_period(
 
 
     # TODO should this be a separate celery job? with the (admittedly large) result above cached?
+    # The code here hasn't been used operationally ... activate with care
     if any(return_periods_aai):
         imp_rp_aai = imp.eai_exp
     else:

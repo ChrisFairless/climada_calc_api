@@ -46,7 +46,6 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
         'economic_growth': False,
         'measures': None,
         'hazard_type': request.hazard_type,
-        'hazard_rp': str(request.hazard_rp),
         'impact_type': request.impact_type,
         'units_exposure': request.units_exposure,
         'units_warming': request.units_warming,
@@ -92,7 +91,7 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
         get_impact_by_return_period.s(
             country=request.geocoding.country_id,
             hazard_type=request.hazard_type,
-            return_periods=request.hazard_rp,
+            return_periods='aai',
             exposure_type=request.exposure_type,
             impact_type=request.impact_type,
             scenario_name=request.scenario_name,
@@ -103,7 +102,7 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
             exposure_year=job_config['exp_year'],
             location_poly=request.location_poly,
             aggregation_scale='all',
-            save_frequency_curve=True
+            save_frequency_curve=False
         )
         for job_config in job_config_list
     ]
@@ -127,6 +126,7 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
         job_config_list[i]['impact'] = impacts_list[i][0]['value']
 
     df = pd.DataFrame(job_config_list)
+    df['hazard_rp'] = 'aai'
     df['impact'] = pd.Series([np.array(impact) for impact in df['impact']])
 
     future_year = max(df['exp_year'])

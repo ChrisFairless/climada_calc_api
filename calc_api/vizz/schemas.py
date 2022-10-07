@@ -460,7 +460,6 @@ class CreateMeasureSchema(ModelSchema):
 class CostBenefitRequest(AnalysisSchema):
     hazard_type: str
     hazard_event_name: str = None
-    hazard_rp: int = None
     exposure_type: str = None
     impact_type: str = None
     measures: List[dict] = None
@@ -487,8 +486,6 @@ class CostBenefitResponse(Schema):
 
 class CostBenefitJobSchema(JobSchema):
     response: CostBenefitResponse = None
-
-
 
 
 class ExposureBreakdownRequest(PlaceSchema):
