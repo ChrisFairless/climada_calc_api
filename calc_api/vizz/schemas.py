@@ -213,7 +213,9 @@ class MapImpactClimateRequest(AnalysisSchema):
 
     def standardise(self):
         super().standardise()
-        if not self.exposure_type:
+        if self.exposure_type:
+            enums.validate_exposure_type_from_impact_type(self.exposure_type, self.impact_type)
+        else:
             self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
@@ -228,7 +230,9 @@ class MapImpactEventRequest(AnalysisSchema):
 
     def standardise(self):
         super().standardise()
-        if not self.exposure_type:
+        if self.exposure_type:
+            enums.validate_exposure_type_from_impact_type(self.exposure_type, self.impact_type)
+        else:
             self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
@@ -380,7 +384,9 @@ class TimelineImpactRequest(PlaceSchema):
                 self.scenario_climate,
                 None)
 
-        if not self.exposure_type:
+        if self.exposure_type:
+            enums.validate_exposure_type_from_impact_type(self.exposure_type, self.impact_type)
+        else:
             self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 

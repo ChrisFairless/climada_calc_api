@@ -80,6 +80,19 @@ def exposure_type_from_impact_type(impact_type):
     return IMPACT_TO_EXPOSURE[impact_type]
 
 
+def validate_exposure_type_from_impact_type(exposure_type, impact_type):
+    if impact_type not in IMPACT_TO_EXPOSURE.keys():
+        raise ValueError('impact type must be one of: ' + str(list(IMPACT_TO_EXPOSURE.keys())))
+    if exposure_type not in IMPACT_TO_EXPOSURE.values():
+        raise ValueError('exposure type must be one of: ' + str(list(IMPACT_TO_EXPOSURE.values())))
+    if IMPACT_TO_EXPOSURE[impact_type] != exposure_type:
+        raise ValueError(f'The requested exposure and impact types are not compatible. '
+                         f'\nImpact requested: {impact_type}'
+                         f'\nExposure requested: {exposure_type}'
+                         f'\nExposure compatible with this impact: {IMPACT_TO_EXPOSURE[impact_type]}')
+
+
+
 def get_option_parameter(options_path: List[str], parameter):
     options = get_options()
     for opt in options_path:
