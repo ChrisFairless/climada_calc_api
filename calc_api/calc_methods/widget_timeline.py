@@ -5,6 +5,7 @@ import numpy as np
 from calc_api.vizz import schemas, schemas_widgets
 from calc_api.vizz.text_timeline import generate_timeline_widget_text
 from calc_api.calc_methods.calc_exposure import get_exposure
+from calc_api.vizz import enums
 from calc_api.calc_methods.timeline import set_up_timeline_calculations, combine_impacts_to_timeline, combine_impacts_to_timeline_no_celery
 
 
@@ -31,6 +32,7 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
     # )
     data_dict = data.dict()
     data_dict.update({'hazard_rp': all_rps})
+    data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data_dict['impact_type'])
     request = schemas.TimelineImpactRequest(**data_dict)
 
     exposure_total_signature = get_exposure.s(

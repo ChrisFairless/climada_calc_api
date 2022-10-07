@@ -6,7 +6,7 @@ from celery import chain, chord, group, shared_task
 from celery_singleton import Singleton
 
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz import schemas, schemas_widgets
+from calc_api.vizz import schemas, schemas_widgets, enums
 import calc_api.vizz.models as models
 from calc_api.vizz.text_costbenefit import generate_costbenefit_widget_text
 from calc_api.calc_methods import costbenefit
@@ -39,6 +39,7 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     LOGGER.debug('Starting cost-benefit widget calculation')
     data.standardise()
     data_dict = data.dict()
+    data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data.impact_type)
     if data.measure_ids and len(data.measure_ids) > 0:
         measures = get_default_measures(measure_id=data.measure_ids)
         measures = [m.to_dict() for m in measures]
@@ -48,11 +49,11 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
         measures = []
 
     if len(measures) == 0:
-        valid_measures = get_default_measures(hazard_type=data.hazard_type, exposure_type=data.exposure_type)
         raise ValueError(f'No valid measures found for the cost-benefit calculation'
+        valid_measures = get_default_measures(hazard_type=data.hazard_type, exposure_type=data_dict['exposure_type'])
                          f'\nMeasure ids provided: {data.measure_ids}'
                          f'\nHazard type: {data.hazard_type}'
-                         f'\nExposure type: {data.exposure_type}'
+                         f'\nExposure type: {data_dict["exposure_type"]}'
                          f'\nValid IDs: {[m.id for m in valid_measures]}'
                          f'\nValid names: {[m.name for m in valid_measures]}'
                          )

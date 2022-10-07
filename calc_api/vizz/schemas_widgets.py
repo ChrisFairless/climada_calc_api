@@ -24,16 +24,10 @@ class GeneratedText(Schema):
 class TimelineWidgetRequest(schemas.AnalysisSchema):
     hazard_type: str
     hazard_rp: str
-    exposure_type: str
     impact_type: str
     units_hazard: str = None
     units_exposure: str = None
     units_warming: str = None
-
-    def standardise(self):
-        super().standardise()
-        if not self.exposure_type:
-            self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
 class TimelineWidgetData(Schema):
@@ -54,8 +48,13 @@ class TimelineWidgetJobSchema(schemas.JobSchema):
 # CostBenefit
 # ===========
 
-class CostBenefitWidgetRequest(TimelineWidgetRequest):
+class CostBenefitWidgetRequest(schemas.AnalysisSchema):
+    hazard_type: str
+    impact_type: str
     measure_ids: List[int] = None
+    units_hazard: str = None
+    units_exposure: str = None
+    units_warming: str = None
 
 
 class CostBenefitWidgetData(Schema):
