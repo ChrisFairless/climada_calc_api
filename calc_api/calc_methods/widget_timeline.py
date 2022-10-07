@@ -113,7 +113,6 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
     generated_text = generate_timeline_widget_text(
         hazard_type=config['hazard_type'],
         location=config['location_name'],
-        location_type=config['location_scale'],
         scenario=config['scenario_name'],
         impact_type=config['impact_type'],
         exposure_units=config['units_exposure'],

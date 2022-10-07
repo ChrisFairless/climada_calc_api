@@ -10,7 +10,6 @@ from calc_api.vizz.enums import get_currency_options
 def generate_timeline_widget_text(
         hazard_type,
         location,
-        location_type,
         scenario,
         impact_type,
         exposure_units,
@@ -30,7 +29,6 @@ def generate_timeline_widget_text(
     overview_text = _generate_timeline_widget_overview_text(
         hazard_type,
         location,
-        location_type,
         exposure_units,
         value_present,
         affected_present,
@@ -69,7 +67,6 @@ def generate_timeline_widget_text(
 def _generate_timeline_widget_overview_text(
         hazard_type,
         location,
-        location_type,
         exposure_units,
         value_present,
         affected_present,
@@ -78,7 +75,7 @@ def _generate_timeline_widget_overview_text(
     if len(return_period) > 1:
         return_period = return_period[0]
     text_overview = Template(
-        "$location is a $location_type with approximately {{exposure_value}}. "
+        "$location has approximately {{exposure_value}}. "
         "Under current climatic conditions, $proportional_qualifier {{affected_present}} "
         "may be exposed to $event_description $return_period_description. "
     )
@@ -96,7 +93,6 @@ def _generate_timeline_widget_overview_text(
 
     final_text = text_overview.substitute(
         location=location.title(),
-        location_type=location_type,
         proportional_qualifier=proportional_qualifier,
         event_description=event_description,
         return_period_description=return_period_description
