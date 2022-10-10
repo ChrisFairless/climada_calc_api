@@ -105,7 +105,8 @@ def location_from_name(location_name):
         out = osmnames_to_schema(place.json())
 
     elif conf.GEOCODER == 'maptiler':
-        url = f'https://api.maptiler.com/geocoding/{location_name}.json?key={MAPTILER_KEY}'
+        language = 'en'
+        url = f'https://api.maptiler.com/geocoding/{location_name}.json?language={language}&key={MAPTILER_KEY}'
         place = requests.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO move this to a setting?
         place = place.json()['features'][0]
         out = maptiler_to_schema(place)
