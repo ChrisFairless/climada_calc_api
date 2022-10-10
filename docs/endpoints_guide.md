@@ -61,7 +61,6 @@ curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets
 --data-raw '{
     "hazard_type": "tropical_cyclone",
     "hazard_rp": "10",
-    "exposure_type": "economic_assets",
     "impact_type": "economic_impact",
     "scenario_name": "ssp585",
     "scenario_year": 2080,
@@ -181,7 +180,6 @@ A query is structured using the `CostBenefitRequest` schema, documented below an
 | `scenario_year` | integer | | Year to produce statistics for | One of `2020`, `2040`, `2060`, `2080` |
 | `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
 | `hazard_rp` | string | | The return period to use for this analysis. | |
-| `exposure_type` | string | | The exposure type the measure applies to. | Currently one of `economic_assets` or `people`. Provided by the `options` endpoint. Will be removed in future. |
 | `impact_type` | string | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
 | `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
 | `units_exposure` | string | See notes | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
@@ -214,7 +212,6 @@ curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets
 --data-raw '{
     "hazard_type": "tropical_cyclone",
     "hazard_rp": "10",
-    "exposure_type": "economic_assets",
     "impact_type": "economic_impact",
     "scenario_name": "ssp585",
     "scenario_year": 2080,
