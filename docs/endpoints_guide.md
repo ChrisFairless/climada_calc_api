@@ -255,3 +255,61 @@ The above components are contained in the chart's `items` property. Each is a `B
 | `combined_measure_climate` | number | The calculated impact for the analysis year when all adaptation measures are applied | Not in use |
 
 
+
+## Social Vulnerability
+
+The `social-vulnerabilty` endpoint gives information about the relative wealth of the population of interest. It returns all the information needed to construct a bar chart of the relative wealth distribution by decile.
+
+### Query structure
+
+Queries are made to the `/rest/vizz/widgets/social-vulnerability` POST endpoint available at https://reca-api.herokuapp.com/rest/vizz/widgets/social-vulnerability.
+
+Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_social_vulnerability_submit.
+
+#### Required parameters
+
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- |  ------- | ----------- |------ |
+| `location_name` |	string |  | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
+| `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+| `units_hazard` | string | | Desired units for the hazard | Currently just `ms` (tropical cyclones) or `celsius` (heat). To be retired soon - we don't need this detail |
+| `units_area` | string | `km2` | Desired units for the area | Currently just `km2`. To be retired soon - we don't need this detail |
+
+#### Not required parameters
+| `location_scale` | string | | Information on the type of location. Determined automatically if not provided | No need to provide this |
+| `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
+| `location_poly` |	list of list of numbers | | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
+| `geocoding` | GeocodePlace schema | None | For internal use: ignore! I'll remove it later. | |
+
+
+#### Example request
+
+This is a request for social vulnerability showing the expected impacts from a 1-in-10 year tropical cyclone on economic assets in Havana in 2080 under the RCP 8.5 warming scenario and the SSP5 population growth scenario.
+
+```
+curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets/social-vulnerability' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "hazard_type": "tropical_cyclone",
+    "location_name": "Jamaica",
+    "units_hazard": "ms",
+    "units_area": "km2"
+}'
+```
+
+### Response
+
+The response is a `SocialVulnerabiltyWidgetJobSchema` object, which you can see at https://reca-api.herokuapp.com/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_widget_social_vulnerability_poll.
+
+The response is contained in its `response.data` properties, where the `text` property contains the generated text and the `chart` contains the data.
+
+The chart gives legend information and a bar chart in its `items` property (note that `items` is a list of length 1: I would like to add a data for a second bar chart here. Let's discuss). Each bar chart is an `ExposureBreakdownBar` schema. The schema contains (up to) ten bars, giving the number of people living in each of the ten social vulnerability groups.
+
+The `ExposureBreakdownBar` has this structure:
+
+| Property | Type | Description | Notes |
+| -------- | ---- | ----------- |------ |
+| `label` | string | The chart title | | 
+| `location_scale` | string | | Currently unused | 
+| `category_labels`	| list of strings | Vulnerability deciles, always in the range '1' to '10' | Bars with no data are currently missed out |
+| `values` | list of numbers | Each decile's population in the area of interest | |
