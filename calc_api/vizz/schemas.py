@@ -68,7 +68,6 @@ class JobSchema(Schema):
         )
 
 
-
 class FileSchema(Schema):
     file_name: str
     file_format: str = None
@@ -121,7 +120,8 @@ class PlaceSchema(Schema):
         self.location_poly = geocoded.poly
         self.geocoding = geocoded
 
-        if hasattr(self, 'hazard_type'):
+        # Check units make sense
+        if hasattr(self, 'units_hazard'):
             haz_unit_type = get_option_parameter(['data', 'filters', self.hazard_type], parameter="unit_type")
             allowed_units = get_option_choices(['data', 'units', haz_unit_type], get_value='value')
             if self.units_hazard not in allowed_units:
@@ -130,7 +130,7 @@ class PlaceSchema(Schema):
                                  f'\nUnits provided: {self.units_hazard} '
                                  f'\nAllowed units: {allowed_units}')
 
-        if hasattr(self, 'exposure_type'):
+        if hasattr(self, 'units_exposure'):
             exp_unit_type = get_option_choices(
                 options_path=['data', 'filters', self.hazard_type, "scenario_options", "impact_type"],
                 parameters={'exposure_type': self.exposure_type},
