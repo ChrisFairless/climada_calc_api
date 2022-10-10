@@ -32,6 +32,14 @@ class Job(models.Model):
             self.update(expires_at=new_expiry)
 
 
+class CountryData(models.Model):
+    country_name = models.CharField(max_length=60)
+    country_iso3alpha = models.CharField(max_length=3)
+    population = models.IntegerField()
+    socvuln_min = models.FloatField()
+    socvuln_max = models.FloatField()
+
+
 # TODO see if this can be combined with the above somehow through smarter celery management.
 class JobLog(models.Model):
     job_hash = models.TextField(primary_key=True, db_index=True)
