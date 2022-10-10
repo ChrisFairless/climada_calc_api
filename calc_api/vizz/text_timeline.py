@@ -176,6 +176,7 @@ def _generate_timeline_widget_with_change_text(
         future_year,
 ):
 
+    # TODO future year should probably be a formattable value here (and elsewhere)
     text_change_description = Template(
         "The $affected_description is projected to "
         "$growth_description by $future_year under the $scenario scenario. "
@@ -284,12 +285,13 @@ def _generate_timeline_widget_frequency_intensity_text(
     location_name_short = location_name.split(',')[0]
 
     text_freq_intense_change = Template(
-        'In $location $event_description $frequency_change_desc $intensity_change_desc by {{future_year}}. $rp_text'
+        'In $location $event_description $frequency_change_desc $intensity_change_desc by $future_year. $rp_text'
     )
-    values = [schemas_widgets.TextVariable(
-        key='frequency_change',
-        value=100 * frequency_change,
-        units='%'
+    values = [
+        schemas_widgets.TextVariable(
+            key='frequency_change',
+            value=100 * frequency_change,
+            units='%'
         )]
 
     if frequency_change > 0.15:
