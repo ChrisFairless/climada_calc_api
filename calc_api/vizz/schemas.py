@@ -92,7 +92,7 @@ class ColorbarLegend(Schema):
 class CategoricalLegendItem(Schema):
     label: str
     slug: str
-    value: str
+    value: str = None
 
 
 class CategoricalLegend(Schema):

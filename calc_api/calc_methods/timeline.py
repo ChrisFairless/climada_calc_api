@@ -153,9 +153,9 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
             title=title,
             units=job_config_list[0]['units_exposure'],
             items=[
-                schemas.CategoricalLegendItem(label="Risk today", slug="risk_today", value=example_value),
-                schemas.CategoricalLegendItem(label="+ growth", slug="plus_growth", value=example_value),
-                schemas.CategoricalLegendItem(label="+ climate change", slug="plus_climate_change", value=example_value)
+                schemas.CategoricalLegendItem(label="Risk today", slug="current_climate"),
+                schemas.CategoricalLegendItem(label="+ growth", slug="growth_change"),
+                schemas.CategoricalLegendItem(label="+ climate change", slug="climate_change")
             ]
         )
 
