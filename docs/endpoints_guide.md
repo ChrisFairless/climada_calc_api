@@ -45,6 +45,7 @@ These are not needed for the current functioning of the API.
 | `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | |
 | `location_poly` |	list of list of numbers | | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | |
 | `geocoding` | GeocodePlace schema | None | For internal use: ignore! I'll remove it later. | |
+| `exposure_type` | string | | The exposure to be used. | Inferred from `impact_type`: no need to use. One of `economic_assets`, `people`. |
 | `scenario_climate` | string | Climate scenario. Overrides `scenario_name` | |
 | `scenario_growth` | string | | Growth scenario. Overrides `scenario_name` | |
 | `aggregation_scale` |	string | | | For internal use: ignore! I'll remove it later

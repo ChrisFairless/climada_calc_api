@@ -25,6 +25,7 @@ class TimelineWidgetRequest(schemas.AnalysisSchema):
     hazard_type: str
     hazard_rp: str
     impact_type: str
+    exposure_type: str = None
     units_hazard: str = None
     units_exposure: str = None
     units_warming: str = None
