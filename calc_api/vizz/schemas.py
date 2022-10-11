@@ -120,6 +120,7 @@ class PlaceSchema(Schema):
         self.location_poly = geocoded.poly
         self.geocoding = geocoded
 
+
         # Check units make sense
         if hasattr(self, 'units_hazard'):
             haz_unit_type = get_option_parameter(['data', 'filters', self.hazard_type], parameter="unit_type")
@@ -130,24 +131,33 @@ class PlaceSchema(Schema):
                                  f'\nUnits provided: {self.units_hazard} '
                                  f'\nAllowed units: {allowed_units}')
 
-        if hasattr(self, 'units_exposure'):
+        if hasattr(self, 'units_exposure') and hasattr(self, 'hazard_type'):
+            if hasattr(self, 'exposure_type') and self.exposure_type is not None:
+                exposure_type = self.exposure_type
+            elif hasattr(self, 'impact_type'):
+                exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
+            else:
+                raise ValueError('Validation not prepared here for no exposure or impact data. Fix.')
+
             exp_unit_type = get_option_choices(
                 options_path=['data', 'filters', self.hazard_type, "scenario_options", "impact_type"],
-                parameters={'exposure_type': self.exposure_type},
+                parameters={'exposure_type': exposure_type},
                 get_value='unit_type'
             )
             exp_unit_type = list(set(exp_unit_type))
             if len(exp_unit_type) != 1:
-                raise ValueError(f'Expected exactly one exposure to match with the setup '
-                                 f'{self.hazard_type} (hazard type) and'
-                                 f'{self.exposure_type} (exposure type). '
-                                 f'Matches: {exp_unit_type}')
+                raise ValueError(f'Expected exactly one exposure type to match with the setup: '
+                                 f'\nHazard type: {self.hazard_type}'
+                                 f'\nExposure type: {exposure_type}. '
+                                 f'\nMatches: {exp_unit_type}')
             allowed_units = get_option_choices(['data', 'units', exp_unit_type[0]], get_value='value')
             if self.units_exposure not in allowed_units:
                 raise ValueError(f'Units incompatible with exposure in {type(self).__name__}. '
-                                 f'\nExposure type: {self.exposure_type} '
+                                 f'\nExposure type: {exposure_type} '
                                  f'\nUnits provided: {self.units_exposure} '
                                  f'\nAllowed units: {allowed_units}')
+        elif hasattr('self', 'units_exposure'):
+            raise ValueError('There should be a check for valide exposures somehow here.')
 
         if hasattr(self, 'units_warming'):
             allowed_units = get_option_choices(['data', 'units', 'temperature'], get_value='value')
@@ -498,6 +508,7 @@ class ExposureBreakdownRequest(PlaceSchema):
 
 class ExposureBreakdownBar(Schema):
     label: str
+    location_scale: str = None
     category_labels: List[str]
     values: List[float]
 

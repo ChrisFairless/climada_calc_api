@@ -97,8 +97,6 @@ class BiodiversityWidgetJobSchema(schemas.JobSchema):
 
 class SocialVulnerabilityWidgetRequest(schemas.PlaceSchema):
     hazard_type: str
-    units_hazard: str = None
-    units_area: str = None
 
 
 class SocialVulnerabilityWidgetData(Schema):
