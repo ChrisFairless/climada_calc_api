@@ -1,4 +1,3 @@
-from millify import millify
 import datetime as dt
 import uuid
 from pathlib import Path
@@ -218,7 +217,7 @@ def make_dummy_exceedance_hazard(job_id=None):
         title="Example hazard exceedance curve",
         description='Dummy data for a hazard exceedance curve',
         units_intensity='m/s',
-        example_value='22.2',
+        example_value=22.2,
         location="/exceedance/hazard?job_id=" + str(job_id),
         job_id=job_id
     )
@@ -231,7 +230,7 @@ def make_dummy_exceedance_impact(job_id=None):
         title="Example impact exceedance curve",
         description='Dummy data for a risk/impact exceedance curve',
         units_intensity='people affected',
-        example_value='121 k',
+        example_value=121000,
         location="/exceedance/impact?job_id=" + str(job_id),
         job_id=job_id
     )
@@ -251,7 +250,7 @@ def make_dummy_exposure_breakdown(job_id=None):
             legend=schemas.CategoricalLegend(
                 title="Vulnerability distributions compared to the national average",
                 units="proportion",
-                items=[schemas.CategoricalLegendItem(label=str(i), slug=str(i), value="0.25") for i in range(1, 11)]
+                items=[schemas.CategoricalLegendItem(label=str(i), slug=str(i), value=0.25) for i in range(1, 11)]
             )
         ),
         metadata={
@@ -302,15 +301,15 @@ def make_dummy_timeline(
                 schemas.CategoricalLegendItem(
                     label="Current climate",
                     slug="current_climate",
-                    value=millify(scale, precision=1)),
+                    value=scale),
                 schemas.CategoricalLegendItem(
                     label="Population change",
                     slug="population_change",
-                    value=millify(scale, precision=1)),
+                    value=scale),
                 schemas.CategoricalLegendItem(
                     label="Climate change",
                     slug="climate_change",
-                    value=millify(scale, precision=1))
+                    value=scale)
             ],
         ),
         units_warming=units_warming,
