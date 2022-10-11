@@ -164,8 +164,10 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     # else:
     #     combined_measure_change = None
 
-    if job_config_list[0]['units_exposure'] not in ['dollars', 'people']:
-        raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {job_config_list[0]["units_exposure"]}')
+    units_exposure = job_config_list[0]['units_exposure']
+    units_warming = job_config_list[0]['units_warming']
+    if units_exposure not in ['dollars', 'people']:
+        raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {units_exposure}')
 
     # Create a list of bar items for each return period
     costbenefit_breakdown = schemas.BreakdownBar(
@@ -205,33 +207,36 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     title = f'Components of {haz_type} climate risk{title_measure_description}: {rp_description}'
 
     description = f'Components of {haz_type} risk with adaptation: {rp_description}'  # TODO expand
-    example_value = millify(max(df['impact']))
 
     legend_items = [
-            schemas.CategoricalLegendItem(label="Risk today", slug="risk_today", value=example_value),
-            schemas.CategoricalLegendItem(label="+ growth", slug="plus_growth", value=example_value),
-            schemas.CategoricalLegendItem(label="+ climate change", slug="plus_climate_change", value=example_value)
+            schemas.CategoricalLegendItem(label="Risk today", slug="current_climate", value=current_climate),
+            schemas.CategoricalLegendItem(label="change from growth", slug="growth_change", value=growth_change),
+            schemas.CategoricalLegendItem(label="change from climate change", slug="climate_change", value=climate_change)
     ]
     if measure_names:
         legend_items = legend_items + [
-            schemas.CategoricalLegendItem(label=f"+ adaptation: {m}", slug="plus_adaptation_{i}", value=example_value)
-            for m in measure_names
+            schemas.CategoricalLegendItem(
+                label=f"change from adaptation measure: {name}",
+                slug="adaptation_{i}",
+                value=impact)
+            for name, impact in zip(measure_names, measure_impacts)
         ]
+    # TODO add combined measures
     # legend_items = legend_items + [
     #     schemas.CategoricalLegendItem(label="+ combined measures", slug="plus_combined_measures", value=example_value)
     # ]
 
     legend = schemas.CategoricalLegend(
         title=title,
-        units=job_config_list[0]['units_exposure'],
+        units=units_exposure,
         items=legend_items
     )
 
     out_costbenefit = schemas.CostBenefit(
         items=[costbenefit_breakdown],
         legend=legend,
-        units_warming=job_config_list[0]['units_warming'],
-        units_response=job_config_list[0]['units_exposure']
+        units_warming=units_warming,
+        units_response=units_exposure
     )
 
     metadata = schemas.CostBenefitMetadata(
