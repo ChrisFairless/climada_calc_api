@@ -189,7 +189,36 @@ def get_exposure_from_api(
 def subset_exposure_extent(
         exp,
         location_poly,
-        buffer=150  # arcseconds
+        buffer=150,  # arcseconds
+        latlon_names=('latitude', 'longitude')
+):
+    df_query = _make_df_subset_query(exp.gdf, location_poly, buffer, latlon_names)
+    exp.set_gdf(gpd.GeoDataFrame(exp.gdf.query(df_query)))
+    if exp.gdf.shape[0] == 0:
+        raise ValueError('Subsetting the exposure went wrong: no exposure points found')
+
+    return exp
+
+
+def subset_dataframe_extent(
+        exp,
+        location_poly,
+        buffer=150,  # arcseconds
+        latlon_names=('latitude', 'longitude')
+):
+    df_query = _make_df_subset_query(exp, location_poly, buffer, latlon_names)
+    exp = pd.DataFrame(exp.query(df_query))
+    if exp.shape[0] == 0:
+        raise ValueError('Subsetting the exposure went wrong: no exposure points found')
+
+    return exp
+
+
+def _make_df_subset_query(
+        exp,
+        location_poly,
+        buffer,
+        latlon_names
 ):
     if len(location_poly) != 4:
         LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
@@ -200,14 +229,7 @@ def subset_exposure_extent(
     latmax = np.max([coord[0] for coord in location_poly]) + buffer_deg
     lonmax = np.max([coord[1] for coord in location_poly]) + buffer_deg
 
-    df_query = f'latitude >= {latmin} & \
-        latitude <= {latmax} & \
-        longitude >= {lonmin} & \
-        longitude <= {lonmax}'
-
-    exp.set_gdf(gpd.GeoDataFrame(exp.gdf.query(df_query)))
-
-    if exp.gdf.shape[0] == 0:
-        raise ValueError('Subsetting the exposure went wrong: no exposure points found')
-
-    return exp
+    return f'{latlon_names[0]} >= {latmin} & \
+        {latlon_names[0]} <= {latmax} & \
+        {latlon_names[1]} >= {lonmin} & \
+        {latlon_names[1]} <= {lonmax}'
