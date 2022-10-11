@@ -17,6 +17,7 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 def database_job(func, *args, **kwargs):
 
     args_dict = {str(i): a for i, a in enumerate(args)}
+    args_dict.update({'__name__': func.__name__})
     args_dict.update(kwargs)
     job_hash = get_hash(args_dict)
 
