@@ -176,7 +176,7 @@ CELERY_TASK_RESULT_EXPIRES = 10 * 60
 CELERY_IMPORTS = ['calc_api.vtest.ninja', 'calc_api.vizz.ninja']
 
 CELERY_SINGLETON_BACKEND_URL = os.environ.get('REDIS_URL') + '/0'
-CELERY_SINGLETON_LOCK_EXPIRY = 300
+CELERY_SINGLETON_LOCK_EXPIRY = 30
 
 
 # Geocoding
