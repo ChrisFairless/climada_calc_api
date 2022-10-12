@@ -9,6 +9,7 @@ conf = ClimadaCalcApiConfig()
 class GeocodePlace(Schema):
     """Response data provided in a geocoding query"""
     name: str
+    # TODO decide what the ID is for and use it consistently
     id: str
     scale: str = None   # -> Enum
     country: str = None

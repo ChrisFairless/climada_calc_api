@@ -30,11 +30,10 @@ def standardise_location(location_name=None, location_code=None, location_scale=
         raise ValueError("For now geocoding can't handle polygons. Sorry!")
 
     if location_scale in ['country', 'admin0']:
-        code = location_code if location_code else location_name
-        code = country_to_iso(code, representation='alpha3')
+        code = country_to_iso(location_name, representation='alpha3')
         return GeocodePlace(
             name=location_name,
-            id=code,
+            id=location_code if location_code else code,
             scale='country',
             country=location_name,
             country_id=code,
