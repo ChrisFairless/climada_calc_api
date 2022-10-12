@@ -9,8 +9,9 @@ from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz import schemas, schemas_widgets, enums
 import calc_api.vizz.models as models
 from calc_api.vizz.text_costbenefit import generate_costbenefit_widget_text
-from calc_api.calc_methods import costbenefit
+from calc_api.calc_methods import calc_costbenefit
 from calc_api.job_management.job_management import database_job
+from calc_api.job_management.standardise_schema import standardise_schema
 
 conf = ClimadaCalcApiConfig()
 
@@ -31,9 +32,10 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
     return [schemas.MeasureSchema(**m.__dict__) for m in measures]
 
 
+
+@standardise_schema
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     LOGGER.debug('Starting cost-benefit widget calculation')
-    data.standardise()
     data_dict = data.dict()
     data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data.impact_type)
     if data.measure_ids and len(data.measure_ids) > 0:
@@ -53,7 +55,7 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
 
     measures = [m[0].to_dict() for m in measures]
     data_dict.update({'measures': measures})
-    costbenefit.check_valid_measures(data_dict['measures'], data.hazard_type, data_dict['exposure_type'])
+    calc_costbenefit.check_valid_measures(data_dict['measures'], data.hazard_type, data_dict['exposure_type'])
 
     LOGGER.debug('Contructing cost-benefit request')
     request = schemas.CostBenefitRequest(**data_dict)
@@ -61,7 +63,7 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
 
 
     # from calc_api.calc_methods.timeline import set_up_timeline_calculations
-    job_config_list, chord_header = costbenefit.set_up_costbenefit_calculations(request)
+    job_config_list, chord_header = calc_costbenefit.set_up_costbenefit_calculations(request)
     callback = combine_impacts_to_costbenefit_widget.s(job_config_list=job_config_list)
 
     # with transaction.atomic():
@@ -75,7 +77,7 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
 @shared_task(base=Singleton)
 def combine_impacts_to_costbenefit_widget(impacts_list, job_config_list):
     LOGGER.debug('Combining impacts to costbenefit widget')
-    costbenefit_data = costbenefit.combine_impacts_to_costbenefit_no_celery(
+    costbenefit_data = calc_costbenefit.combine_impacts_to_costbenefit_no_celery(
         impacts_list=impacts_list,
         job_config_list=job_config_list
     )

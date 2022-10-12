@@ -14,7 +14,7 @@ from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.enums import get_year_options, get_rp_options
 from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_return_period
 from calc_api.calc_methods.colourmaps import Legend, PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
-from calc_api.vizz.util import options_return_period_to_description
+from calc_api.job_management import standardise_schema
 from calc_api.job_management.job_management import database_job
 
 conf = ClimadaCalcApiConfig()
@@ -23,7 +23,10 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
+# TODO get this working
 def costbenefit(request: schemas.CostBenefitRequest):
+    # For some worrying reason this throws an error when I use the @standardise_schema decorator
+    # but nothing uses this for now so it's ok?
     request.standardise()
     job_config_list, chord_header = set_up_costbenefit_calculations(request)
 

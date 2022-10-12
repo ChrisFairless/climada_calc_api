@@ -14,6 +14,7 @@ from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_re
 from calc_api.calc_methods.colourmaps import Legend, PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
 from calc_api.vizz.util import options_return_period_to_description
 from calc_api.job_management.job_management import database_job
+from calc_api.job_management.standardise_schema import standardise_schema
 
 conf = ClimadaCalcApiConfig()
 
@@ -36,9 +37,8 @@ def timeline_impact(request: schemas.TimelineImpactRequest):
     return out
 
 
+@standardise_schema
 def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
-    if not request.geocoding:
-        request.standardise()
     if request.scenario_name == 'historical':
         LOGGER.warning('Making a timeline calculation where all scenario components are historical')
     year_choices = get_year_options(request.hazard_type)

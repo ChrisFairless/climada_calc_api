@@ -109,16 +109,18 @@ class PlaceSchema(Schema):
     geocoding: schemas_geocoding.GeocodePlace = None   # TODO make this private somehow?
 
     def standardise(self):
-        geocoded = standardise_location(
-            location_name=self.location_name,
-            location_code=self.location_code,
-            location_scale=self.location_scale,
-            location_poly=self.location_poly)
-        self.location_name = geocoded.name
-        self.location_code = geocoded.id
-        self.location_scale = geocoded.scale
-        self.location_poly = geocoded.poly
-        self.geocoding = geocoded
+        # We assume that if all these values are filled in, then they are correct. This is probably fine.
+        if not all([self.location_name, self.location_scale, self.location_code, self.location_poly, self.geocoding]):
+            geocoded = standardise_location(
+                location_name=self.location_name,
+                location_code=self.location_code,
+                location_scale=self.location_scale,
+                location_poly=self.location_poly)
+            self.location_name = geocoded.name
+            self.location_code = geocoded.id
+            self.location_scale = geocoded.scale
+            self.location_poly = geocoded.poly
+            self.geocoding = geocoded
 
 
         # Check units make sense
