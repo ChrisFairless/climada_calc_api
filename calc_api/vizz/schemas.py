@@ -119,9 +119,9 @@ class PlaceSchema(Schema):
             self.location_name = geocoded.name
             self.location_code = geocoded.id
             self.location_scale = geocoded.scale
-            self.location_poly = geocoded.poly
             self.geocoding = geocoded
-
+            if not self.location_poly:
+                self.location_poly = geocoded.bbox
 
         # Check units make sense
         if hasattr(self, 'units_hazard'):

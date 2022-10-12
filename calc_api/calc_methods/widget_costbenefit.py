@@ -36,12 +36,15 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
 @standardise_schema
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     data_dict = data.dict()
+    if not data.location_poly:
+        data_dict['location_poly'] = data_dict['geocoding']['bbox']
     data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data.impact_type)
     if data.measure_ids and len(data.measure_ids) > 0:
         measures = [get_default_measures(measure_id=m_id) for m_id in data.measure_ids]
     else:
         measures = []
 
+    # TODO move this into a schema validation/standardise method
     if len(measures) == 0 or any([len(m) == 0 for m in measures]):
         valid_measures = get_default_measures(hazard_type=data.hazard_type, exposure_type=data_dict['exposure_type'])
         raise ValueError(f'Valid measures not found for the cost-benefit calculation'

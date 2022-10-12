@@ -139,10 +139,10 @@ def subset_hazard_extent(
         LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
 
     buffer_deg = buffer / (60 * 60)
-    latmin = np.min(coord[0] for coord in location_poly) - buffer_deg
-    lonmin = np.min(coord[1] for coord in location_poly) - buffer_deg
-    latmax = np.min(coord[0] for coord in location_poly) + buffer_deg
-    lonmax = np.max(coord[1] for coord in location_poly) + buffer_deg
+    latmin = np.min([coord[0] for coord in location_poly]) - buffer_deg
+    lonmin = np.min([coord[1] for coord in location_poly]) - buffer_deg
+    latmax = np.min([coord[0] for coord in location_poly]) + buffer_deg
+    lonmax = np.max([coord[1] for coord in location_poly]) + buffer_deg
 
     extent = (lonmin, lonmax, latmin, latmax)
 

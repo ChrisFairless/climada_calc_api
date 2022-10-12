@@ -185,7 +185,7 @@ def get_exposure_from_api(
     return exp
 
 
-# TODO make this work with a GeocodePlace object as well
+# TODO make this work with a GeocodePlace object as well?
 def subset_exposure_extent(
         exp,
         location_poly,
@@ -193,10 +193,9 @@ def subset_exposure_extent(
         latlon_names=('latitude', 'longitude')
 ):
     df_query = _make_df_subset_query(exp.gdf, location_poly, buffer, latlon_names)
-    exp.set_gdf(gpd.GeoDataFrame(exp.gdf.query(df_query)))
+    exp.gdf = gpd.GeoDataFrame(exp.gdf.query(df_query))
     if exp.gdf.shape[0] == 0:
         raise ValueError('Subsetting the exposure went wrong: no exposure points found')
-
     return exp
 
 
@@ -210,7 +209,6 @@ def subset_dataframe_extent(
     exp = pd.DataFrame(exp.query(df_query))
     if exp.shape[0] == 0:
         raise ValueError('Subsetting the exposure went wrong: no exposure points found')
-
     return exp
 
 
