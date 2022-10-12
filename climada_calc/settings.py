@@ -170,6 +170,7 @@ CELERY_REDIS_MAX_CONNECTIONS = 8
 CELERY_ACCEPT_CONTENT = ['application/json', 'application/text', 'application/x-python-serialize'] # TODO Fix content/serialisation!!!
 CELERY_TASK_SERIALIZER = 'pickle'  # TODO Get this working with json
 CELERY_RESULT_SERIALIZER = 'pickle'
+CELERYD_PREFETCH_MULTIPLIER = 1  # Don't assign jobs to workers until they are free (recommended when some jobs are long)
 CELERY_TASK_TIME_LIMIT = 5 * 60
 CELERY_TASK_RESULT_EXPIRES = 10 * 60
 CELERY_IMPORTS = ['calc_api.vtest.ninja', 'calc_api.vizz.ninja']
