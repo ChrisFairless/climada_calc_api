@@ -113,8 +113,7 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
     return job_config_list, chord_header
 
 
-@shared_task(base=Singleton)
-@database_job
+@shared_task()
 def combine_impacts_to_costbenefit(impacts_list, job_config_list):
     return combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list)
 

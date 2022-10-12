@@ -35,7 +35,6 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
 
 @standardise_schema
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
-    LOGGER.debug('Starting cost-benefit widget calculation')
     data_dict = data.dict()
     data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data.impact_type)
     if data.measure_ids and len(data.measure_ids) > 0:
@@ -57,10 +56,7 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     data_dict.update({'measures': measures})
     calc_costbenefit.check_valid_measures(data_dict['measures'], data.hazard_type, data_dict['exposure_type'])
 
-    LOGGER.debug('Contructing cost-benefit request')
     request = schemas.CostBenefitRequest(**data_dict)
-    LOGGER.debug(request.__dict__)
-
 
     # from calc_api.calc_methods.timeline import set_up_timeline_calculations
     job_config_list, chord_header = calc_costbenefit.set_up_costbenefit_calculations(request)
@@ -69,12 +65,11 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     # with transaction.atomic():
     res = chord(chord_header)(callback)
 
-    LOGGER.debug('Costbenefit calculation submitted')
     out = res.id
     return out
 
 
-@shared_task(base=Singleton)
+@shared_task()
 def combine_impacts_to_costbenefit_widget(impacts_list, job_config_list):
     LOGGER.debug('Combining impacts to costbenefit widget')
     costbenefit_data = calc_costbenefit.combine_impacts_to_costbenefit_no_celery(

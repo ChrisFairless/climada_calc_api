@@ -75,7 +75,7 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
     return out
 
 
-@shared_task(base=Singleton)
+@shared_task()
 def combine_impacts_to_timeline_widget(impacts_widget_data,
                                        job_config_list,
                                        report_year,
