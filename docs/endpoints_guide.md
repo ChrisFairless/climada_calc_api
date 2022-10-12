@@ -185,7 +185,7 @@ A query is structured using the `CostBenefitRequest` schema, documented below an
 | `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
 | `units_exposure` | string | See notes | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
 | `units_warming` |	string | `celsius` | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
-| `measure_ids`	| list of integers | | IDs of adaptation measures to be implemented (see above). |
+| `measure_ids`	| list of integers | | List of IDs of adaptation measures to be implemented (see above). |
 
 ### Not required parameters
 
@@ -304,7 +304,7 @@ The response is a `SocialVulnerabiltyWidgetJobSchema` object, which you can see 
 
 The response is contained in its `response.data` properties, where the `text` property contains the generated text and the `chart` contains the data.
 
-The chart gives legend information and a bar chart in its `items` property (note that `items` is a list of length 1: I would like to add a data for a second bar chart here. Let's discuss). Each bar chart is an `ExposureBreakdownBar` schema. The schema contains (up to) ten bars, giving the number of people living in each of the ten social vulnerability groups.
+The chart gives legend information and a bar chart in its `items` property (note that there are two `items`: the first is data for the location of interest, the second for the country it is in). Each gives a breakdown for a bar chart with the `ExposureBreakdownBar` schema. The schema contains (up to) ten bars, giving the proportion of people living in each of the ten social vulnerability groups.
 
 The `ExposureBreakdownBar` has this structure:
 
@@ -313,4 +313,4 @@ The `ExposureBreakdownBar` has this structure:
 | `label` | string | The chart title | | 
 | `location_scale` | string | | Currently unused | 
 | `category_labels`	| list of strings | Vulnerability deciles, always in the range '1' to '10' | Bars with no data are currently missed out |
-| `values` | list of numbers | Each decile's population in the area of interest | |
+| `values` | list of numbers | Each decile's proportional population in the area of interest (in the range 0 – 1) | |
