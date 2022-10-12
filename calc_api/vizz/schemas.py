@@ -4,6 +4,7 @@ from typing import List
 import datetime
 import uuid
 import json
+from time import sleep
 
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.models import Job, Measure
@@ -37,9 +38,8 @@ class JobSchema(Schema):
     @classmethod
     # TODO refactor so that location_root is a class attribute
     def from_task_id(cls, task_id, location_root):
-        # task = TaskResult.objects.get(task_id=task_id)
-        # response_schema = globals().copy()
-        # response_schema = response_schema.get(response_schema_name)
+        # Sometimes all the results will be cached, so waiting a fraction of a second will let the workers assemble them
+        sleep(0.5)
         task = app.AsyncResult(task_id)
         if task.ready():
             if task.successful():
