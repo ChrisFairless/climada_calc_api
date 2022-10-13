@@ -258,7 +258,7 @@ def geocode_autocomplete(s):
 
 
 def geocode_precalculated_locations():
-    return GeocodePlaceList(data=[GeocodePlace.from_location(place) for place in Location.objects.all()])
+    return GeocodePlaceList(data=[GeocodePlace(**place.__dict__) for place in Location.objects.all()])
 
 
 def bbox_to_wkt(bbox):
