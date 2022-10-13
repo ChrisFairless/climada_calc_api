@@ -3,12 +3,10 @@ import numpy as np
 from cache_memoize import cache_memoize
 from celery import shared_task
 from celery_singleton import Singleton
-import pandas as pd
+from shapely import wkt
 from typing import List
 
-from climada.hazard import Hazard
 from climada.util.api_client import Client
-import climada.util.coordinates as u_coord
 
 from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig
@@ -135,14 +133,17 @@ def subset_hazard_extent(
         location_poly,
         buffer=300      # arcseconds
 ):
-    if len(location_poly) != 4:
-        LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
+    if isinstance(location_poly, str):
+        location_poly = wkt.loads(location_poly)
+    if len(location_poly.exterior.coords[:]) - 1 != 4:
+        raise ValueError("API doesn't handle non-bounding box polygons yet")
 
     buffer_deg = buffer / (60 * 60)
-    latmin = np.min([coord[0] for coord in location_poly]) - buffer_deg
-    lonmin = np.min([coord[1] for coord in location_poly]) - buffer_deg
-    latmax = np.max([coord[0] for coord in location_poly]) + buffer_deg
-    lonmax = np.max([coord[1] for coord in location_poly]) + buffer_deg
+    lonmin, latmin, lonmax, latmax = location_poly.bounds
+    latmin = latmin - buffer_deg
+    lonmin = lonmin - buffer_deg
+    latmax = latmax + buffer_deg
+    lonmax = lonmax + buffer_deg
 
     extent = (lonmin, lonmax, latmin, latmax)
 

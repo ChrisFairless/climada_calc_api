@@ -7,6 +7,7 @@ import pandas as pd
 import geopandas as gpd
 from pathlib import Path
 from time import sleep
+from shapely import wkt
 
 from climada.entity.exposures import Exposures
 from climada.util.api_client import Client
@@ -52,9 +53,8 @@ def get_exposure(
         exp.gdf = exp.gdf[exp.gdf['value'] != 0]
 
     # TODO handle polygons, be sure it's not more efficient to make this another link of the chain
+
     if location_poly:
-        if len(location_poly) != 4:
-            raise ValueError("API doesn't handle polygons yet")
         exp = subset_exposure_extent(exp, location_poly)
 
     # TODO implement, consider splitting from the chain
@@ -193,6 +193,7 @@ def subset_exposure_extent(
         latlon_names=('latitude', 'longitude')
 ):
     df_query = _make_df_subset_query(exp.gdf, location_poly, buffer, latlon_names)
+
     exp.gdf = gpd.GeoDataFrame(exp.gdf.query(df_query))
     if exp.gdf.shape[0] == 0:
         raise ValueError('Subsetting the exposure went wrong: no exposure points found')
@@ -218,14 +219,22 @@ def _make_df_subset_query(
         buffer,
         latlon_names
 ):
-    if len(location_poly) != 4:
+    # In this tool location_poly and bbox are always stored as well-known text,
+    # except at the point of geometric operations:
+    if isinstance(location_poly, str):
+        location_poly = wkt.loads(location_poly)
+    if len(location_poly.exterior.coords[:]) - 1 != 4:
+        raise ValueError("Can't handle polygons to extract exposure data yet, provide a bounding box with length 4")
+
+    if len(location_poly.exterior.coords[:]) - 1 != 4:
         LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
 
     buffer_deg = buffer / (60 * 60)
-    latmin = np.min([coord[0] for coord in location_poly]) - buffer_deg
-    lonmin = np.min([coord[1] for coord in location_poly]) - buffer_deg
-    latmax = np.max([coord[0] for coord in location_poly]) + buffer_deg
-    lonmax = np.max([coord[1] for coord in location_poly]) + buffer_deg
+    lonmin, latmin, lonmax, latmax = location_poly.bounds
+    latmin = latmin - buffer_deg
+    lonmin = lonmin - buffer_deg
+    latmax = latmax + buffer_deg
+    lonmax = lonmax + buffer_deg
 
     return f'{latlon_names[0]} >= {latmin} & \
         {latlon_names[0]} <= {latmax} & \

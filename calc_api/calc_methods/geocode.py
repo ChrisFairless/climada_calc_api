@@ -4,6 +4,8 @@ from typing import List
 from ninja import Schema
 import os
 import re
+from shapely import wkt
+from shapely.geometry import Polygon
 
 from climada.util.coordinates import country_to_iso
 
@@ -127,7 +129,7 @@ def osmnames_to_schema(place):
         state=place['state'],
         country=place['country'],
         country_id=country_to_iso(place['country']),
-        bbox=bbox_to_poly(place['boundingbox'], as_dict=False)
+        bbox=bbox_to_wkt(place['boundingbox'])
     )
 
 
@@ -146,7 +148,7 @@ def maptiler_to_schema(place):
         state=_get_place_context_type(place, 'state'),
         country=country,
         country_id=country_iso3,
-        bbox=bbox_to_poly(place['bbox'], as_dict=False)
+        bbox=bbox_to_wkt(place['bbox'])
     )
 
 
@@ -260,12 +262,10 @@ def geocode_autocomplete(s):
     return GeocodePlaceList(data=suggestions)
 
 
-def bbox_to_poly(bbox, as_dict=True):
+def bbox_to_wkt(bbox):
     if len(bbox) != 4:
-        raise ValueError('Expected bbox to be length 4')
+        raise ValueError('Expected bbox to have four points')
     lat_list = [bbox[i] for i in [1, 3, 3, 1]]
     lon_list = [bbox[i] for i in [0, 0, 2, 2]]
-    if as_dict:
-        return [{'lat': lat, 'lon': lon} for lat, lon in zip(lat_list, lon_list)]
-    else:
-        return [[lat, lon] for lat, lon in zip(lat_list, lon_list)]
+    polygon = Polygon([[lon, lat] for lat, lon in zip(lat_list, lon_list)])
+    return polygon.wkt

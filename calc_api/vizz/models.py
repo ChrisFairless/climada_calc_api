@@ -40,7 +40,6 @@ class CountryData(models.Model):
     socvuln_max = models.FloatField()
 
 
-# TODO see if this can be combined with the above somehow through smarter celery management.
 class JobLog(models.Model):
     job_hash = models.TextField(primary_key=True, db_index=True)
     func = models.CharField(max_length=30)
@@ -78,6 +77,21 @@ class Measure(models.Model):
     units_hazard = models.TextField()
     units_distance = models.TextField()
     user_generated = models.BooleanField()
+
+
+class Location(models.Model):
+    name = models.TextField(primary_key=True)
+    # TODO decide what the ID is for and use it consistently
+    id = models.TextField()
+    scale = models.CharField(max_length=15, null=True)
+    country = models.CharField(max_length=60, null=True)
+    country_id = models.CharField(max_length=3, null=True)
+    admin1 = models.CharField(max_length=60, null=True)
+    admin1_id = models.CharField(max_length=15, null=True)
+    admin2 = models.CharField(max_length=60, null=True)
+    admin2_id = models.CharField(max_length=15, null=True)
+    bbox = models.TextField(null=True)
+    poly = models.TextField(null=True)
 
 
 class Hazard(models.Model):

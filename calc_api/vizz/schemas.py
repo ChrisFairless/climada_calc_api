@@ -105,7 +105,7 @@ class PlaceSchema(Schema):
     location_name: str = None
     location_scale: str = None
     location_code: str = None
-    location_poly: List[List[float]] = None
+    location_poly: str = None
     geocoding: schemas_geocoding.GeocodePlace = None   # TODO make this private somehow?
 
     def standardise(self):
