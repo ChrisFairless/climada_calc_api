@@ -401,10 +401,20 @@ def _api_exceedance_impact_poll(
     return {}
 
 
-@_api.get("/geocode/autocomplete", tags=["geocode"], response=schemas_geocoding.GeocodePlaceList,
+@_api.get("/geocode/autocomplete",
+          tags=["geocode"],
+          response=schemas_geocoding.GeocodePlaceList,
           summary="Get suggested locations from a string")
 def _api_geocode_autocomplete(request, query):
     return geocode.geocode_autocomplete(query)
+
+
+@_api.get("/geocode/reca_locations",
+          tags=["geocode"],
+          response=schemas_geocoding.GeocodePlaceList,
+          summary="Get list of locations that have precalculated data")
+def _api_geocode_precalculated_locations(request):
+    return geocode.geocode_precalculated_locations()
 
 
 #######################################

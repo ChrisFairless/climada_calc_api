@@ -12,6 +12,7 @@ from climada.util.coordinates import country_to_iso
 from climada_calc.settings import GEOCODE_URL, MAPTILER_KEY
 from calc_api.vizz.schemas_geocoding import GeocodePlaceList, GeocodePlace
 from calc_api.config import ClimadaCalcApiConfig
+from calc_api.vizz.models import Location
 from calc_api.vizz import schemas
 
 conf = ClimadaCalcApiConfig()
@@ -19,10 +20,6 @@ conf = ClimadaCalcApiConfig()
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
-
-COUNTRY_NAME_CORRECTIONS = {
-    'Ayiti': 'Haiti'
-}
 
 def standardise_location(location_name=None, location_code=None, location_scale=None, location_poly=None):
     if not location_name and not location_code:
@@ -171,8 +168,6 @@ def _maptiler_establish_country_from_place(place):
     else:
         country = _get_place_context_type(place, 'country')
         if country:
-            if country in COUNTRY_NAME_CORRECTIONS.keys():
-                country = COUNTRY_NAME_CORRECTIONS[country]
             try:
                 country_iso3 = country_to_iso(country)
             except LookupError as e:
@@ -260,6 +255,10 @@ def geocode_autocomplete(s):
     else:
         raise ValueError('GEOCODE must be one of osmnames, nominatim_web or maptiler')
     return GeocodePlaceList(data=suggestions)
+
+
+def geocode_precalculated_locations():
+    return GeocodePlaceList(data=[GeocodePlace.from_location(place) for place in Location.objects.all()])
 
 
 def bbox_to_wkt(bbox):
