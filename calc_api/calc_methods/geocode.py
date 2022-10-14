@@ -216,6 +216,9 @@ def query_place(s):
 
 
 def get_one_place(s, exact=True):
+    db_location = Location.objects.filter(name=s)
+    if len(db_location) == 1:
+        return GeocodePlaceList(data=[GeocodePlace(**db_location[0].__dict__)])
     response = query_place(s)
     if len(response) == 0:
         raise ValueError(f'Could not identify a place corresponding to {s}')
@@ -245,6 +248,9 @@ def get_place_hierarchy(s, exact=True):
 
 # TODO there's no real reason to have this separate from query_place is there?
 def geocode_autocomplete(s):
+    db_location = Location.objects.filter(name=s)
+    if len(db_location) == 1:
+        return GeocodePlaceList(data=[GeocodePlace(**db_location[0].__dict__)])
     response = query_place(s)
     if not response:
         return GeocodePlaceList(data=[])
