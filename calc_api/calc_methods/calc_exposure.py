@@ -8,6 +8,7 @@ import geopandas as gpd
 from pathlib import Path
 from time import sleep
 from shapely import wkt
+from shapely.geometry import Polygon
 
 from climada.entity.exposures import Exposures
 from climada.util.api_client import Client
@@ -19,6 +20,7 @@ from calc_api.vizz.enums import exposure_type_from_impact_type
 from calc_api.calc_methods.util import standardise_scenario
 from calc_api.vizz.enums import ScenarioGrowthEnum, ExposureTypeEnum, ApiExposureTypeEnum
 from calc_api.job_management.job_management import database_job
+from calc_api.calc_methods import util
 
 conf = ClimadaCalcApiConfig()
 
@@ -192,7 +194,7 @@ def subset_exposure_extent(
         buffer=150,  # arcseconds
         latlon_names=('latitude', 'longitude')
 ):
-    df_query = _make_df_subset_query(exp.gdf, location_poly, buffer, latlon_names)
+    df_query = _make_df_subset_query(location_poly, buffer, latlon_names)
 
     exp.gdf = gpd.GeoDataFrame(exp.gdf.query(df_query))
     if exp.gdf.shape[0] == 0:
@@ -206,7 +208,7 @@ def subset_dataframe_extent(
         buffer=150,  # arcseconds
         latlon_names=('latitude', 'longitude')
 ):
-    df_query = _make_df_subset_query(exp, location_poly, buffer, latlon_names)
+    df_query = _make_df_subset_query(location_poly, buffer, latlon_names)
     exp = pd.DataFrame(exp.query(df_query))
     if exp.shape[0] == 0:
         raise ValueError('Subsetting the exposure went wrong: no exposure points found')
@@ -214,20 +216,13 @@ def subset_dataframe_extent(
 
 
 def _make_df_subset_query(
-        exp,
         location_poly,
         buffer,
         latlon_names
 ):
     # In this tool location_poly and bbox are always stored as well-known text,
     # except at the point of geometric operations:
-    if isinstance(location_poly, str):
-        location_poly = wkt.loads(location_poly)
-    if len(location_poly.exterior.coords[:]) - 1 != 4:
-        raise ValueError("Can't handle polygons to extract exposure data yet, provide a bounding box with length 4")
-
-    if len(location_poly.exterior.coords[:]) - 1 != 4:
-        LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
+    location_poly = util.convert_to_polygon(location_poly)
 
     buffer_deg = buffer / (60 * 60)
     lonmin, latmin, lonmax, latmax = location_poly.bounds

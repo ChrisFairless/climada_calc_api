@@ -1,9 +1,11 @@
 import logging
+from shapely.geometry import Polygon
+from shapely import wkt
+
 from celery import shared_task
 from climada.util.coordinates import country_to_iso
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.enums import SCENARIO_LOOKUPS
-from calc_api.calc_methods.geocode import standardise_location
 
 conf = ClimadaCalcApiConfig()
 
@@ -28,63 +30,26 @@ def standardise_scenario(scenario_name=None, scenario_growth=None, scenario_clim
     return scenario_name, scenario_growth, scenario_climate
 
 
-# TODO merge this into the standardise_location method
-def country_iso_from_parameters(location_scale,
-                                location_code=None,
-                                location_name=None,
-                                location_poly=None,
-                                representation="alpha3"):
-    """
-    Decode location parameters to country codes to pass to the API
-
-    Parameters
-    ----------
-    location_scale: str
-        One of 'global', 'ISO3', 'country', 'admin0', 'admin1', 'admin2'
-    location_code: str
-        String representation of the location of interest as exact encoding (if known)
-    location_name: str
-        String representation of the location of interest
-    location_poly: str
-        Not yet implemented
-    representation: str
-        One of "alpha3", "alpha2", "numeric", "name"
-    """
-    # Identify ISO3 codes needed for query
-    if location_poly:
-        raise ValueError("API doesn't handle polygon queries yet")
-
-    if location_scale == "global":
-        raise ValueError("API doesn't handle global queries yet")  # TODO
-    elif location_scale in ['admin0', 'country']:
-        if location_code:
-            country_iso3alpha = country_to_iso(location_code, representation)
-            if country_iso3alpha is None:
-                raise ValueError(f'The location code did not match a country. ' +
-                                 f'Provided: {location_code}')
-            if country_iso3alpha != location_code:
-                raise Warning(f'The location code did not match its decoded ISO3 code. Did you mean location_name? ' +
-                              f' Provided: {location_code}  Derived: {country_iso3alpha}')
-        elif location_name:
-            country_iso3alpha = country_to_iso(location_name, representation)
-            if country_iso3alpha is None:
-                raise ValueError(f'The location name did not match a country. ' +
-                                 f'Provided: {location_name}')
+def convert_to_polygon(location_poly):
+    if isinstance(location_poly, list):
+        if isinstance(location_poly[0], list):
+            location_poly = Polygon(location_poly)
         else:
-            raise ValueError("API requires location_code or location_name data")  # TODO
-    else:
-        geocoded = standardise_location(
-            location_name=location_name,
-            location_code=location_code,
-            location_scale=location_scale,
-            location_poly=location_poly)
-        country_iso3alpha = geocoded.country_id
+            if len(location_poly) != 4:
+                raise ValueError(f'Could not read location polygon: {location_poly}')
+            else:
+                location_poly = bbox_to_wkt(location_poly)
+    if isinstance(location_poly, str):
+        location_poly = wkt.loads(location_poly)
+    if len(location_poly.exterior.coords[:]) - 1 != 4:
+        LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
+    return location_poly
 
-    if not isinstance(country_iso3alpha, list):
-        country_iso3alpha = [country_iso3alpha]
-
-    if len(country_iso3alpha) > 1:
-        raise ValueError("Can't handle multiple countries yet")
-
-    # TODO make this able to handle lists!!
-    return country_iso3alpha[0]
+def bbox_to_wkt(bbox):
+    if len(bbox) != 4:
+        raise ValueError('Expected bbox to have four points')
+    # TODO use climada utils to standardise around 180 degrees longitude
+    lat_list = [bbox[i] for i in [1, 3, 3, 1]]
+    lon_list = [bbox[i] for i in [0, 0, 2, 2]]
+    polygon = Polygon([[lon, lat] for lat, lon in zip(lat_list, lon_list)])
+    return polygon.wkt

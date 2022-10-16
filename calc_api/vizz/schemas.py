@@ -7,13 +7,14 @@ import json
 from time import sleep
 
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.models import Job, Measure
+from calc_api.vizz.models import JobLog, Measure
 from climada_calc import celery_app as app
 from calc_api.vizz import enums
 from calc_api.calc_methods.util import standardise_scenario
 from calc_api.calc_methods.geocode import standardise_location
 from calc_api.vizz import schemas_geocoding
 from calc_api.vizz.enums import get_option_choices, get_option_parameter
+from calc_api.calc_methods import util
 
 conf = ClimadaCalcApiConfig()
 
@@ -121,7 +122,7 @@ class PlaceSchema(Schema):
             self.location_scale = geocoded.scale
             self.geocoding = geocoded
             if not self.location_poly:
-                self.location_poly = geocoded.bbox
+                self.location_poly = util.bbox_to_wkt(geocoded.bbox)
 
         # Check units make sense
         if hasattr(self, 'units_hazard'):

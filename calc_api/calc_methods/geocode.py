@@ -1,10 +1,6 @@
 import requests
 import logging
-from typing import List
-from ninja import Schema
-import os
 import re
-from shapely import wkt
 from shapely.geometry import Polygon
 
 from climada.util.coordinates import country_to_iso
@@ -126,7 +122,7 @@ def osmnames_to_schema(place):
         state=place['state'],
         country=place['country'],
         country_id=country_to_iso(place['country']),
-        bbox=bbox_to_wkt(place['boundingbox'])
+        bbox=place['boundingbox']
     )
 
 
@@ -145,7 +141,7 @@ def maptiler_to_schema(place):
         state=_get_place_context_type(place, 'state'),
         country=country,
         country_id=country_iso3,
-        bbox=bbox_to_wkt(place['bbox'])
+        bbox=place['bbox']
     )
 
 
@@ -250,7 +246,7 @@ def get_place_hierarchy(s, exact=True):
 def geocode_autocomplete(s):
     db_location = Location.objects.filter(name=s)
     if len(db_location) == 1:
-        return GeocodePlaceList(data=[GeocodePlace(**db_location[0].__dict__)])
+        return GeocodePlaceList(data=[GeocodePlace.from_location_model(db_location[0])])
     response = query_place(s)
     if not response:
         return GeocodePlaceList(data=[])
@@ -264,13 +260,5 @@ def geocode_autocomplete(s):
 
 
 def geocode_precalculated_locations():
-    return GeocodePlaceList(data=[GeocodePlace(**place.__dict__) for place in Location.objects.all()])
+    return GeocodePlaceList(data=[GeocodePlace.from_location_model(place) for place in Location.objects.all()])
 
-
-def bbox_to_wkt(bbox):
-    if len(bbox) != 4:
-        raise ValueError('Expected bbox to have four points')
-    lat_list = [bbox[i] for i in [1, 3, 3, 1]]
-    lon_list = [bbox[i] for i in [0, 0, 2, 2]]
-    polygon = Polygon([[lon, lat] for lat, lon in zip(lat_list, lon_list)])
-    return polygon.wkt

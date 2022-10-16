@@ -2,16 +2,12 @@ import logging
 from cache_memoize import cache_memoize
 from celery import shared_task
 from celery_singleton import Singleton
-import pandas as pd
 import numpy as np
 import copy
 from scipy import interpolate
 
-from climada.hazard import Hazard
 from climada.entity import Exposures, ImpactFunc, ImpactFuncSet, ImpfTropCyclone, Entity, MeasureSet, Measure
 from climada.engine import Impact
-from climada.util.api_client import Client
-import climada.util.coordinates as u_coord
 
 from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig

@@ -1,7 +1,4 @@
 import logging
-import numpy as np
-import pandas as pd
-from typing import List
 from celery import chain, chord, group, shared_task
 from celery_singleton import Singleton
 
@@ -12,6 +9,7 @@ from calc_api.vizz.text_costbenefit import generate_costbenefit_widget_text
 from calc_api.calc_methods import calc_costbenefit
 from calc_api.job_management.job_management import database_job
 from calc_api.job_management.standardise_schema import standardise_schema
+from calc_api.calc_methods import util
 
 conf = ClimadaCalcApiConfig()
 
@@ -37,7 +35,7 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     data_dict = data.dict()
     if not data.location_poly:
-        data_dict['location_poly'] = data_dict['geocoding']['bbox']
+        data_dict['location_poly'] = util.bbox_to_wkt(data_dict['geocoding']['bbox'])
     data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data.impact_type)
     if data.measure_ids and len(data.measure_ids) > 0:
         measures = [get_default_measures(measure_id=m_id) for m_id in data.measure_ids]

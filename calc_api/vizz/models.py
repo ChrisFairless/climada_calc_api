@@ -3,9 +3,6 @@ import uuid
 import datetime
 
 from django.db import models
-from django.utils.timezone import utc
-from django_celery_results.models import TaskResult
-
 from calc_api.config import ClimadaCalcApiConfig
 
 conf = ClimadaCalcApiConfig()

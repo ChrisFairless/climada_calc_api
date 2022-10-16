@@ -31,4 +31,5 @@ class Command(BaseCommand):
 
             place = PlaceSchema(location_name=placename)
             place.standardise()
-            _, _ = Location.objects.update_or_create(**place.geocoding.dict())
+            location = place.geocoding.to_location_model()
+            location.save()

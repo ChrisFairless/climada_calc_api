@@ -10,7 +10,7 @@ from climada.util.api_client import Client
 
 from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.calc_methods.util import standardise_scenario
+from calc_api.calc_methods import util
 from calc_api.vizz.enums import ScenarioClimateEnum, HazardTypeEnum
 from calc_api.job_management.job_management import database_job
 
@@ -40,7 +40,7 @@ def get_hazard_by_return_period(
     LOGGER.debug('Starting get_hazard_by_return_period calculation. Locals: ' + str(locals()))
 
     if not all([scenario_name, scenario_climate, scenario_year]):
-        scenario_name, _, scenario_climate = standardise_scenario(
+        scenario_name, _, scenario_climate = util.standardise_scenario(
             scenario_name=scenario_name,
             scenario_climate=scenario_climate,
             scenario_year=scenario_year
@@ -83,7 +83,7 @@ def get_hazard_by_location(
     haz = get_hazard_from_api(hazard_type, country, scenario_name, scenario_year)
     # TODO the location bit
     if location_poly:
-        haz = subset_hazard_extent(location_poly)
+        haz = subset_hazard_extent(haz, location_poly)
 
     return haz
 
@@ -133,10 +133,7 @@ def subset_hazard_extent(
         location_poly,
         buffer=300      # arcseconds
 ):
-    if isinstance(location_poly, str):
-        location_poly = wkt.loads(location_poly)
-    if len(location_poly.exterior.coords[:]) - 1 != 4:
-        raise ValueError("API doesn't handle non-bounding box polygons yet")
+    location_poly = util.convert_to_polygon(location_poly)
 
     buffer_deg = buffer / (60 * 60)
     lonmin, latmin, lonmax, latmax = location_poly.bounds
