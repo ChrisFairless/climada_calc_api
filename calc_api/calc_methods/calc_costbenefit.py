@@ -151,10 +151,12 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     climate_change = future_climate - only_growth
 
     if any(ix_single_measures):
+        measures_list = [m[0] for m in df.loc[ix_single_measures]['measures']]
+        measure_names = [m['name'] for m in measures_list]
         measure_impacts = pd.Series(df.loc[ix_single_measures]['impact'])
-        measure_names = [m[0]['name'] for m in df.loc[ix_single_measures]['measures']]
         measure_change = [m - climate_change for m in measure_impacts]
     else:
+        measures_list = None
         measure_impacts = None
         measure_names = None
         measure_change = None
@@ -166,12 +168,13 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     # else:
     #     combined_measure_change = None
 
+    # TODO make units flexible. Check units cost consistent with units exposure when they're both monetary
+    units_currency = measures_list[0]['units_currency']
     units_exposure = job_config_list[0]['units_exposure']
     units_warming = job_config_list[0]['units_warming']
     if units_exposure not in ['dollars', 'people']:
         raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {units_exposure}')
 
-    # Create a list of bar items for each return period
     costbenefit_breakdown = schemas.BreakdownBar(
         year_label=str(future_year),
         year_value=int(future_year),
@@ -234,9 +237,20 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
         items=legend_items
     )
 
+    out_measures = [schemas.MeasureSchema(**m) for m in measures_list]
+    out_costs = [m['cost'] for m in measures_list]
+    out_benefits = [-imp for imp in costbenefit_breakdown.measure_change]
+    out_costbenefits = [benefit/cost for cost, benefit in zip(out_costs, out_benefits)]
+
     out_costbenefit = schemas.CostBenefit(
         items=[costbenefit_breakdown],
         legend=legend,
+        measure=out_measures,
+        cost=out_costs,
+        costbenefit=out_costbenefits,
+        combined_cost=None,
+        combined_benefit=None,
+        units_currency=units_currency,
         units_warming=units_warming,
         units_response=units_exposure
     )

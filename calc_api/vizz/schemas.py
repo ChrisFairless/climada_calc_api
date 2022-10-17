@@ -159,8 +159,16 @@ class PlaceSchema(Schema):
                                  f'\nExposure type: {exposure_type} '
                                  f'\nUnits provided: {self.units_exposure} '
                                  f'\nAllowed units: {allowed_units}')
-        elif hasattr('self', 'units_exposure'):
+        elif hasattr(self, 'units_exposure'):
             raise ValueError('There should be a check for valide exposures somehow here.')
+
+        if hasattr(self, 'units_currency') and hasattr(self, 'units_exposure'):
+            if self.units_exposure and self.units_exposure != 'people':  # TODO make this is units type check from the enums
+                if self.units_exposure != self.units_currency:
+                    raise ValueError(f'When using financial exposures in a cost-benefit, the units should be the same:'
+                                     f'\nCost: {self.units_currency}'
+                                     f'\nExposure {self.units_exposure}')
+
 
         if hasattr(self, 'units_warming'):
             allowed_units = get_option_choices(['data', 'units', 'temperature'], get_value='value')
@@ -476,6 +484,7 @@ class CostBenefitRequest(AnalysisSchema):
     exposure_type: str = None
     impact_type: str = None
     measures: List[dict] = None
+    units_currency: str = None
     units_hazard: str = None
     units_exposure: str = None
     units_warming: str = None
@@ -484,6 +493,12 @@ class CostBenefitRequest(AnalysisSchema):
 class CostBenefit(Schema):
     items: List[BreakdownBar]
     legend: CategoricalLegend
+    measure: List[MeasureSchema]
+    cost: List[float]
+    costbenefit: List[float]
+    combined_cost = float
+    combined_costbenefit = float
+    units_currency: str
     units_warming: str
     units_response: str
 
