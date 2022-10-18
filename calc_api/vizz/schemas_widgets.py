@@ -53,6 +53,7 @@ class CostBenefitWidgetRequest(schemas.AnalysisSchema):
     hazard_type: str
     impact_type: str
     measure_ids: List[int] = None
+    units_currency: str = None
     units_hazard: str = None
     units_exposure: str = None
     units_warming: str = None
