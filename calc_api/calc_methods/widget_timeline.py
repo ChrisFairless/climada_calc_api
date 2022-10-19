@@ -8,9 +8,11 @@ from calc_api.calc_methods.calc_exposure import get_exposure
 from calc_api.vizz import enums
 from calc_api.calc_methods.timeline import set_up_timeline_calculations, combine_impacts_to_timeline, combine_impacts_to_timeline_no_celery
 from calc_api.job_management.standardise_schema import standardise_schema
+from calc_api.job_management.job_management import database_job
 
 
 @standardise_schema
+@database_job
 def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
     all_rps = [data.hazard_rp, 10, 100]
 

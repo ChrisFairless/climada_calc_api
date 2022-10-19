@@ -32,6 +32,7 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
 
 
 @standardise_schema
+@database_job
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     data_dict = data.dict()
     if not data.location_poly:
@@ -59,7 +60,7 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
 
     request = schemas.CostBenefitRequest(**data_dict)
 
-    # from calc_api.calc_methods.timeline import set_up_timeline_calculations
+    # TODO make a costbenefit_calc class. Maybe it and timeline extend some calculations ur-class
     job_config_list, chord_header = calc_costbenefit.set_up_costbenefit_calculations(request)
     callback = combine_impacts_to_costbenefit_widget.s(job_config_list=job_config_list)
 

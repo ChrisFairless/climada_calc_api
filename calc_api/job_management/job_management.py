@@ -46,5 +46,11 @@ def database_job(func, *args, **kwargs):
         _, _ = JobLog.objects.update_or_create(job_hash=job_hash, func=func.__name__, args=str(args_dict), kwargs=str(kwargs), result=result)
         return result
 
+    elif conf.DATABASE_MODE == 'fail_missing':
+        try:
+            return JobLog.objects.get(job_hash=job_hash).result
+        except JobLog.DoesNotExist as e:
+            raise JobLog.DoesNotExist(f'Not in precalculated database: \nFunction: {func.__name__} \n'
+                                      f'Args: {args_dict} \nError: {e}')
     else:
         raise ValueError(f'Could not process the configuration parameter database_mode. Value: {conf.DATABASE_MODE}')
