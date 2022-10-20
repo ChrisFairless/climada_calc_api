@@ -39,6 +39,10 @@ def json_default(thing):
         return dataclasses.asdict(thing)
     except TypeError:
         pass
+    try:
+        return thing.__dict__
+    except TypeError:
+        pass
     if isinstance(thing, datetime.datetime):
         return thing.isoformat(timespec='microseconds')
     raise TypeError(f"object of type {type(thing).__name__} not serializable")
