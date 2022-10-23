@@ -38,11 +38,11 @@ class CountryData(models.Model):
 
 
 class JobLog(models.Model):
-    job_hash = models.TextField(primary_key=True, db_index=True)
-    func = models.CharField(max_length=30)
+    job_hash = models.CharField(max_length=36, primary_key=True, db_index=True)
+    func = models.CharField(max_length=50)
     args = models.TextField()
     kwargs = models.TextField()
-    result = models.JSONField()
+    result = models.JSONField(null=True)  # TODO a cleanup cron job that removes these
 
 
 class Cobenefit(models.Model):

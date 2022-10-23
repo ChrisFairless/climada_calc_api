@@ -5,18 +5,22 @@ import datetime
 import uuid
 import json
 from time import sleep
+import logging
 
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.models import JobLog, Measure
 from climada_calc import celery_app as app
 from calc_api.vizz import enums
-from calc_api.calc_methods.util import standardise_scenario
+from calc_api.calc_methods.util import standardise_scenario, bbox_to_wkt
 from calc_api.calc_methods.geocode import standardise_location
 from calc_api.vizz import schemas_geocoding
 from calc_api.vizz.enums import get_option_choices, get_option_parameter
-from calc_api.calc_methods import util
+from calc_api import util
 
 conf = ClimadaCalcApiConfig()
+
+LOGGER = logging.getLogger(__name__)
+LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 # TODO extend schemas to include 'impact type' as well as exposure type
 # TODO add 'standardise' methods to each of these classes (possibly as part of an __init__)
@@ -37,32 +41,109 @@ class JobSchema(Schema):
     message: str = None
 
     @classmethod
-    # TODO refactor so that location_root is a class attribute
     def from_task_id(cls, task_id, location_root):
+        if conf.DATABASE_MODE in ['read', 'update', 'fail_missing']:
+            existing_task = JobLog.objects.filter(job_hash=task_id)
+            if len(existing_task) == 1 and existing_task.result:
+                uri = existing_task.result.metadata.uri if hasattr(existing_task.result.metadata, 'uri') else None
+                return cls(
+                    job_id=task_id,
+                    location=location_root + '/' + task_id,
+                    status="SUCCESS",
+                    request={},  # TODO work out where to get this from if the job didn't succeed. Probably add to the DB model
+                    completed_at=None,
+                    expires_at=None,
+                    response=existing_task.result,
+                    response_uri=uri,
+                    code=None,
+                    message=None
+                )
+        job = app.AsyncResult(task_id)
+        return cls.from_asyncresult(job, location_root)
+
+    @classmethod
+    # TODO refactor so that location_root is a class attribute
+    def from_asyncresult(cls, task, location_root):
+        # Note: we call the parameter 'task' here, but it's actually some task's AsyncResult
         # Sometimes all the results will be cached, so waiting a fraction of a second will let the workers assemble them
-        sleep(0.5)
-        task = app.AsyncResult(task_id)
+        sleep(1)
+        print("\n\nWHAT HAVE WE HERE")
+        print(str(task.__class__))
+        print(str(task))
+        print("HAS GET?")
+        print(str(hasattr(task, 'get')))
+        print("GETTING")
+        response = task.get()
+        print('RESPONSE')
+        print(response)
+
         if task.ready():
             if task.successful():
                 response = task.get()
                 uri = task.result.metadata.uri if hasattr(task.result.metadata, 'uri') else None
                 expiry = task.date_done + datetime.timedelta(seconds=conf.JOB_TIMEOUT)
+                request_dict = {
+                    # 'schema': cls.__name__,
+                    'args': task.args,
+                    'kwargs': task.kwargs
+                }
+
             else:
-                # TODO deal with failed tasks
+                print(f"Task failed but there's no code to handle this yet. \nTask: {task} \nInfo: {task.info}")
                 task.forget()
-                print("FORGETTING")
-                raise ValueError(f"Task failed but there's no code to handle this yet. Task: {task}")
+                response, uri, expiry = None, None, None
+                request_dict = {}
+
+                # TODO deal with failed tasks
+                # task.forget()
+                # print("FORGETTING")
+                # raise ValueError(f"Task failed but there's no code to handle this yet. \nTask: \n{task}")
         else:
             response, uri, expiry = None, None, None
+            request_dict = {}
 
-        return cls(
+        output = cls(
             job_id=task.id,
             location=location_root + '/' + task.id,
             status=task.status,
-            request={},  # TODO work out where to get this from
+            request=request_dict,  # TODO work out where to get this from if the job didn't succeed
             completed_at=task.date_done,
             expires_at=expiry,
             response=response,
+            response_uri=uri,
+            code=None,
+            message=None
+        )
+
+        if conf.DATABASE_MODE in ['create', 'update'] and task.successful():
+            try:
+                job = JobLog.objects.get(job_hash=task.id)
+                if not job.result:
+                    json_result = util.encode(output)
+                    job.result = json_result
+                    job.save(update_fields=['result'])
+                else:
+                    LOGGER.warning(
+                        'Unexpectedly found a job with a result already saved. Are we using this in a new way?')
+            except JobLog.DoesNotExist as e:
+                LOGGER.warning('Expected to find a existing record for this job. Investigate.')
+
+        return output
+
+    @classmethod
+    def from_db_hash(cls, job_hash, location_root):
+        task = JobLog.objects.get(job_hash=job_hash)
+        uri = task.result.metadata.uri if hasattr(task.result.metadata, 'uri') else None
+        # expiry = task.date_done + datetime.timedelta(seconds=conf.JOB_TIMEOUT)
+
+        return cls(
+            job_id=task.request.id,
+            location=location_root + '/' + task.request.id,
+            status=task.status,
+            request={},  # TODO work out where to get this from
+            completed_at=task.date_done,
+            expires_at=None,
+            response=task.result,
             response_uri=uri,
             code=None,
             message=None
@@ -122,7 +203,7 @@ class PlaceSchema(Schema):
             self.location_scale = geocoded.scale
             self.geocoding = geocoded
             if not self.location_poly:
-                self.location_poly = util.bbox_to_wkt(geocoded.bbox)
+                self.location_poly = bbox_to_wkt(geocoded.bbox)
 
         # Check units make sense
         if hasattr(self, 'units_hazard'):
@@ -176,6 +257,9 @@ class PlaceSchema(Schema):
                 raise ValueError(f'Units incompatible with temperature in {type(self).__name__}. '
                                  f'\nUnits provided: {self.units_warming} '
                                  f'\nAllowed units: {allowed_units}')
+
+    def get_id(self):
+        return util.get_hash(self)
 
 
 

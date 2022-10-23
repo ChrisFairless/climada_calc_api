@@ -10,11 +10,16 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
 @decorator
-def standardise_schema(func, *args):
-    assert len(args) == 1
-    assert isinstance(args[0], Schema)
-    assert hasattr(args[0], 'standardise')
+def standardise_schema(func, *args, **kwargs):
+    ix_args_schema = [i for i, a in enumerate(args) if isinstance(a, Schema)]
+    ix_kwargs_schema = [key for key, item in kwargs.items() if isinstance(item, Schema)]
 
-    args[0].standardise()
+    for i in ix_args_schema:
+        assert hasattr(args[i], 'standardise')
+        args[i].standardise()
 
-    return func(args[0])
+    for key in ix_kwargs_schema:
+        assert hasattr(kwargs[key], 'standardise')
+        kwargs[key].standardise()
+
+    return func(*args, **kwargs)

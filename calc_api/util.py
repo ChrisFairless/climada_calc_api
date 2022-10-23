@@ -2,7 +2,7 @@ import hashlib
 import json
 import dataclasses
 import datetime
-
+from uuid import UUID
 
 HASH_FUNCS = {
     'md5': hashlib.md5,
@@ -35,21 +35,21 @@ def get_client_ip(request):
 
 # Adapted from https://death.andgravity.com/stable-hashing
 def json_default(thing):
-    try:
-        return dataclasses.asdict(thing)
-    except TypeError:
-        pass
+    # try:
+    #     return dataclasses.asdict(thing)
+    # except TypeError:
+    #     pass
     try:
         return thing.__dict__
     except TypeError:
         pass
     if isinstance(thing, datetime.datetime):
         return thing.isoformat(timespec='microseconds')
-    raise TypeError(f"object of type {type(thing).__name__} not serializable")
+    raise TypeError(f"object of type {type(thing).__name__} not serializable with the calc_api utils")
 
 
-def get_hash(thing):
-    dump = json.dumps(
+def encode(thing):
+    return json.dumps(
         thing,
         default=json_default,
         ensure_ascii=False,
@@ -57,4 +57,16 @@ def get_hash(thing):
         indent=None,
         separators=(',', ':'),
     )
-    return hashlib.md5(dump.encode('utf-8')).digest().hex()
+
+
+def get_hash(thing):
+    dump = encode(thing)
+    hexcode = hashlib.md5(dump.encode('utf-8')).hexdigest()
+    return UUID(hex=hexcode)
+
+
+def get_args_dict(name, *args, **kwargs):
+    args_dict = {str(i): a for i, a in enumerate(args)}
+    args_dict.update({'name': name})
+    args_dict.update(kwargs)
+    return args_dict

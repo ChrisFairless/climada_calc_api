@@ -20,6 +20,8 @@ from calc_api.vizz import schemas, schemas_widgets, schemas_geocoding
 from calc_api.vizz.util import get_options
 from calc_api.calc_methods import mapping, geocode, timeline
 from calc_api.calc_methods import widget_timeline, widget_social_vulnerability, widget_costbenefit
+from calc_api.job_management.standardise_schema import standardise_schema
+from calc_api.job_management.job_management import endpoint_cache
 
 conf = ClimadaCalcApiConfig()
 
@@ -441,7 +443,7 @@ def _api_default_measures(request, measure_id: int = None, slug: str = None, haz
     summary="Create data for the cost-benefit section of the RECA site"
 )
 def _api_widget_costbenefit_submit(request, data: schemas_widgets.CostBenefitWidgetRequest):
-    job_id = widget_costbenefit.widget_costbenefit(data)
+    job_id = widget_costbenefit.widget_costbenefit(data)    
     return schemas_widgets.CostBenefitWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/cost-benefit')
 
 
@@ -462,10 +464,11 @@ def _api_widget_costbenefit_poll(request, job_id):
     response=schemas_widgets.TimelineWidgetJobSchema,
     summary="Create data for the risk over time section of the RECA site"
 )
+@standardise_schema
+@endpoint_cache(endpoint='rest/vizz/widgets/risk-timeline')
 def _api_widget_risk_timeline_submit(request, data: schemas_widgets.TimelineWidgetRequest):
-    job_id = widget_timeline.widget_timeline(data)
-    return schemas_widgets.TimelineWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/risk-timeline')
-
+    job = widget_timeline.widget_timeline(data)
+    return schemas_widgets.TimelineWidgetJobSchema.from_asyncresult(job, 'rest/vizz/widgets/risk-timeline')
 
 @_api.get(
     "/widgets/risk-timeline/{uuid:job_id}",
