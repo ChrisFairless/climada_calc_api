@@ -77,11 +77,12 @@ class CostBenefitWidgetJobSchema(schemas.JobSchema):
 # ============
 
 class BiodiversityWidgetRequest(schemas.PlaceSchema):
-    units_area: str = None
+    hazard_type: str
 
 
 class BiodiversityWidgetData(Schema):
     text: List[GeneratedText]
+    chart: schemas.ExposureBreakdown = None
 
 
 class BiodiversityWidgetResponse(Schema):

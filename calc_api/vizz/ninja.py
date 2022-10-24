@@ -19,7 +19,7 @@ from climada_calc.settings import BASE_DIR, STATIC_ROOT
 from calc_api.vizz import schemas, schemas_widgets, schemas_geocoding
 from calc_api.vizz.util import get_options
 from calc_api.calc_methods import mapping, geocode, timeline
-from calc_api.calc_methods import widget_timeline, widget_social_vulnerability, widget_costbenefit
+from calc_api.calc_methods import widget_timeline, widget_social_vulnerability, widget_costbenefit, widget_biodiversity
 
 conf = ClimadaCalcApiConfig()
 
@@ -484,7 +484,7 @@ def _api_widget_risk_timeline_poll(request, job_id):
     summary="Create data for the biodiversity section of the RECA site"
 )
 def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityWidgetRequest):
-    job_id = widget_timeline.widget_biodiversity(data)
+    job_id = widget_biodiversity.widget_biodiversity(data)
     return schemas_widgets.BiodiversityWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/biodiversity')
 
 
