@@ -16,6 +16,8 @@ conf = ClimadaCalcApiConfig()
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
+PRECISION = 6   # Decimal places to round to for lat lon. To avoid rounding errors when calculating hashes
+                # from the same input twice
 
 def standardise_location(location_name=None, location_code=None, location_scale=None, location_poly=None):
     if not location_name and not location_code:
@@ -113,6 +115,7 @@ def location_from_name(location_name):
 
 
 def osmnames_to_schema(place):
+    bbox = [round(x, PRECISION) for x in place['boundingbox']]
     return GeocodePlace(
         name=place['display_name'],
         id=place['osm_id'],
@@ -122,7 +125,7 @@ def osmnames_to_schema(place):
         state=place['state'],
         country=place['country'],
         country_id=country_to_iso(place['country']),
-        bbox=place['boundingbox']
+        bbox=bbox
     )
 
 
@@ -131,6 +134,7 @@ def maptiler_to_schema(place):
         LOGGER.debug(f'Geocoder was given multiple place types: {place["place_type"]}')
 
     country, country_iso3 = _maptiler_establish_country_from_place(place)
+    bbox = [round(x, PRECISION) for x in place['bbox']]
 
     return GeocodePlace(
         name=place['place_name'],
@@ -141,7 +145,7 @@ def maptiler_to_schema(place):
         state=_get_place_context_type(place, 'state'),
         country=country,
         country_id=country_iso3,
-        bbox=place['bbox']
+        bbox=bbox
     )
 
 
