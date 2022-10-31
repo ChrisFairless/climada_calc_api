@@ -32,7 +32,6 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
 
 
 @standardise_schema
-@database_job
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     data_dict = data.dict()
     if not data.location_poly:
