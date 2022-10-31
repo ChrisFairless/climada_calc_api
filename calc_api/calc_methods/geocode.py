@@ -16,8 +16,7 @@ conf = ClimadaCalcApiConfig()
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
-PRECISION = 6   # Decimal places to round to for lat lon. To avoid rounding errors when calculating hashes
-                # from the same input twice
+PRECISION = 6   # Decimal places to round to for lat lon.
 
 def standardise_location(location_name=None, location_code=None, location_scale=None, location_poly=None):
     if not location_name and not location_code:
