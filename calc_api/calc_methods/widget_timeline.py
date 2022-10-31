@@ -13,23 +13,6 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
     request_id = data.get_id()
     all_rps = [data.hazard_rp, 10, 100]
 
-    # request = schemas.TimelineImpactRequest(
-    #     hazard_type=data.hazard_type,
-    #     hazard_rp=all_rps,
-    #     exposure_type=data.exposure_type,
-    #     impact_type=data.impact_type,
-    #     scenario_name=data.scenario_name,
-    #     scenario_climate=data.scenario_climate,
-    #     scenario_growth=data.scenario_growth,
-    #     location_name=data.location_name,
-    #     location_scale=data.location_scale,
-    #     location_code=data.location_code,
-    #     location_poly=data.location_poly,
-    #     aggregation_method=data.aggregation_method,
-    #     units_warming=data.units_warming,
-    #     units_exposure=data.units_exposure,
-    #     geocoding=data.geocoding
-    # )
     data_dict = data.dict()
     data_dict.update({'hazard_rp': all_rps})
     data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data_dict['impact_type'])
@@ -69,7 +52,7 @@ def widget_timeline(data: schemas_widgets.TimelineWidgetRequest):
     )
 
     # with transaction.atomic():
-    job = chord(chord_header, task_id=request_id)(chord_callback)
+    job = chord(chord_header, task_id=str(request_id))(chord_callback)
     return job
 
 

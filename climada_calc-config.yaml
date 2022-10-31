@@ -36,4 +36,4 @@ defaults:
      min_dist_to_centroids: 20
    data-license: "Attribution 4.0 International (CC BY 4.0)"
 lock-timeout: 10  # minutes
-database_mode: 'create'  # One of 'off' 'read' 'create' 'update'
+database_mode: 'create'  # One of 'off' 'read' 'create' 'update' 'fail_missing'

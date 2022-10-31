@@ -6,6 +6,7 @@ import uuid
 import json
 from time import sleep
 import logging
+from celery.result import AsyncResult
 
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.models import JobLog, Measure
@@ -43,7 +44,7 @@ class JobSchema(Schema):
     @classmethod
     def from_task_id(cls, task_id, location_root):
         if conf.DATABASE_MODE in ['read', 'update', 'fail_missing']:
-            existing_task = JobLog.objects.filter(job_hash=task_id)
+            existing_task = JobLog.objects.filter(job_hash=str(task_id))
             if len(existing_task) == 1 and existing_task.result:
                 uri = existing_task.result.metadata.uri if hasattr(existing_task.result.metadata, 'uri') else None
                 return cls(
@@ -62,20 +63,34 @@ class JobSchema(Schema):
         return cls.from_asyncresult(job, location_root)
 
     @classmethod
+    def from_joblog(cls, job: JobLog, location_root):
+        if job.result is None:
+            raise ValueError('JobLog has no result')
+
+        request = job.args
+        result = json.loads(job.result)
+        uri = result['metadata']['uri'] if 'uri' in result['metadata'] else None
+        output = cls(
+            job_id=job.job_hash,
+            location=location_root + '/' + job.job_hash,
+            status="SUCCESS",
+            request={},  # TODO work out where to get this from
+            completed_at=None,
+            expires_at=None,
+            response=result,
+            response_uri=uri,
+            code=None,
+            message=None
+        )
+        return output
+
+
+    @classmethod
     # TODO refactor so that location_root is a class attribute
-    def from_asyncresult(cls, task, location_root):
+    def from_asyncresult(cls, task: AsyncResult, location_root):
         # Note: we call the parameter 'task' here, but it's actually some task's AsyncResult
         # Sometimes all the results will be cached, so waiting a fraction of a second will let the workers assemble them
         sleep(1)
-        print("\n\nWHAT HAVE WE HERE")
-        print(str(task.__class__))
-        print(str(task))
-        print("HAS GET?")
-        print(str(hasattr(task, 'get')))
-        print("GETTING")
-        response = task.get()
-        print('RESPONSE')
-        print(response)
 
         if task.ready():
             if task.successful():
@@ -117,22 +132,27 @@ class JobSchema(Schema):
 
         if conf.DATABASE_MODE in ['create', 'update'] and task.successful():
             try:
-                job = JobLog.objects.get(job_hash=task.id)
+                print("UPDATING JOB")
+                print(str(task.id))
+                job = JobLog.objects.get(job_hash=str(task.id))
                 if not job.result:
-                    json_result = util.encode(output)
+                    json_result = util.encode(response)
+                    print("RESPONSE")
+                    print(json_result)
                     job.result = json_result
+                    print("Saving update")
                     job.save(update_fields=['result'])
                 else:
                     LOGGER.warning(
                         'Unexpectedly found a job with a result already saved. Are we using this in a new way?')
             except JobLog.DoesNotExist as e:
-                LOGGER.warning('Expected to find a existing record for this job. Investigate.')
+                LOGGER.warning(f'Expected to find an existing record for this job. Investigate. Error: {e}')
 
         return output
 
     @classmethod
     def from_db_hash(cls, job_hash, location_root):
-        task = JobLog.objects.get(job_hash=job_hash)
+        task = JobLog.objects.get(job_hash=str(job_hash))
         uri = task.result.metadata.uri if hasattr(task.result.metadata, 'uri') else None
         # expiry = task.date_done + datetime.timedelta(seconds=conf.JOB_TIMEOUT)
 

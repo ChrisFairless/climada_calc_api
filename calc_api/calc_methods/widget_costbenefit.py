@@ -33,6 +33,7 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
 
 @standardise_schema
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
+    request_id = data.get_id()
     data_dict = data.dict()
     if not data.location_poly:
         data_dict['location_poly'] = util.bbox_to_wkt(data_dict['geocoding']['bbox'])
@@ -64,7 +65,7 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     callback = combine_impacts_to_costbenefit_widget.s(job_config_list=job_config_list)
 
     # with transaction.atomic():
-    res = chord(chord_header)(callback)
+    res = chord(chord_header, task_id=str(request_id))(callback)
 
     out = res.id
     return out

@@ -442,6 +442,8 @@ def _api_default_measures(request, measure_id: int = None, slug: str = None, haz
     response=schemas_widgets.CostBenefitWidgetJobSchema,
     summary="Create data for the cost-benefit section of the RECA site"
 )
+@standardise_schema
+@endpoint_cache(return_class=schemas_widgets.CostBenefitWidgetJobSchema, location_root='rest/vizz/widgets/cost-benefit')
 def _api_widget_costbenefit_submit(request, data: schemas_widgets.CostBenefitWidgetRequest):
     job_id = widget_costbenefit.widget_costbenefit(data)    
     return schemas_widgets.CostBenefitWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/cost-benefit')
@@ -465,7 +467,7 @@ def _api_widget_costbenefit_poll(request, job_id):
     summary="Create data for the risk over time section of the RECA site"
 )
 @standardise_schema
-@endpoint_cache(endpoint='rest/vizz/widgets/risk-timeline')
+@endpoint_cache(return_class=schemas_widgets.TimelineWidgetJobSchema, location_root='rest/vizz/widgets/risk-timeline')
 def _api_widget_risk_timeline_submit(request, data: schemas_widgets.TimelineWidgetRequest):
     job = widget_timeline.widget_timeline(data)
     return schemas_widgets.TimelineWidgetJobSchema.from_asyncresult(job, 'rest/vizz/widgets/risk-timeline')
@@ -486,8 +488,10 @@ def _api_widget_risk_timeline_poll(request, job_id):
     response=schemas_widgets.BiodiversityWidgetJobSchema,
     summary="Create data for the biodiversity section of the RECA site"
 )
+@standardise_schema
+@endpoint_cache(return_class=schemas_widgets.BiodiversityWidgetJobSchema, location_root='rest/vizz/widgets/biodiversity')
 def _api_widget_biodiversity_submit(request, data: schemas_widgets.BiodiversityWidgetRequest):
-    job_id = widget_timeline.widget_biodiversity(data)
+    job_id = widget_biodiversity.widget_biodiversity(data)
     return schemas_widgets.BiodiversityWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/biodiversity')
 
 
@@ -507,6 +511,8 @@ def _api_widget_biodiversity_poll(request, job_id):
     response=schemas_widgets.SocialVulnerabilityWidgetJobSchema,
     summary="Create data for the social vulnerability section of the RECA site"
 )
+@standardise_schema
+@endpoint_cache(return_class=schemas_widgets.SocialVulnerabilityWidgetJobSchema, location_root='rest/vizz/widgets/social-vulnerability')
 def _api_widget_social_vulnerability_submit(request, data: schemas_widgets.SocialVulnerabilityWidgetRequest):
     job_id = widget_social_vulnerability.widget_social_vulnerability(data)
     return schemas_widgets.SocialVulnerabilityWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/social-vulnerability')
