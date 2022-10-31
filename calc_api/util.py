@@ -40,7 +40,11 @@ def json_default(thing):
     # except TypeError:
     #     pass
     try:
-        return thing.__dict__
+        # Add the class to the dictionary to avoid namespace clashes
+        # Maybe it would be better to keep jobs in tables names after the jobs but we're in neck deep now.
+        thing_dict = thing.__dict__
+        thing_dict['__class__'] = type(thing).__name__
+        return thing_dict
     except TypeError:
         pass
     if isinstance(thing, datetime.datetime):
