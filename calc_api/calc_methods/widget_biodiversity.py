@@ -21,8 +21,8 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
 @standardise_schema
-@database_job
 def widget_biodiversity(data: schemas_widgets.BiodiversityWidgetRequest):
+    request_id = data.get_id()
 
     if data.location_poly and len(wkt.loads(data.location_poly).exterior.coords[:]) - 1 != 4:
         LOGGER.warning('Ignoring location polygon data for soc vuln calculations: using location bbox')
@@ -42,7 +42,7 @@ def widget_biodiversity(data: schemas_widgets.BiodiversityWidgetRequest):
         country_name=data.geocoding.country
     )
 
-    res = chord(chord_header)(chord_callback)
+    res = chord(chord_header, task_id=str(request_id))(chord_callback)
 
     return res.id
 
