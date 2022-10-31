@@ -15,3 +15,8 @@ sqlalchemy
 celery-singleton
 millify
 decorator
+pyyaml
+shapely
+numpy
+pandas
+requests
