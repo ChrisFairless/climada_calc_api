@@ -19,9 +19,9 @@ from climada_calc.settings import BASE_DIR, STATIC_ROOT
 from calc_api.vizz import schemas, schemas_widgets, schemas_geocoding
 from calc_api.vizz.util import get_options
 from calc_api.calc_methods import mapping, geocode, timeline
-from calc_api.calc_methods import widget_timeline, widget_social_vulnerability, widget_costbenefit
 from calc_api.job_management.standardise_schema import standardise_schema
 from calc_api.job_management.job_management import endpoint_cache
+from calc_api.calc_methods import widget_timeline, widget_social_vulnerability, widget_costbenefit, widget_biodiversity
 
 conf = ClimadaCalcApiConfig()
 

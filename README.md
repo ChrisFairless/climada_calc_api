@@ -14,6 +14,8 @@ This branch is for running on your local machine or deploying to Heroku. It's a 
 
 ### Quick start
 
+**Note: these instructions are usually out of date - contact me if you're installing this locally**
+
 You will need Docker installed on your machine and about 10 GB of space ... we will shrink the container sizes at a later date.
 
 1. Clone this git repository to a local directory.
@@ -40,24 +42,31 @@ The Django web server expects to mount a volume located on the host machine at `
 
 ## Container structure
 
-This test version of the project uses five containers:
+This current version of the project uses five containers:
 
 #### web
-A Django web tool running a RESTful API using Django Ninja. On startup it checks for the existence of test data and downloads and creates it when it doesn't exist. Mount a volume to `/climada_calc_api/static/sample_data` (by default this is set up as `./static/sample_data` on your local machine) to persist this data.
+A Django web tool running a RESTful API using Django Ninja. Mount a volume to `/climada_calc_api/static/sample_data` (by default this is set up as `./static/sample_data` on your local machine) to persist this data.
 
+This is the component facing the outside world. It receives requests and processes them. Longer calculations are added to the Celery job queue and processed by workers.
 
 #### celery
-A containerised task/queue manager to manage requests. You can drop this container if you only want to use the test endpoints in a quick demonstration.
+The same container as `web` above, but running as a worker. It takes tasks from Celery's queue and executes them. The `redis` container acts as a broker for the tasks.
+
+To scale the application, spin up more instances of this worker.
 
 #### celery_flower
 A job management interface for Celery. Access it on [0.0.0.0:5000](http://0.0.0.0:5000) to view the job queues and check things are working. You can drop this container without affecting functionality.
 
+#### db
+A PostgreSQL database. Used for storing any tabular information relevant to the tool and for cacheing selected results.
+
 #### redis
-A redis database. This handles all the storage, cacheing and works as Celery's broker. In future these jobs will be split amongst other services.
+A redis database. This works as Celery's broker and results storage.
 
-#### geocoding_api
-A containerised version of the [OSMNames geocoder](https://hub.docker.com/r/klokantech/osmnames-sphinxsearch). It uses the defaults settings which keep the container small(ish) and limited to 100k places. This doesn't work in cloud deployment, where we use a dedicated Geocoding service (not yet documented)
 
+### Cloud structure
+
+Deployment to the cloud (currently: Heroku) uses the same structure as the above. The `web` and `celery` components are initialised as Heroku dynos using the relevant Docker image, and the `redis` and `db` components are Heroku's provisioned Redis and PostegreSQL databases. The `celery_flower` container is currently excluded from cloud deployment.
 
 ## Usage
 
