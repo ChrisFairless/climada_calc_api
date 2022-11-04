@@ -57,11 +57,16 @@ def create_habitat_breakdown(
 
     # TODO maybe parallelise this
     exp_landuse = get_habitat_from_api(country_iso)
+    if not exp_landuse:
+        raise ValueError(f'No landuse data found in the API for country {country_iso}')
 
     if location_poly:
         exp_landuse = subset_exposure_extent(exp_landuse, location_poly, buffer=150)
+
     df_landuse = exp_landuse.gdf
     n_grid_cells = df_landuse.shape[0]
+    if n_grid_cells == 0:
+        raise ValueError(f'No landuse points when subsetting for {country_iso}: {location_name}')
 
     landuse_by_cat = df_landuse.groupby(['category', 'category_code']).agg({'value': 'sum'}).reset_index()
     total_area = sum(landuse_by_cat['value'])
