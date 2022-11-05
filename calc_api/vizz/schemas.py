@@ -69,6 +69,8 @@ class JobSchema(Schema):
 
         request = job.args
         result = json.loads(job.result)
+        if '__class__' in result.keys():
+            _ = result.pop('__class__')
         uri = result['metadata']['uri'] if 'uri' in result['metadata'] else None
         output = cls(
             job_id=job.job_hash,
@@ -136,11 +138,8 @@ class JobSchema(Schema):
                 print(str(task.id))
                 job = JobLog.objects.get(job_hash=str(task.id))
                 if not job.result:
-                    json_result = util.encode(response)
-                    print("RESPONSE")
-                    print(json_result)
+                    json_result = util.encode(response, include_class=False)
                     job.result = json_result
-                    print("Saving update")
                     job.save(update_fields=['result'])
                 else:
                     LOGGER.warning(

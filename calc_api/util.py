@@ -2,6 +2,7 @@ import hashlib
 import json
 import dataclasses
 import datetime
+from functools import partial
 from uuid import UUID
 
 HASH_FUNCS = {
@@ -34,7 +35,7 @@ def get_client_ip(request):
 
 
 # Adapted from https://death.andgravity.com/stable-hashing
-def json_default(thing):
+def json_default(thing, include_class=True):
     # try:
     #     return dataclasses.asdict(thing)
     # except TypeError:
@@ -43,7 +44,8 @@ def json_default(thing):
         # Add the class to the dictionary to avoid namespace clashes
         # Maybe it would be better to keep jobs in tables names after the jobs but we're in neck deep now.
         thing_dict = thing.__dict__
-        thing_dict['__class__'] = type(thing).__name__
+        if include_class:
+            thing_dict['__class__'] = type(thing).__name__
         return thing_dict
     except TypeError:
         pass
@@ -52,10 +54,10 @@ def json_default(thing):
     raise TypeError(f"object of type {type(thing).__name__} not serializable with the calc_api utils")
 
 
-def encode(thing):
+def encode(thing, include_class=True):
     return json.dumps(
         thing,
-        default=json_default,
+        default=partial(json_default, include_class=include_class),
         ensure_ascii=False,
         sort_keys=True,
         indent=None,
