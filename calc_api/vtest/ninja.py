@@ -281,9 +281,9 @@ def _api_exceedance_hazard_poll(request, job_id: uuid.UUID = None):
     "/exceedance/impact",
     tags=["exceedance"],
     response=schemas.ExceedanceJobSchema,
-    summary="Submit job for hazard intensity exceedance curve data"
+    summary="Submit job for impact exceedance curve data"
 )
-def _api_exceedance_impact_submit(request, data: schemas.ExceedanceHazardRequest = None):
+def _api_exceedance_impact_submit(request, data: schemas.ExceedanceImpactRequest = None):
     job = schemas_examples.make_dummy_job(data, "/exceedance/impact?job_id=", uuid.uuid4())
     return schemas.ExceedanceJobSchema(**job.__dict__)
 
