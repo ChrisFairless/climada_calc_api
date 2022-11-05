@@ -6,6 +6,7 @@ import uuid
 import json
 from time import sleep
 import logging
+import numpy as np
 from celery.result import AsyncResult
 
 from calc_api.config import ClimadaCalcApiConfig
@@ -15,7 +16,7 @@ from calc_api.vizz import enums
 from calc_api.calc_methods.util import standardise_scenario, bbox_to_wkt
 from calc_api.calc_methods.geocode import standardise_location
 from calc_api.vizz import schemas_geocoding
-from calc_api.vizz.enums import get_option_choices, get_option_parameter
+from calc_api.vizz.enums import get_option_choices, get_option_parameter, get_exposure_types, get_hazard_type_names
 from calc_api import util
 
 conf = ClimadaCalcApiConfig()
@@ -234,25 +235,47 @@ class PlaceSchema(Schema):
                                  f'\nUnits provided: {self.units_hazard} '
                                  f'\nAllowed units: {allowed_units}')
 
-        if hasattr(self, 'units_exposure') and hasattr(self, 'hazard_type'):
-            if hasattr(self, 'exposure_type') and self.exposure_type is not None:
-                exposure_type = self.exposure_type
-            elif hasattr(self, 'impact_type'):
-                exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
-            else:
-                raise ValueError('Validation not prepared here for no exposure or impact data. Fix.')
+        if hasattr(self, 'hazard_type') and hasattr(self, 'exposure_type') and not hasattr(self, 'impact_type'):
+            raise ValueError('I thought I made sure this would never happen')
 
-            exp_unit_type = get_option_choices(
-                options_path=['data', 'filters', self.hazard_type, "scenario_options", "impact_type"],
-                parameters={'exposure_type': exposure_type},
-                get_value='unit_type'
-            )
-            exp_unit_type = list(set(exp_unit_type))
-            if len(exp_unit_type) != 1:
-                raise ValueError(f'Expected exactly one exposure type to match with the setup: '
-                                 f'\nHazard type: {self.hazard_type}'
-                                 f'\nExposure type: {exposure_type}. '
-                                 f'\nMatches: {exp_unit_type}')
+        # check impact type is consistent with exposure
+        if hasattr(self, 'impact_type'):
+            assert(hasattr(self, 'hazard_type'))
+            assert(self.impact_type is not None)
+            exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
+            if hasattr(self, 'exposure_type') and self.exposure_type:
+                if self.exposure_type != exposure_type:
+                    raise ValueError(f'Requested exposure type ({self.exposure_type}) mismatch with '
+                                     f'exposure type inferred from impact ({self.impact_type} gives '
+                                     f'{exposure_type}')
+
+        # check exposure units are consistent with exposure
+        if hasattr(self, 'exposure_type') or hasattr(self, 'impact_type'):
+            if not hasattr(self, 'impact_type'):
+                exposure_type = self.exposure_type
+            assert(exposure_type in get_exposure_types())
+            all_exp_unit_types = {
+                htype: get_option_choices(
+                    options_path=['data', 'filters', htype, "scenario_options", "impact_type"],
+                    parameters={'exposure_type': exposure_type},
+                    get_value='unit_type'
+                )
+                for htype in get_hazard_type_names()
+            }
+            if hasattr(self, 'hazard_type'):
+                exp_unit_type = list(set(all_exp_unit_types[self.hazard_type]))
+                if len(exp_unit_type) != 1:
+                    raise ValueError(f'Expected exactly one exposure type to match with the setup: '
+                                     f'\nHazard type: {self.hazard_type}'
+                                     f'\nExposure type: {exposure_type}. '
+                                     f'\nMatches: {exp_unit_type}')
+            else:
+                exp_unit_type = list(set(np.concatenate([np.array(unit_list) for unit_list in all_exp_unit_types])))
+                if len(exp_unit_type) != 1:
+                    raise ValueError(f'Expected exactly one exposure type to match with the setup: '
+                                     f'\nExposure type: {exposure_type}. '
+                                     f'\nMatches: {exp_unit_type}')
+
             allowed_units = get_option_choices(['data', 'units', exp_unit_type[0]], get_value='value')
             if self.units_exposure not in allowed_units:
                 raise ValueError(f'Units incompatible with exposure in {type(self).__name__}. '
@@ -260,7 +283,7 @@ class PlaceSchema(Schema):
                                  f'\nUnits provided: {self.units_exposure} '
                                  f'\nAllowed units: {allowed_units}')
         elif hasattr(self, 'units_exposure'):
-            raise ValueError('There should be a check for valide exposures somehow here.')
+            raise ValueError('There should be a check for valid exposures somehow here.')
 
         if hasattr(self, 'units_currency') and hasattr(self, 'units_exposure'):
             if self.units_exposure and self.units_exposure != 'people':  # TODO make this is units type check from the enums
@@ -268,7 +291,6 @@ class PlaceSchema(Schema):
                     raise ValueError(f'When using financial exposures in a cost-benefit, the units should be the same:'
                                      f'\nCost: {self.units_currency}'
                                      f'\nExposure {self.units_exposure}')
-
 
         if hasattr(self, 'units_warming'):
             allowed_units = get_option_choices(['data', 'units', 'temperature'], get_value='value')

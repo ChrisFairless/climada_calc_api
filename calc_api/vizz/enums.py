@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List
+import numpy as np
 
 from calc_api.vizz.util import get_options
 
@@ -118,7 +119,7 @@ def get_option_choices(options_path: List[str], get_value: str = None, parameter
 
 
 def get_hazard_type_names():
-    return get_option_choices(['data', 'filters'], get_value='value')
+    return get_option_choices(['data', 'filters'])
 
 
 def get_year_options(hazard_type, get_value=None, parameters=None):
@@ -130,7 +131,7 @@ def get_scenario_options(hazard_type, get_value=None, parameters=None):
 
 
 def get_impact_options(hazard_type, get_value=None, parameters=None):
-    return get_option_choices(['data', 'filters', hazard_type, 'scenario_options', 'impact'], get_value, parameters)
+    return get_option_choices(['data', 'filters', hazard_type, 'scenario_options', 'impact_type'], get_value, parameters)
 
 
 def get_rp_options(hazard_type, get_value=None, parameters=None):
@@ -141,9 +142,14 @@ def get_currency_options():
     return get_option_choices(['data', 'units', 'currency'], get_value='value')
 
 
-def get_exposure_types(hazard_type):
-    impact_list = get_impact_options(hazard_type, get_value='value')
-    return list(set([exposure_type_from_impact_type[impact] for impact in impact_list]))
+def get_exposure_types(hazard_type=None):
+    if hazard_type:
+        impact_list = get_impact_options(hazard_type, get_value='value')
+    else:
+        haz_names = get_hazard_type_names()
+        list_of_impact_lists = [get_impact_options(haz, get_value='value') for haz in haz_names]
+        impact_list = list(np.concatenate([np.array(impacts) for impacts in list_of_impact_lists]))
+    return list(set([exposure_type_from_impact_type(impact) for impact in impact_list]))
 
 
 
