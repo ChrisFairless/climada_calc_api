@@ -282,14 +282,11 @@ class PlaceSchema(Schema):
         return util.get_hash(self)
 
 
-
-class AnalysisSchema(PlaceSchema):
+class ScenarioSchema(PlaceSchema):
     scenario_name: str = None
     scenario_climate: str = None
     scenario_growth: str = None
     scenario_year: int = None
-    aggregation_scale: str = None
-    aggregation_method: str = None
 
     def standardise(self):
         super().standardise()
@@ -300,38 +297,44 @@ class AnalysisSchema(PlaceSchema):
                 self.scenario_growth,
                 self.scenario_climate,
                 self.scenario_year)
-        if self.aggregation_scale == self.geocoding.scale:
-            self.aggregation_scale = 'all'
         enums.assert_in_enum(self.scenario_name, enums.ScenarioNameEnum)
         enums.assert_in_enum(self.scenario_growth, enums.ScenarioGrowthEnum)
         enums.assert_in_enum(self.scenario_climate, enums.ScenarioClimateEnum)
 
 
-class MapHazardClimateRequest(AnalysisSchema):
+class MapHazardClimateRequest(ScenarioSchema):
     hazard_type: enums.HazardTypeEnum
     hazard_rp: str = None
+    aggregation_scale: str = None
+    aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units_hazard: str = None
 
 
-class MapHazardEventRequest(AnalysisSchema):
+class MapHazardEventRequest(ScenarioSchema):
     hazard_type: enums.HazardTypeEnum
     hazard_event_name: str
+    aggregation_scale: str = None
+    aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units_hazard: str = None
 
 
-class MapExposureRequest(AnalysisSchema):
+class MapExposureRequest(ScenarioSchema):
     exposure_type: str
+    aggregation_scale: str = None
+    aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units_exposure: str = None
 
 
-class MapImpactClimateRequest(AnalysisSchema):
+class MapImpactClimateRequest(ScenarioSchema):
     hazard_type: enums.HazardTypeEnum
     hazard_rp: str = None
     exposure_type: str
     impact_type: str
+    aggregation_scale: str = None
+    aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units_hazard: str = None
     units_exposure: str = None
@@ -344,11 +347,13 @@ class MapImpactClimateRequest(AnalysisSchema):
             self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
-class MapImpactEventRequest(AnalysisSchema):
+class MapImpactEventRequest(ScenarioSchema):
     hazard_type: enums.HazardTypeEnum
     hazard_event_name: str
     exposure_type: str
     impact_type: str
+    aggregation_scale: str = None
+    aggregation_method: str = None
     format: str = conf.DEFAULT_IMAGE_FORMAT
     units_hazard: str = None
     units_exposure: str = None
@@ -396,17 +401,19 @@ class MapJobSchema(JobSchema):
         return ""
 
 
-class ExceedanceHazardRequest(AnalysisSchema):
+class ExceedanceHazardRequest(ScenarioSchema):
     hazard_type: str
     hazard_event_name: str = None
+    # aggregation_method: str = 'max'
     units_hazard: str = None
 
 
-class ExceedanceImpactRequest(AnalysisSchema):
+class ExceedanceImpactRequest(ScenarioSchema):
     hazard_type: str
     hazard_event_name: str = None
     exposure_type: str = None
     impact_type: str = None
+    # aggregation_method: str = 'sum'
     units_hazard: str = None
     units_exposure: str = None
 
@@ -451,7 +458,7 @@ class TimelineHazardRequest(PlaceSchema):
     hazard_rp: str = None
     scenario_name: str = None
     scenario_climate: str = None
-    aggregation_method: str = None
+    # aggregation_method: str = 'max'
     units_hazard: str = None
     units_warming: str = None
 
@@ -470,7 +477,7 @@ class TimelineExposureRequest(PlaceSchema):
     exposure_type: str = None
     scenario_name: str = None
     scenario_growth: str = None
-    aggregation_method: str = None
+    # aggregation_method: str = 'sum'
     units_exposure: str = None
     units_warming: str = None
 
@@ -494,7 +501,6 @@ class TimelineImpactRequest(PlaceSchema):
     scenario_name: str = None
     scenario_climate: str = None
     scenario_growth: str = None
-    aggregation_method: str = None
     units_hazard: str = None
     units_exposure: str = None
     units_warming: str = None
@@ -582,7 +588,7 @@ class CreateMeasureSchema(ModelSchema):
 #     hazard: str = None
 
 
-class CostBenefitRequest(AnalysisSchema):
+class CostBenefitRequest(ScenarioSchema):
     hazard_type: str
     hazard_event_name: str = None
     exposure_type: str = None
@@ -624,7 +630,7 @@ class ExposureBreakdownRequest(PlaceSchema):
     exposure_type: str = None
     exposure_categorisation: str
     scenario_year: int = None
-    aggregation_method: str = None
+    # aggregation_method: str = None
     units_exposure: str = None
 
 

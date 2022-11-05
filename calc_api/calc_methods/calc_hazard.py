@@ -35,7 +35,8 @@ def get_hazard_by_return_period(
         scenario_climate: str,
         scenario_year: int,
         location_poly=None,
-        aggregation_scale=None):
+        aggregation_scale=None,
+        aggregation_method=None):
 
     LOGGER.debug('Starting get_hazard_by_return_period calculation. Locals: ' + str(locals()))
 
@@ -79,11 +80,14 @@ def get_hazard_by_location(
         scenario_name,
         scenario_year,
         location_poly=None,
-        aggregation_scale=None):
+        aggregation_scale=None,
+        aggregation_method=None):
     haz = get_hazard_from_api(hazard_type, country, scenario_name, scenario_year)
     # TODO the location bit
     if location_poly:
         haz = subset_hazard_extent(haz, location_poly)
+    if aggregation_scale:
+        raise ValueError("API doesn't aggregate output yet")
 
     return haz
 
@@ -116,7 +120,8 @@ def get_hazard_event(hazard_type,
                      scenario_year,
                      event_name,
                      location_poly=None,
-                     aggregation_scale=None):
+                     aggregation_scale=None,
+                     aggregation_method=None):
     haz = get_hazard_from_api(hazard_type, country, scenario_name, scenario_year)
     haz = haz.select(event_names=[event_name])
     if location_poly:

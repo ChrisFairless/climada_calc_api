@@ -21,7 +21,7 @@ class GeneratedText(Schema):
 # Timeline / Impact over time
 # ===========================
 
-class TimelineWidgetRequest(schemas.AnalysisSchema):
+class TimelineWidgetRequest(schemas.ScenarioSchema):
     hazard_type: str
     hazard_rp: str
     impact_type: str
@@ -49,7 +49,7 @@ class TimelineWidgetJobSchema(schemas.JobSchema):
 # CostBenefit
 # ===========
 
-class CostBenefitWidgetRequest(schemas.AnalysisSchema):
+class CostBenefitWidgetRequest(schemas.ScenarioSchema):
     hazard_type: str
     impact_type: str
     measure_ids: List[int] = None

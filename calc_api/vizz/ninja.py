@@ -382,7 +382,6 @@ def _api_exceedance_hazard_poll(
         location_scale: str,
         location_code: str,
         location_poly: str,
-        aggregation_scale: str,
         aggregation_method: str):
     return {}
 
@@ -397,9 +396,7 @@ def _api_exceedance_impact_poll(
         scenario_year: int,
         location_scale: str,
         location_code: str,
-        location_poly: str,
-        aggregation_scale: str,
-        aggregation_method: str):
+        location_poly: str):
     return {}
 
 
@@ -453,7 +450,7 @@ def _api_widget_costbenefit_submit(request, data: schemas_widgets.CostBenefitWid
     "/widgets/cost-benefit/{uuid:job_id}",
     tags=["widget"],
     response=schemas_widgets.CostBenefitWidgetJobSchema,
-    summary="Poll for data for the risk over time section of the RECA site"
+    summary="Poll for data for the cost-benefit section of the RECA site"
 )
 def _api_widget_costbenefit_poll(request, job_id):
     return schemas_widgets.CostBenefitWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/cost-benefit')
