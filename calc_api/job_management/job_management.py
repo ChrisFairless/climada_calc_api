@@ -1,12 +1,9 @@
-import json
-import datetime
 import logging
 from decorator import decorator
-from time import sleep
 
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.models import JobLog
-from calc_api.util import get_hash, get_args_dict, encode
+from calc_api.util import get_hash, get_args_dict
 
 conf = ClimadaCalcApiConfig()
 LOGGER = logging.getLogger(__name__)
@@ -22,16 +19,13 @@ def database_job(func, *args, **kwargs):
 
     elif conf.DATABASE_MODE == 'read':
         try:
-            existing_result = JobLog.objects.get(job_hash=str(job_hash)).result
-            return existing_result
+            return get_joblog_result(job_hash)
         except JobLog.DoesNotExist:
             return func(*args, **kwargs)
 
     elif conf.DATABASE_MODE == 'create':
         try:
-            existing_result = JobLog.objects.get(job_hash=str(job_hash)).result
-            print(">>>Existing result found")
-            return existing_result
+            return get_joblog_result(job_hash)
         except JobLog.DoesNotExist:
             result = func(*args, **kwargs)
             _ = JobLog.objects.create(
@@ -56,8 +50,7 @@ def database_job(func, *args, **kwargs):
 
     elif conf.DATABASE_MODE == 'fail_missing':
         try:
-            job = JobLog.objects.get(job_hash=str(job_hash)).result
-            return job
+            return get_joblog_result(job_hash)
         except JobLog.DoesNotExist as e:
             # raise JobLog.DoesNotExist(f'Not in precalculated database: \nFunction: {func.__name__} \n'
             #                           f'Args: {args_dict} \nError: {e}')
@@ -67,6 +60,9 @@ def database_job(func, *args, **kwargs):
     else:
         raise ValueError(f'Could not process the configuration parameter database_mode. Value: {conf.DATABASE_MODE}')
 
+
+def get_joblog_result(job_hash):
+    return JobLog.objects.get(job_hash=str(job_hash)).result
 
 
 @decorator
