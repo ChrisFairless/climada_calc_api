@@ -153,7 +153,7 @@ If you're using the Swagger documentation, here is an example body you can POST:
     "location_name": "Haiti",
     "location_scale": "country",
     "units_response": "dollars",
-    "units_warming": "celsius"
+    "units_warming": "degC"
 }
 ```
 and here it is as a Curl request:
@@ -170,7 +170,7 @@ curl --location --request POST 'http://0.0.0.0:8000/rest/vizz/widgets/risk-timel
     "location_name": "Haiti",
     "location_scale": "country",
     "units_response": "dollars",
-    "units_warming": "celsius"
+    "units_warming": "degC"
 }'
 ```
 This should return information including a job ID and the URL to poll for results.

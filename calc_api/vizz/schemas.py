@@ -17,6 +17,7 @@ from calc_api.calc_methods.util import standardise_scenario, bbox_to_wkt
 from calc_api.calc_methods.geocode import standardise_location
 from calc_api.vizz import schemas_geocoding
 from calc_api.vizz.enums import get_option_choices, get_option_parameter, get_exposure_types, get_hazard_type_names
+from calc_api.vizz import units
 from calc_api import util
 
 conf = ClimadaCalcApiConfig()
@@ -90,7 +91,7 @@ class JobSchema(Schema):
 
     @classmethod
     # TODO refactor so that location_root is a class attribute
-    def from_asyncresult(cls, task: AsyncResult, location_root):
+    def from_asyncresult(cls, task: AsyncResult, request):
         # Note: we call the parameter 'task' here, but it's actually some task's AsyncResult
         # Sometimes all the results will be cached, so waiting a fraction of a second will let the workers assemble them
         sleep(1)
@@ -122,7 +123,7 @@ class JobSchema(Schema):
 
         output = cls(
             job_id=task.id,
-            location=location_root + '/' + task.id,
+            location=request.get_full_path() + '/' + task.id,
             status=task.status,
             request=request_dict,  # TODO work out where to get this from if the job didn't succeed
             completed_at=task.date_done,
@@ -170,6 +171,107 @@ class JobSchema(Schema):
         )
 
 
+class ResponseSchema(Schema):
+
+    def convert_units(self, units_dict):
+        if not set(units_dict.keys()).issubset(units.API_DEFAULT_UNITS.keys()):
+            raise ValueError(f'convert_units parameter units_dict must have keys that are a subset of '
+                             f'{units.API_DEFAULT_UNITS.keys()}. \nProvided: {units_dict.keys()}')
+
+        mapping_dict = self.get_unit_change_mapping(units_dict)
+
+        for att, mapping in mapping_dict.items():
+            from_unit, to_unit = mapping
+
+            # TODO in the v1 iteration rewrite the schemas so that values and units are always kept together
+            # Remembering all this is a huge mental overhead. Maybe create a Unit schema/use pint so that the
+            # unit type is also included in the metadata
+            if att == 'units':
+                # Data structures we know in advance:
+                # - Schema has attributes 'units' and 'value(s)'
+                # - Schemas has attribute 'items' which is a list of schemas with value(s) attributes
+                # - Schemas has attribute 'items.items', which is a list of schemas with value(s) attributes
+                # A curse on these overcomplicated data structures!
+                scale_function = units.make_conversion_function(from_unit, to_unit)
+                if hasattr(self, 'value') or hasattr(self, 'values'):
+                    self.scale_values(scale_function)
+                if hasattr(self, 'items'):
+                    if self.items:
+                        assert isinstance(self.items, list)
+                        if hasattr(self.items[0], 'items'):  # Sometimes the values are buried two lists deep
+                            items_list_list = [it.items for it in self.items]
+                        else:
+                            items_list_list = [self.items]
+                        for items_list in items_list_list:
+                            _ = [obj.scale_values(scale_function) for obj in items_list]
+                self.__setattr__(att, to_unit)
+
+        # Convert all children
+        for att in self.dict().keys():
+            att_value = self.__getattribute__(att)
+            if isinstance(att_value, Schema):
+                assert isinstance(att_value, ResponseSchema)   # All subschema should also be ResponseSchema
+                att_value.convert_units(units_dict)
+            elif isinstance(att_value, list) and len(att_value) > 0:
+                if isinstance(att_value[0], Schema):
+                    _ = [entry.convert_units(units_dict) for entry in att_value]
+
+    def get_unit_change_mapping(self, units_dict):
+        # Find the Schema's unit attributes (e.g. units, unit_hazard, unit_intensity, unit_currency)
+        unit_attributes = [
+            att for att in self.dict().keys()
+            if att.startswith('unit')
+        ]
+        mappings = {}
+        for att in unit_attributes:
+            from_unit = self.__getattribute__(att)
+            if from_unit in units.UNITS_NOT_TO_CONVERT:
+                continue
+            unit_type = units.UNIT_TYPES[from_unit]
+            if unit_type in units_dict.keys():
+                to_unit = units_dict[unit_type]
+            else:
+                raise ValueError(
+                    f'Found unit data with no instructions on how to convert: '
+                    f'\nUnit: {from_unit} (type: {unit_type})'
+                    f'\nIf you want to use the API defaults, use the convert_units_with_api_defaults method.'
+                )
+            mappings[att] = (from_unit, to_unit)
+        return mappings
+
+    def scale_values(self, scale_function):
+        if hasattr(self, 'value'):
+            if self.value:
+                if not isinstance(self.__getattribute__('value'), float):
+                    raise ValueError(f"Class {type(self).__name__} has a non-float 'value' attribute: "
+                                     f"{type(self.__getattribute__('value')).__name__}: "
+                                     f"{self.__getattribute__('value')}")
+                self.__setattr__('value', scale_function(self.value))
+        elif hasattr(self, 'values'):
+            if self.values:
+                if not isinstance(self.__getattribute__('values'), list):
+                    raise ValueError(f"Class {type(self).__name__} has a non-list 'values' attribute: "
+                                     f"{type(self.__getattribute__('values')).__name__}")
+                if not isinstance(self.__getattribute__('values')[0], float):
+                    raise ValueError(f"Class {type(self).__name__} has 'values' attribute containing list of non-float objects: "
+                                     f"{type(self.__getattribute__('values')[0]).__name__}")
+                self.__setattr__('values', scale_function(self.values))
+        else:
+            raise ValueError(f"Expected either 'value' or 'values' attribute in class {str(type(self).__name__)}")
+
+
+    def convert_to_climada_units(self):
+        self.convert_units(units_dict=units.NATIVE_UNITS_CLIMADA)
+
+    def convert_units_with_api_defaults(self, units_dict=None):
+        if not units_dict:
+            units_dict = units.API_DEFAULT_UNITS
+        else:
+            missing_types = {key: value for key, value in units.API_DEFAULT_UNITS if key not in units_dict.keys()}
+            units_dict = units_dict.union(missing_types)
+        self.convert_units(units_dict)
+
+
 class FileSchema(Schema):
     file_name: str
     file_format: str = None
@@ -178,26 +280,36 @@ class FileSchema(Schema):
     url: str
 
 
-class ColorbarLegendItem(Schema):
+class ColorbarLegendItem(ResponseSchema):
     band_min: float
     band_max: float
     color: str
 
 
-class ColorbarLegend(Schema):
+class ColorbarLegend(ResponseSchema):
     title: str
     units: str
-    value: str
+    value: float
     items: List[ColorbarLegendItem]
 
+    def convert_units(self, units_dict):
+        unit_type = units.UNIT_TYPES[self.units]
+        from_unit, to_unit = self.units, units_dict[unit_type]
+        scale_function = units.make_conversion_function(from_unit, to_unit)
+        self.value = scale_function(self.value)
+        self.units = to_unit
+        for legend in self.items:
+            legend.band_min = scale_function(legend.band_min)
+            legend.band_max = scale_function(legend.band_max)
 
-class CategoricalLegendItem(Schema):
+
+class CategoricalLegendItem(ResponseSchema):
     label: str
     slug: str
     value: float = None
 
 
-class CategoricalLegend(Schema):
+class CategoricalLegend(ResponseSchema):
     title: str
     units: str = None
     items: List[CategoricalLegendItem]
@@ -227,8 +339,8 @@ class PlaceSchema(Schema):
 
         # Check units make sense
         if hasattr(self, 'units_hazard'):
-            haz_unit_type = get_option_parameter(['data', 'filters', self.hazard_type], parameter="unit_type")
-            allowed_units = get_option_choices(['data', 'units', haz_unit_type], get_value='value')
+            haz_unit_type = units.HAZARD_UNIT_TYPES[self.hazard_type]
+            allowed_units = units.UNIT_OPTIONS[haz_unit_type]
             if self.units_hazard not in allowed_units:
                 raise ValueError(f'Units incompatible with hazard in {type(self).__name__}. '
                                  f'\nHazard type: {self.hazard_type} '
@@ -243,11 +355,14 @@ class PlaceSchema(Schema):
             assert(hasattr(self, 'hazard_type'))
             assert(self.impact_type is not None)
             exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
-            if hasattr(self, 'exposure_type') and self.exposure_type:
-                if self.exposure_type != exposure_type:
-                    raise ValueError(f'Requested exposure type ({self.exposure_type}) mismatch with '
-                                     f'exposure type inferred from impact ({self.impact_type} gives '
-                                     f'{exposure_type}')
+            if hasattr(self, 'exposure_type'):
+                if self.exposure_type:
+                    if self.exposure_type != exposure_type:
+                        raise ValueError(f'Requested exposure type ({self.exposure_type}) mismatch with '
+                                         f'exposure type inferred from impact ({self.impact_type} gives '
+                                         f'{exposure_type}')
+                else:
+                    self.__setattr__('exposure_type', exposure_type)
 
         # check exposure units are consistent with exposure
         if hasattr(self, 'exposure_type') or hasattr(self, 'impact_type'):
@@ -387,7 +502,7 @@ class MapImpactEventRequest(ScenarioSchema):
             self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
-class MapEntry(Schema):
+class MapEntry(ResponseSchema):
     #TODO is the best way to encode this info?
     lat: float    # of floats
     lon: float    # of floats
@@ -396,20 +511,20 @@ class MapEntry(Schema):
     color: str
 
 
-class Map(Schema):
+class Map(ResponseSchema):
     items: List[MapEntry]
     legend: ColorbarLegend
+    units: str
 
 
-class MapMetadata(Schema):
+class MapMetadata(ResponseSchema):
     description: str
     file_uri: str = None
-    units: str
     custom_fields: dict = None
     bounding_box: List[float]
 
 
-class MapResponse(Schema):
+class MapResponse(ResponseSchema):
     data: Map = None
     metadata: MapMetadata = None
 
@@ -439,29 +554,29 @@ class ExceedanceImpactRequest(ScenarioSchema):
     units_exposure: str = None
 
 
-class ExceedanceCurvePoint(Schema):
+class ExceedanceCurvePoint(ResponseSchema):
     return_period: float
-    intensity: float
+    value: float
 
 
-class ExceedanceCurve(Schema):
+class ExceedanceCurve(ResponseSchema):
     items: List[ExceedanceCurvePoint]
     scenario_name: str
     slug: str
 
 
-class ExceedanceCurveSet(Schema):
+class ExceedanceCurveSet(ResponseSchema):
     items: List[ExceedanceCurve]
     units_return_period: str
-    units_intensity: str
+    units: str
     legend: CategoricalLegend
 
 
-class ExceedanceCurveMetadata(Schema):
+class ExceedanceCurveMetadata(ResponseSchema):
     description: str
 
 
-class ExceedanceResponse(Schema):
+class ExceedanceResponse(ResponseSchema):
     data: ExceedanceCurveSet
     metadata: ExceedanceCurveMetadata
 
@@ -542,10 +657,10 @@ class TimelineImpactRequest(PlaceSchema):
             self.exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
 
 
-class BreakdownBar(Schema):
+class BreakdownBar(ResponseSchema):
     year_label: str
     year_value: float
-    temperature: float = None
+    temperature: float = None     # Actually the change in temperature
     current_climate: float = None
     growth_change: float = None
     climate_change: float = None
@@ -556,19 +671,44 @@ class BreakdownBar(Schema):
     combined_measure_change: float = None
     combined_measure_climate: float = None
 
+    def convert_breakdown_units(self, temperature_units, response_units):
+        if self.temperature:
+            delta_units = ('delta_' + temperature_units[0], 'delta_' + temperature_units[1])
+            temp_scale_fn = units.make_conversion_function(delta_units[0], delta_units[1])
+            self.__setattr__('temperature', temp_scale_fn(self.temperature))
 
-class Timeline(Schema):
+        if response_units[0] not in units.UNITS_NOT_TO_CONVERT:
+            response_scale_fn = units.make_conversion_function(response_units[0], response_units[1])
+            for response_var in ['current_climate', 'growth_change', 'climate_change', 'future_climate',
+                                 'combined_measure_change', 'combined_measure_climate']:
+                old_value = self.__getattribute__(response_var)
+                if old_value:
+                    self.__setattr__(response_var, response_scale_fn(old_value))
+            for response_list in ['measure_change', 'measure_climate']:
+                old_value = self.__getattribute__(response_list)
+                if old_value:
+                    self.__setattr__(response_list, [response_scale_fn(x) for x in old_value])
+
+
+class Timeline(ResponseSchema):
     items: List[BreakdownBar]
     legend: CategoricalLegend
     units_warming: str
     units_response: str
 
+    def convert_units(self, units_dict):
+        response_type = units.UNIT_TYPES[self.units_response]
+        response_from_to = (self.units_response, units_dict[response_type])
+        temperature_from_to = (self.units_warming, units_dict['temperature'])
+        _ = [bar.convert_breakdown_units(temperature_from_to, response_from_to) for bar in self.items]
+        ResponseSchema.convert_units(self, units_dict)
 
-class TimelineMetadata(Schema):
+
+class TimelineMetadata(ResponseSchema):
     description: str
 
 
-class TimelineResponse(Schema):
+class TimelineResponse(ResponseSchema):
     data: Timeline
     metadata: TimelineMetadata
 
@@ -580,7 +720,8 @@ class TimelineJobSchema(JobSchema):
 # CostBenefit
 # ===========
 
-class MeasureSchema(ModelSchema):
+#TODO refactor all this with dual class schemas. One day.
+class MeasureSchema(ModelSchema, ResponseSchema):
     class Config:
         model = Measure
         model_fields = ["id", "name", "slug", "description", "hazard_type", "exposure_type", "cost_type", "cost",
@@ -591,11 +732,36 @@ class MeasureSchema(ModelSchema):
 
     # Don't understand why these are necessary here but...
     def to_dict(self):
-        return self.__dict__
+        return self.dict()
 
     @classmethod
-    def from_dict(cls, dict):
-        return cls(**dict)
+    def from_dict(cls, d):
+        return cls(**d)
+
+    def convert_units(self, units_dict):
+        haz_from = self.__getattribute__("units_hazard")
+        haz_type = units.UNIT_TYPES[haz_from]
+        haz_to = units_dict[haz_type]
+        haz_scale_function = units.make_conversion_function(haz_from, haz_to)
+        self.__setattr__("hazard_cutoff", haz_scale_function(self.__getattribute__("hazard_cutoff")))
+        self.__setattr__("hazard_change_constant", haz_scale_function(self.__getattribute__("hazard_change_constant")))
+        haz_multiplier = self.__getattribute__("hazard_change_multiplier")
+        if haz_type == "temperature" and haz_multiplier and haz_multiplier != 1:
+            raise ValueError("You shouldn't be using linear scaling with temperature-based hazards!")
+        self.__setattr__("hazard_change_multiplier", haz_scale_function(haz_multiplier))
+        self.__setattr__("units_hazard", haz_to)
+
+        cost_from = self.__getattribute__("units_currency")
+        cost_to = units_dict["currency"]
+        cost_scale_function = units.make_conversion_function(cost_from, cost_to)
+        self.__setattr__("cost", cost_scale_function(self.__getattribute__("cost")))
+        self.__setattr__("cost", cost_scale_function(self.__getattribute__("annual_upkeep")))
+
+        dist_from = self.__getattribute__("units_distance")
+        dist_to = units_dict["currency"]
+        dist_scale_function = units.make_conversion_function(dist_from, dist_to)
+        self.__setattr__("max_distance_from_coast", dist_scale_function(self.__getattribute__("max_distance_from_coast")))
+
 
 class CreateMeasureSchema(ModelSchema):
     class Config:
@@ -621,7 +787,7 @@ class CostBenefitRequest(ScenarioSchema):
     units_warming: str = None
 
 
-class CostBenefit(Schema):
+class CostBenefit(ResponseSchema):
     items: List[BreakdownBar]
     legend: CategoricalLegend
     measure: List[MeasureSchema]
@@ -633,12 +799,28 @@ class CostBenefit(Schema):
     units_warming: str
     units_response: str
 
+    def convert_units(self, units_dict):
+        response_type = units.UNIT_TYPES['units_response']
+        response_from_to = (self.units_response, units_dict[response_type])
+        temperature_from_to = (self.units_warming, units_dict['temperature'])
 
-class CostBenefitMetadata(Schema):
+        response_conversion_fn = units.make_conversion_function(self.units_response, units_dict[response_type])
+        cost_conversion_fn = units.make_conversion_function(self.units_currency, units_dict['currency'])
+        costbenefit_conversion_factor = response_conversion_fn(1) / cost_conversion_fn(1)  # This is allowed because it's not temperature
+
+        _ = [bar.convert_breakdown_units(temperature_from_to, response_from_to) for bar in self.items]
+        self.cost = [cost_conversion_fn(x) for x in self.cost]
+        self.costbenefit = [costbenefit_conversion_factor * x for x in self.costbenefit]
+        self.combined_cost = cost_conversion_fn(self.combined_cost)
+        self.combined_costbenefit = costbenefit_conversion_factor * self.combined_costbenefit
+        ResponseSchema.convert_units(self, units_dict)
+
+
+class CostBenefitMetadata(ResponseSchema):
     description: str
 
 
-class CostBenefitResponse(Schema):
+class CostBenefitResponse(ResponseSchema):
     data: CostBenefit
     metadata: CostBenefitMetadata
 
@@ -655,19 +837,24 @@ class ExposureBreakdownRequest(PlaceSchema):
     units_exposure: str = None
 
 
-class ExposureBreakdownBar(Schema):
+class ExposureBreakdownBar(ResponseSchema):
     label: str
     location_scale: str = None
     category_labels: List[str]
     values: List[float]
 
 
-class ExposureBreakdown(Schema):
+class ExposureBreakdown(ResponseSchema):
     items: List[ExposureBreakdownBar]
     legend: CategoricalLegend
+    units: str = None
+
+    def convert_units(self, units_dict):
+        if self.units:
+            ResponseSchema.convert_units(self, units_dict)
 
 
-class ExposureBreakdownResponse(Schema):
+class ExposureBreakdownResponse(ResponseSchema):
     data: ExposureBreakdown
     metadata: dict
 

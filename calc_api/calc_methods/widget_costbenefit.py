@@ -10,6 +10,7 @@ from calc_api.calc_methods import calc_costbenefit
 from calc_api.job_management.job_management import database_job
 from calc_api.job_management.standardise_schema import standardise_schema
 from calc_api.calc_methods import util
+from calc_api.vizz import units
 
 conf = ClimadaCalcApiConfig()
 
@@ -17,7 +18,39 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 
-def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: str = None, exposure_type: str = None):
+def get_default_measures(
+        measure_id: int = None,
+        slug: str = None,
+        hazard_type: str = None,
+        exposure_type: str = None,
+        units_hazard: str = None,
+        units_currency: str = None,
+        units_distance: str = None,
+        units_temperature: str = None,
+        units_speed: str = None
+):
+    # TODO: one day we'll want to make this work with any hazard unit type, even unknown ones.
+    #  So we'll need to abstract this.
+    units_dict = {}
+    if units_hazard:
+        if not hazard_type:
+            raise ValueError('The units_hazard parameter can only be used when hazard_type is set. '
+                             'Use units_temperature and units_speed otherwise')
+        unit_type = units.UNIT_TYPES[units_hazard]
+        if unit_type == "temperature":
+            assert units_hazard == units_temperature
+        elif unit_type == "speed":
+            assert units_hazard == units_speed
+        else:
+            raise ValueError(f'Unexpected hazard unit type. Units: {units_hazard}. Type: {unit_type}')
+        units_dict[unit_type] = units_hazard
+    else:
+        if units_temperature:
+            units_dict['temperature'] = units_temperature
+        if units_speed:
+            units_dict['speed'] = units_speed
+    units_dict['currency'] = units_currency
+
     measures = models.Measure.objects.filter(user_generated=False)
     if measure_id:
         measures = measures.filter(id=measure_id)
@@ -27,7 +60,9 @@ def get_default_measures(measure_id: int = None, slug: str = None, hazard_type: 
         measures = measures.filter(hazard_type=hazard_type)
     if exposure_type:
         measures = measures.filter(exposure_type=exposure_type)
-    return [schemas.MeasureSchema(**m.__dict__) for m in measures]
+    measures_list = [schemas.MeasureSchema(**m.__dict__) for m in measures]
+    _ = [measure.convert_units(units_dict) for measure in measures_list]
+    return measures_list
 
 
 

@@ -1,19 +1,26 @@
 from ninja import Schema
-from typing import List
+from typing import List, Union
+
 import calc_api.vizz.schemas as schemas
 from calc_api.vizz import enums
+from calc_api.vizz.util import get_options
+from calc_api.config import ClimadaCalcApiConfig
 
 
 # Generated text
 # ==============
 
-class TextVariable(Schema):
+class TextVariable(schemas.ResponseSchema):
     key: str
-    value: str
+    value: Union[float, str]
     units: str = None
 
+    def convert_units(self, units_dict):
+        if self.units:
+            schemas.ResponseSchema.convert_units(self, units_dict)
 
-class GeneratedText(Schema):
+
+class GeneratedText(schemas.ResponseSchema):
     template: str
     values: List[TextVariable]
 
@@ -31,12 +38,12 @@ class TimelineWidgetRequest(schemas.ScenarioSchema):
     units_warming: str = None
 
 
-class TimelineWidgetData(Schema):
+class TimelineWidgetData(schemas.ResponseSchema):
     text: List[GeneratedText]
     chart: schemas.Timeline
 
 
-class TimelineWidgetResponse(Schema):
+class TimelineWidgetResponse(schemas.ResponseSchema):
     data: TimelineWidgetData
     metadata: schemas.TimelineMetadata
 
@@ -59,12 +66,12 @@ class CostBenefitWidgetRequest(schemas.ScenarioSchema):
     units_warming: str = None
 
 
-class CostBenefitWidgetData(Schema):
+class CostBenefitWidgetData(schemas.ResponseSchema):
     text: List[GeneratedText]
     chart: schemas.CostBenefit
 
 
-class CostBenefitWidgetResponse(Schema):
+class CostBenefitWidgetResponse(schemas.ResponseSchema):
     data: CostBenefitWidgetData
     metadata: schemas.CostBenefitMetadata
 
@@ -80,12 +87,12 @@ class BiodiversityWidgetRequest(schemas.PlaceSchema):
     hazard_type: str
 
 
-class BiodiversityWidgetData(Schema):
+class BiodiversityWidgetData(schemas.ResponseSchema):
     text: List[GeneratedText]
     chart: schemas.ExposureBreakdown = None
 
 
-class BiodiversityWidgetResponse(Schema):
+class BiodiversityWidgetResponse(schemas.ResponseSchema):
     data: BiodiversityWidgetData
     metadata: dict
 
@@ -101,12 +108,12 @@ class SocialVulnerabilityWidgetRequest(schemas.PlaceSchema):
     hazard_type: str
 
 
-class SocialVulnerabilityWidgetData(Schema):
+class SocialVulnerabilityWidgetData(schemas.ResponseSchema):
     text: List[GeneratedText]
     chart: schemas.ExposureBreakdown = None
 
 
-class SocialVulnerabilityWidgetResponse(Schema):
+class SocialVulnerabilityWidgetResponse(schemas.ResponseSchema):
     data: SocialVulnerabilityWidgetData
     metadata: dict
 

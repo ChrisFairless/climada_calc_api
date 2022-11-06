@@ -20,3 +20,5 @@ shapely
 numpy
 pandas
 requests
+pint
+forex_python

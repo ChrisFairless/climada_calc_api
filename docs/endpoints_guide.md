@@ -31,9 +31,9 @@ Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-
 | `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
 | `hazard_rp` | string | | The return period to use for this analysis. | |
 | `impact_type` | string | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
-| `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (default tropical cyclones) or `celsius` (default heat). To be expanded |
+| `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (default tropical cyclones) or `degC` (default heat). To be expanded |
 | `units_exposure` | string | See notes | Units the exposure is measured in | Currently one of `dollars` (default economic assets) or `people` (default people). To be expanded |
-| `units_warming` |	string | `celsius` | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+| `units_warming` |	string | `degC` | Units the degree of warming is measured in | Currently `degC`. To be expanded |
 
 #### Not required parameters
 
@@ -68,7 +68,7 @@ curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets
     "location_name": "Havana, Cuba",
     "units_hazard": "ms",
     "units_exposure": "dollars",
-    "units_warming": "celsius"
+    "units_warming": "degC"
 }'
 ```
 
@@ -156,7 +156,7 @@ A `MeasureSchema` has the following properties. It was designed as a schema wher
 | `hazard_change_constant` | number | 0 | The measure reduces the hazard intensity by this amount | |
 | `cobenefits` | list of Cobenefits | `[]` | A list of Cobenefit objects. | Still being implemented |
 | `units_currency` | string | `dollars` | Currency | Currently always dollars
-| `units_hazard` | string | | Units the hazard is measured in | Currently one of `ms` (default tropical cyclones) or `celsius` (default heat). To be expanded |
+| `units_hazard` | string | | Units the hazard is measured in | Currently one of `ms` (default tropical cyclones) or `degC` (default heat). To be expanded |
 | `units_distance` | string | `kilometres` | Units to measure distance | Currently `kilometres`. To be expanded. |
 | user_generated |	boolean | `false` | Flag for custom measures | Not enabled: always `false` |
 
@@ -182,9 +182,9 @@ A query is structured using the `CostBenefitRequest` schema, documented below an
 | `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
 | `hazard_rp` | string | | The return period to use for this analysis. | |
 | `impact_type` | string | | The impact to be calculated. | Depends on the hazard and exposure types. For tropical cyclones one of `assets_affected`, `economic_impact`, `people_affected`. For extreme heat `people_affected`. Provided by the `options` endpoint. |
-| `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `celsius` (heat). To be expanded |
+| `units_hazard` | string | See notes | Units the hazard is measured in | Currently one of `ms` (tropical cyclones) or `degC` (heat). To be expanded |
 | `units_exposure` | string | See notes | Units the exposure is measured in | Currently one of `dollars` (economic assets) or `people` (people). To be expanded |
-| `units_warming` |	string | `celsius` | Units the degree of warming is measured in | Currently `celsius`. To be expanded |
+| `units_warming` |	string | `degC` | Units the degree of warming is measured in | Currently `degC`. To be expanded |
 | `measure_ids`	| list of integers | | List of IDs of adaptation measures to be implemented (see above). |
 
 ### Not required parameters
@@ -220,7 +220,7 @@ curl --location --request POST 'https://reca-api.herokuapp.com/rest/vizz/widgets
     "measure_ids": [74],
     "units_hazard": "ms",
     "units_exposure": "dollars",
-    "units_warming": "celsius"
+    "units_warming": "degC"
 }'
 ```
 
@@ -273,7 +273,7 @@ Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-
 | --------- | ---- |  ------- | ----------- |------ |
 | `location_name` |	string |  | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
 | `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
-| `units_hazard` | string | | Desired units for the hazard | Currently just `ms` (tropical cyclones) or `celsius` (heat). To be retired soon - we don't need this detail |
+| `units_hazard` | string | | Desired units for the hazard | Currently just `ms` (tropical cyclones) or `degC` (heat). To be retired soon - we don't need this detail |
 | `units_area` | string | `km2` | Desired units for the area | Currently just `km2`. To be retired soon - we don't need this detail |
 
 #### Not required parameters

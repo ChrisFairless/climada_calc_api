@@ -41,11 +41,10 @@ class ClimadaCalcApiConfig:
         self.REPOSITORY_URL = cdac['repository_url']
         self.DEFAULT_LICENSE = cdac['defaults']['data-license']
         self.LOCK_TIMEOUT = int(cdac['lock-timeout'])
-        self.DEFAULT_UNITS_TEMPERATURE = cdac['defaults']['units']['temperature']
-        self.DEFAULT_UNITS_DISTANCE = cdac['defaults']['units']['distance']
-        self.DEFAULT_UNITS_SPEED = cdac['defaults']['units']['speed']
-        self.DEFAULT_UNITS_AREA = cdac['defaults']['units']['area']
-        self.DEFAULT_UNITS_CURRENCY = cdac['defaults']['units']['currency']
+        self.DEFAULT_UNITS = {
+            var: cdac['defaults']['units'][var]
+            for var in ['temperature', 'distance', 'speed', 'area', 'currency', "people"]
+        }
         self.DEFAULT_IMAGE_FORMAT = cdac['defaults']['image_format']
         self.DEFAULT_SCENARIO_NAME = cdac['defaults']['api_parameters']['scenario_name']
         self.DEFAULT_SCENARIO_YEAR = cdac['defaults']['api_parameters']['scenario_year']

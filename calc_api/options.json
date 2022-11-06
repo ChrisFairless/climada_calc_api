@@ -279,16 +279,16 @@
             "type": "slider",
             "unit_type": "temperature",
             "default": {
-              "celsius": 25,
-              "fahrenheit": 75
+              "degC": 25,
+              "degF": 75
             },
             "choices": {
-              "celsius": {
+              "degC": {
                 "minimum": 25,
                 "maximum": 45,
                 "step": 1
               },
-              "fahrenheit": {
+              "degF": {
                 "minimum": 75,
                 "maximum": 110,
                 "step": 1
@@ -320,16 +320,16 @@
             "type": "slider",
             "unit_type": "temperature",
             "default": {
-              "celsius": 0,
-              "fahrenheit": 0
+              "degC": 0,
+              "degF": 0
             },
             "choices": {
-              "celsius": {
+              "degF": {
                 "minimum": -5,
                 "maximum": 0,
                 "step": 0.5
               },
-              "fahrenheit": {
+              "degF": {
                 "minimum": -10,
                 "maximum": 0,
                 "step": 0.5
@@ -731,11 +731,15 @@
       "currency": {
         "description": "Currency in analysis",
         "type": "select",
-        "default": "dollars",
+        "default": "USD",
         "choices": [
           {
             "name": "dollars",
-            "value": "dollars"
+            "value": "USD"
+          },
+          {
+            "name": "Euros",
+            "value": "EUR"
           }
         ]
       },
@@ -772,11 +776,11 @@
         "choices": [
           {
             "name": "square miles",
-            "value": "square miles"
+            "value": "square_miles"
           },
           {
             "name": "square kilometers",
-            "value": "square kilometers"
+            "value": "square_kilometers"
           },
           {
             "name": "acres",
@@ -814,15 +818,15 @@
       "temperature": {
         "description": "Temperature units in analysis",
         "type": "select",
-        "default": "fahrenheit",
+        "default": "degF",
         "choices": [
           {
-            "name": "Celsius",
-            "value": "celsius"
+            "name": "degrees Celsius",
+            "value": "degC"
           },
           {
-            "name": "Fahrenheit",
-            "value": "fahrenheit"
+            "name": "degrees Fahrenheit",
+            "value": "degF"
           }
         ]
       }

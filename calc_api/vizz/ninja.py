@@ -21,6 +21,7 @@ from calc_api.vizz.util import get_options
 from calc_api.calc_methods import mapping, geocode, timeline
 from calc_api.job_management.standardise_schema import standardise_schema
 from calc_api.job_management.job_management import endpoint_cache
+from calc_api.job_management.wrangle_units import wrangle_endpoint_units
 from calc_api.calc_methods import widget_timeline, widget_social_vulnerability, widget_costbenefit, widget_biodiversity
 
 conf = ClimadaCalcApiConfig()
@@ -422,15 +423,32 @@ def _api_geocode_precalculated_locations(request):
 #
 #######################################
 
-
+# TODO convert measures units nicely
 @_api.get(
     "/widgets/default-measures",
     tags=["widget"],
     response=List[schemas.MeasureSchema],
     summary="Get predefined adaptation measures"
 )
-def _api_default_measures(request, measure_id: int = None, slug: str = None, hazard_type: str = None, exposure_type: str = None):
-    return widget_costbenefit.get_default_measures(measure_id, slug, hazard_type, exposure_type)
+def _api_default_measures(
+        request,
+        measure_id: int = None,
+        slug: str = None,
+        hazard_type: str = None,
+        exposure_type: str = None,
+        units_hazard: str = None,
+        units_currency: str = None,
+        units_distance: str = None
+):
+    return widget_costbenefit.get_default_measures(
+        measure_id,
+        slug,
+        hazard_type,
+        exposure_type,
+        units_hazard,
+        units_currency,
+        units_distance
+    )
 
 
 @_api.post(
@@ -440,9 +458,10 @@ def _api_default_measures(request, measure_id: int = None, slug: str = None, haz
     summary="Create data for the cost-benefit section of the RECA site"
 )
 @standardise_schema
+@wrangle_endpoint_units
 @endpoint_cache(return_class=schemas_widgets.CostBenefitWidgetJobSchema, location_root='rest/vizz/widgets/cost-benefit')
 def _api_widget_costbenefit_submit(request, data: schemas_widgets.CostBenefitWidgetRequest):
-    job_id = widget_costbenefit.widget_costbenefit(data)    
+    job_id = widget_costbenefit.widget_costbenefit(data)
     return schemas_widgets.CostBenefitWidgetJobSchema.from_task_id(job_id, 'rest/vizz/widgets/cost-benefit')
 
 
@@ -464,11 +483,12 @@ def _api_widget_costbenefit_poll(request, job_id):
     summary="Create data for the risk over time section of the RECA site"
 )
 @standardise_schema
+@wrangle_endpoint_units
 @endpoint_cache(return_class=schemas_widgets.TimelineWidgetJobSchema, location_root='rest/vizz/widgets/risk-timeline')
 def _api_widget_risk_timeline_submit(request, data: schemas_widgets.TimelineWidgetRequest):
     job = widget_timeline.widget_timeline(data)
     # TODO make all the widget endpoints either from_task_id or from_asyncresult, it doesn't seem to matter which
-    return schemas_widgets.TimelineWidgetJobSchema.from_asyncresult(job, 'rest/vizz/widgets/risk-timeline')
+    return schemas_widgets.TimelineWidgetJobSchema.from_asyncresult(job, request)
 
 @_api.get(
     "/widgets/risk-timeline/{uuid:job_id}",

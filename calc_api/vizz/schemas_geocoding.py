@@ -20,18 +20,18 @@ class GeocodePlace(ModelSchema):
     bbox: List[float] = None
 
     @classmethod
-    def from_location_model(cls, loc):
-        loc_dict = loc.__dict__
-        if loc_dict['bbox']:
-            loc_dict['bbox'] = wkt.loads(loc_dict['bbox']).bounds
-        return cls(**loc_dict)
+    def from_location_model(cls, loc: Location):
+        bbox = wkt.loads(loc.bbox).bounds if loc.bbox else None
+        loc.bbox = None
+        loc = cls().from_orm(loc)
+        loc.bbox = bbox
+        return loc
 
     def to_location_model(self):
-        loc_dict = self.__dict__
+        loc_dict = self.dict()
         if self.bbox:
             loc_dict['bbox'] = util.bbox_to_wkt(self.bbox)
         return Location(**loc_dict)
-
 
 
 class GeocodePlaceList(Schema):

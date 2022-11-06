@@ -20,7 +20,7 @@ def make_dummy_job(request_schema, location_root, job_id=None):
         job_id=job_id,
         location=location_root + str(job_id),
         status="submitted",
-        request={} if not request_schema else request_schema.__dict__,
+        request={} if not request_schema else request_schema.dict(),
         response=None,
         submitted_at=dt.datetime(2020, 1, 1),
         expires_at=dt.datetime(2020, 1, 3)
@@ -274,8 +274,8 @@ def make_dummy_exposure_breakdown(job_id=None):
 def make_dummy_timeline(
         response_units,
         scale,
-        units_warming='degrees Fahrenheit',
-        units_response='people affected',
+        units_warming='degF',
+        units_response='people',
         description="Dummy data from tests API",
         location_root="/timeline/impact?job_id=",
         job_id=None
@@ -357,8 +357,8 @@ def make_dummy_timelinewidget_risk(job_id=None):
     timeline_job = make_dummy_timeline(
         response_units=response_units,
         scale=scale,
-        units_warming='degrees Fahrenheit',
-        units_response='people affected',
+        units_warming='degF',
+        units_response='people',
         description='Dummy data for timeline widget',
         location_root="/timeline/impact?job_id="
     )

@@ -4,7 +4,7 @@ import numpy as np
 
 from calc_api.vizz.util import options_return_period_to_description, options_scenario_to_description
 from calc_api.vizz import schemas_widgets
-from calc_api.vizz.enums import get_currency_options
+from calc_api.vizz.enums import get_unit_options
 
 
 def generate_timeline_widget_text(
@@ -83,7 +83,7 @@ def _generate_timeline_widget_overview_text(
     proportional_qualifier = 'all' if affected_present == value_present else ''
     event_description = event_description_from_hazard_type(hazard_type)
 
-    is_currency = exposure_units in get_currency_options()
+    is_currency = exposure_units in get_unit_options('currency')
     exposure_units_description = exposure_units + ' of economic assets' if is_currency else exposure_units
 
     if return_period == 'aai':
@@ -177,8 +177,9 @@ def _generate_timeline_widget_with_change_text(
 ):
 
     # TODO future year should probably be a formattable value here (and elsewhere)
+    # TODO rewrite these as strings with inline substitutions and function calls so I can find the relevant code better
     text_change_description = Template(
-        "The $affected_description is projected to "
+        f"The $affected_description is projected to "
         "$growth_description by $future_year under the $scenario scenario. "
         "This change is $cause_description. "
     )

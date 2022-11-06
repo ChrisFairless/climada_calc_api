@@ -1,9 +1,7 @@
 import logging
 import copy
-import json
 import pandas as pd
 import numpy as np
-from millify import millify
 
 from django.db import transaction
 from celery import chain, chord, shared_task
@@ -11,9 +9,9 @@ from celery_singleton import Singleton
 
 import calc_api.vizz.schemas as schemas
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.enums import get_year_options, get_rp_options
+from calc_api.vizz.enums import get_rp_options
+from calc_api.vizz.units import get_valid_exposure_units
 from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_return_period
-from calc_api.calc_methods.colourmaps import Legend, PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
 from calc_api.job_management import standardise_schema
 from calc_api.job_management.job_management import database_job
 
@@ -172,8 +170,6 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     units_currency = measures_list[0]['units_currency']
     units_exposure = job_config_list[0]['units_exposure']
     units_warming = job_config_list[0]['units_warming']
-    if units_exposure not in ['dollars', 'people']:
-        raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {units_exposure}')
 
     costbenefit_breakdown = schemas.BreakdownBar(
         year_label=str(future_year),

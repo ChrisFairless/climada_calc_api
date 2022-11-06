@@ -61,7 +61,7 @@ def dynamic_request_create(endpoint, class_string, request_dict):
         module = importlib.import_module('calc_api.vizz.schemas')
     request = getattr(module, class_string)()
     for key, value in request_dict:
-        if key in request.__dict__().keys():
+        if key in request.dict().keys():
             request[key] = value
     return request
 
@@ -118,9 +118,9 @@ class TestEndpoints(unittest.TestCase):
             # 'aggregation_scale': aggregation_scale,
             # 'aggregation_method': aggregation_method,
             'format': 'tif',
-            'units_currency': 'dollars',
+            'units_currency': 'USD',
             'units_hazard': units_hazard,
-            'units_warming': 'fahrenheit',
+            'units_warming': 'degF',
             'units_exposure': units_exposure,
             'units_area': 'square miles'
         }
@@ -157,7 +157,7 @@ class TestEndpoints(unittest.TestCase):
                             'impact_type': 'people_affected',
                             'units': 'people'
                         }]
-                        haz_unit = 'fahrenheit'
+                        haz_unit = 'degF'
                         continue
                     elif haz_name == 'tropical_cyclone':
                         haz_unit = 'mph'

@@ -11,8 +11,7 @@ import calc_api.vizz.schemas as schemas
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.enums import get_year_options, get_rp_options
 from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_return_period
-from calc_api.calc_methods.colourmaps import Legend, PALETTE_HAZARD_COLORCET, PALETTE_EXPOSURE_COLORCET, PALETTE_IMPACT_COLORCET
-from calc_api.vizz.util import options_return_period_to_description
+from calc_api.vizz.units import NATIVE_UNITS_CLIMADA, UNIT_TYPES
 from calc_api.job_management.job_management import database_job
 from calc_api.job_management.standardise_schema import standardise_schema
 
@@ -65,6 +64,9 @@ def set_up_timeline_calculations(request: schemas.TimelineImpactRequest):
         for haz_year in np.unique([2020, exp_year])
     ]
 
+    print("\n\nJOB CONFIG")
+    print(str(job_config_list[0]))
+
     chord_header = [
         get_impact_by_return_period.s(
             country=request.geocoding.country_id,
@@ -114,23 +116,19 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
         scenario_future - scenario_growth for scenario_future, scenario_growth in zip(future_climate, only_growth)
     )
 
-    # population_change_list= [job['impact'] for job in impacts_list if job['haz_year']==2020]
-    # climate_change_list = [job['impact'] for job in impacts_list if job['haz_year']==job['exp_year']]
-
-    if job_config_list[0]['units_exposure'] not in ['dollars', 'people']:
-        raise ValueError(f'Unit conversion not implemented yet. Units must be dollars or people. Provided: {job_config_list[0]["units_exposure"]}')
-
     timeline_list = []
 
     # Create a timeline item for each input return period:
     for i, rp in enumerate(job_config_list[0]['hazard_rp']):
+
+        exposure_units_type = UNIT_TYPES[job_config_list[0]['units_exposure']]
 
         # Create a list of bar items for each return period
         timeline_bars = [
             schemas.BreakdownBar(
                 year_label=str(year),
                 year_value=int(year),
-                temperature=-999.0,
+                temperature=None,
                 current_climate=float(current_climate[i]),
                 growth_change=float(pop[i]),
                 climate_change=float(clim[i]),
@@ -151,7 +149,7 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
 
         legend = schemas.CategoricalLegend(
             title=title,
-            units=job_config_list[0]['units_exposure'],
+            units=NATIVE_UNITS_CLIMADA[exposure_units_type],
             items=[
                 schemas.CategoricalLegendItem(label="Risk today", slug="current_climate"),
                 schemas.CategoricalLegendItem(label="+ growth", slug="growth_change"),
@@ -162,8 +160,8 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
         timeline = schemas.Timeline(
             items=timeline_bars,
             legend=legend,
-            units_warming=job_config_list[0]['units_warming'],
-            units_response=job_config_list[0]['units_exposure']
+            units_warming=NATIVE_UNITS_CLIMADA['temperature'],
+            units_response=NATIVE_UNITS_CLIMADA[exposure_units_type]
         )
 
         metadata = schemas.TimelineMetadata(
@@ -171,6 +169,10 @@ def combine_impacts_to_timeline_no_celery(impacts_list, job_config_list):
         )
 
         output_timeline = schemas.TimelineResponse(data=timeline, metadata=metadata)
+        output_timeline.convert_units({
+            'temperature': job_config_list[0]['units_warming'],
+            exposure_units_type: job_config_list[0]['units_exposure']
+        })
         timeline_list.append(output_timeline)
 
     # LOGGER.debug('RESPONSE')
