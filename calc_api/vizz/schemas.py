@@ -243,11 +243,14 @@ class PlaceSchema(Schema):
             assert(hasattr(self, 'hazard_type'))
             assert(self.impact_type is not None)
             exposure_type = enums.exposure_type_from_impact_type(self.impact_type)
-            if hasattr(self, 'exposure_type') and self.exposure_type:
-                if self.exposure_type != exposure_type:
-                    raise ValueError(f'Requested exposure type ({self.exposure_type}) mismatch with '
-                                     f'exposure type inferred from impact ({self.impact_type} gives '
-                                     f'{exposure_type}')
+            if hasattr(self, 'exposure_type'):
+                if self.exposure_type:
+                    if self.exposure_type != exposure_type:
+                        raise ValueError(f'Requested exposure type ({self.exposure_type}) mismatch with '
+                                         f'exposure type inferred from impact ({self.impact_type} gives '
+                                         f'{exposure_type}')
+                else:
+                    self.__setattr__('exposure_type', exposure_type)
 
         # check exposure units are consistent with exposure
         if hasattr(self, 'exposure_type') or hasattr(self, 'impact_type'):
