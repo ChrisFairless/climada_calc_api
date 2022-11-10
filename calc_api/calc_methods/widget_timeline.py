@@ -117,7 +117,7 @@ def combine_impacts_to_timeline_widget(impacts_widget_data,
         chart=timeline
     )
     timeline_metadata = schemas.TimelineMetadata(
-        description='Timeline' #TODO flesh out!!!
+        description='Timeline'  # TODO flesh out!!!
     )
     return schemas_widgets.TimelineWidgetResponse(
         data=timeline_data,

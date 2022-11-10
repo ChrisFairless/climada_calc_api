@@ -51,17 +51,21 @@ def generate_timeline_widget_text(
         hazard_type
     )
 
-    frequency_intensity_text = _generate_timeline_widget_frequency_intensity_text(
+    frequency_intensity_text = _generate_timeline_widget_frequency_intensity_change_text(
         hazard_type=hazard_type,
         location_name=location,
         future_year=future_year,
         frequency_change=frequency_change,
-        intensity_change=intensity_change,
+        intensity_change=intensity_change
+    )
+
+    return_period_text = _generate_timeline_widget_rp_change_text(
+        hazard_type=hazard_type,
         new_10yr_return=new_10yr_return,
         new_100yr_return=new_100yr_return
     )
 
-    return [overview_text, change_text, hazard_overview_text, frequency_intensity_text]
+    return [hazard_overview_text, overview_text, change_text, frequency_intensity_text, return_period_text]
 
 
 def _generate_timeline_widget_overview_text(
@@ -75,7 +79,7 @@ def _generate_timeline_widget_overview_text(
     if len(return_period) > 1:
         return_period = return_period[0]
     text_overview = Template(
-        "$location has approximately {{exposure_value}}. "
+        "$location has approximately {{exposure_value}}$exposure_postscript. "
         "Under current climatic conditions, $proportional_qualifier {{affected_present}} "
         "may be exposed to $event_description $return_period_description. "
     )
@@ -84,7 +88,7 @@ def _generate_timeline_widget_overview_text(
     event_description = event_description_from_hazard_type(hazard_type)
 
     is_currency = exposure_units in get_unit_options('currency')
-    exposure_units_description = exposure_units + ' of economic assets' if is_currency else exposure_units
+    exposure_postscript = ' of economic assets' if is_currency else ''
 
     if return_period == 'aai':
         return_period_description = 'on average each year'
@@ -93,6 +97,7 @@ def _generate_timeline_widget_overview_text(
 
     final_text = text_overview.substitute(
         location=location.title(),
+        exposure_postscript=exposure_postscript,
         proportional_qualifier=proportional_qualifier,
         event_description=event_description,
         return_period_description=return_period_description
@@ -102,7 +107,7 @@ def _generate_timeline_widget_overview_text(
         schemas_widgets.TextVariable(
             key='exposure_value',
             value=value_present,
-            units=exposure_units_description
+            units=exposure_units
         ),
         schemas_widgets.TextVariable(
             key='affected_present',
@@ -125,7 +130,7 @@ def _generate_timeline_widget_no_change_text(
         "Under the $scenario scenario this is not projected to change. "
     )
     final_text = text_no_components_change.substitute(
-        scenario=options_scenario_to_description(scenario, hazard_type).lower()
+        scenario=options_scenario_to_description(scenario, hazard_type).title()
     )
     return schemas_widgets.GeneratedText(
         template=final_text,
@@ -181,7 +186,7 @@ def _generate_timeline_widget_with_change_text(
     text_change_description = Template(
         f"The $affected_description is projected to "
         "$growth_description by $future_year under the $scenario scenario. "
-        "This change is $cause_description. "
+        "This is $cause_description. "
     )
 
     # TODO put all of these lookups into a big dictionary somewhere so it's easy to add new types
@@ -274,16 +279,16 @@ def _generate_timeline_widget_hazard_overview_text(hazard_type):
         values=[]
     )
 
-def _generate_timeline_widget_frequency_intensity_text(
+
+def _generate_timeline_widget_frequency_intensity_change_text(
         hazard_type,
         location_name,
         future_year,
         frequency_change,
         intensity_change,
-        new_10yr_return,
-        new_100yr_return
 ):
     location_name_short = location_name.split(',')[0]
+    event_description = event_description_from_hazard_type(hazard_type)
 
     text_freq_intense_change = Template(
         'In $location $event_description $frequency_change_desc $intensity_change_desc by $future_year. $rp_text'
@@ -339,7 +344,26 @@ def _generate_timeline_widget_frequency_intensity_text(
     else:
         raise ValueError(f'Could not process change in intensity: {intensity_change}')
 
-    event_description = event_description_from_hazard_type(hazard_type)
+
+    final_text = text_freq_intense_change.substitute(
+        event_description=event_description,
+        location=location_name_short,
+        future_year=future_year,
+        frequency_change_desc=frequency_change_desc,
+        intensity_change_desc=intensity_change_desc,
+    )
+
+    return schemas_widgets.GeneratedText(
+        template=final_text,
+        values=values
+    )
+
+
+def _generate_timeline_widget_rp_change_text(
+        hazard_type,
+        new_10yr_return,
+        new_100yr_return
+):
     is_new_rp_10yr = new_10yr_return <= 9.5 or new_10yr_return >= 10.5
     is_new_rp_100yr = new_100yr_return <= 95 or new_100yr_return >= 105
 
@@ -354,26 +378,24 @@ def _generate_timeline_widget_frequency_intensity_text(
         units='years'
     )]
 
+    event_description = event_description_from_hazard_type(hazard_type)
+
+    values = []
     if not is_new_rp_100yr and not is_new_rp_10yr:
         rp_text = ''
     elif not is_new_rp_100yr:
-        rp_text = f'The impacts of {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, but the impacts of 1-in-100-year events are not projected to change much by {{year}}.'
+        rp_text = Template('The impacts of $event_description that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, but the impacts of 1-in-100-year events are not projected to change much by {{year}}.')
         values.extend(value_new_10yr)
     elif not is_new_rp_10yr:
-        rp_text = f'The impacts of 1-in-10-year events are not projected to change much, but the impacts of {event_description} that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
+        rp_text = Template('The impacts of 1-in-10-year events are not projected to change much, but the impacts of $event_description that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.')
         values.extend(value_new_100yr)
     else:
-        rp_text = f'The impacts of {event_description} that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, and impacts that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.'
+        rp_text = Template('The impacts of $event_description that would be expected once in 10 years are projected to happen once in {{new_10yr_return}} years instead, and impacts that would be expected once in 100 years are projected to happen once in {{new_100yr_return}} years instead.')
         values.extend(value_new_10yr)
         values.extend(value_new_100yr)
 
-    final_text = text_freq_intense_change.substitute(
+    final_text = rp_text.substitute(
         event_description=event_description,
-        location=location_name_short,
-        future_year=future_year,
-        frequency_change_desc=frequency_change_desc,
-        intensity_change_desc=intensity_change_desc,
-        rp_text=rp_text
     )
 
     return schemas_widgets.GeneratedText(
