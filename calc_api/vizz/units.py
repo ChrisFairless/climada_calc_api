@@ -1,5 +1,5 @@
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.enums import get_unit_options, get_option_parameter, HazardTypeEnum, get_exposure_types
+from calc_api.vizz import enums
 from pint import UnitRegistry
 from forex_python.converter import CurrencyRates
 
@@ -21,12 +21,19 @@ NATIVE_UNITS_CLIMADA = {
 
 UNITS_NOT_TO_CONVERT = ['fraction', '%', 'percent', 'years', 'people']
 
+UNIT_NAME_CORRECTIONS = {
+    "celsius": "degC",
+    "fahrenheit": "degF",
+    "dollars": "USD",
+    "euros": "EUR"
+}
+
 # Dictionary of units chosen by default in the API config, by unit type (e.g. 'speed': 'mph')
 API_DEFAULT_UNITS = conf.DEFAULT_UNITS
 
 # Dictionary of valid options for each unit type, according to the API options.json (e.g. 'speed': ['mph', 'm/s'])
 UNIT_OPTIONS = {
-    unit_type: get_unit_options(unit_type)
+    unit_type: enums.get_unit_options(unit_type)
     for unit_type in API_DEFAULT_UNITS.keys()
 }
 
@@ -34,7 +41,7 @@ UNIT_OPTIONS = {
 UNIT_TYPES = {unit_name: unit_type for unit_type, options_list in UNIT_OPTIONS.items() for unit_name in options_list}
 
 HAZARD_UNIT_TYPES = {
-    haz: get_option_parameter(['data', 'filters', haz], parameter="unit_type") for haz in HazardTypeEnum
+    haz: enums.get_option_parameter(['data', 'filters', haz], parameter="unit_type") for haz in enums.HazardTypeEnum
 }
 
 def make_conversion_function(units_from, units_to):
@@ -84,9 +91,15 @@ def get_request_parameter_to_unittype_mapping(s):
     return requested_units
 
 
-def get_valid_exposure_units(hazard_type=None):
-    exposure_types = get_exposure_types(hazard_type)
+def get_valid_exposure_units(hazard_type=None, exposure_type=None):
+    exposure_types_list = enums.get_exposure_types(hazard_type)
+    if exposure_type:
+        if exposure_type not in exposure_types_list:
+            raise ValueError(f"Inconsistent hazard_type and exposure_type provided: "
+                             f"\nHazard type: {hazard_type}"
+                             f"\nExposure type: {exposure_type}")
+        exposure_types_list = [exposure_type]
     exposure_units = set()
-    for unit_type in exposure_types:
+    for unit_type in exposure_types_list:
         exposure_units = exposure_units.union(set(UNIT_OPTIONS[unit_type]))
     return list(exposure_units)

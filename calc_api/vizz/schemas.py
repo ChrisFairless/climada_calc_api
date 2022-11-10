@@ -337,7 +337,14 @@ class PlaceSchema(Schema):
             if not self.location_poly:
                 self.location_poly = bbox_to_wkt(geocoded.bbox)
 
-        # Check units make sense
+        # Rename common units to our internally standard name (e.g. celsius -> degC, dollars -> USD)
+        schema_units = units.get_request_unit_parameters(self)
+        for unit_param in schema_units:
+            unit_name = self.__getattribute__(unit_param).lower()
+            if unit_name in units.UNIT_NAME_CORRECTIONS.keys():
+                self.__setattr__(unit_param, units.UNIT_NAME_CORRECTIONS[unit_name])
+
+        # Check hazard units make sense
         if hasattr(self, 'units_hazard'):
             haz_unit_type = units.HAZARD_UNIT_TYPES[self.hazard_type]
             allowed_units = units.UNIT_OPTIONS[haz_unit_type]
@@ -369,30 +376,13 @@ class PlaceSchema(Schema):
             if not hasattr(self, 'impact_type'):
                 exposure_type = self.exposure_type
             assert(exposure_type in get_exposure_types())
-            all_exp_unit_types = {
-                htype: get_option_choices(
-                    options_path=['data', 'filters', htype, "scenario_options", "impact_type"],
-                    parameters={'exposure_type': exposure_type},
-                    get_value='unit_type'
-                )
-                for htype in get_hazard_type_names()
-            }
-            if hasattr(self, 'hazard_type'):
-                exp_unit_type = list(set(all_exp_unit_types[self.hazard_type]))
-                if len(exp_unit_type) != 1:
-                    raise ValueError(f'Expected exactly one exposure type to match with the setup: '
-                                     f'\nHazard type: {self.hazard_type}'
-                                     f'\nExposure type: {exposure_type}. '
-                                     f'\nMatches: {exp_unit_type}')
-            else:
-                exp_unit_type = list(set(np.concatenate([np.array(unit_list) for unit_list in all_exp_unit_types])))
-                if len(exp_unit_type) != 1:
-                    raise ValueError(f'Expected exactly one exposure type to match with the setup: '
-                                     f'\nExposure type: {exposure_type}. '
-                                     f'\nMatches: {exp_unit_type}')
 
-            allowed_units = get_option_choices(['data', 'units', exp_unit_type[0]], get_value='value')
-            if self.units_exposure not in allowed_units:
+            if hasattr(self, 'hazard_type'):
+                valid_exposure_units = units.get_valid_exposure_units(self.hazard_type, exposure_type)
+            else:
+                valid_exposure_units = units.get_valid_exposure_units(exposure_type=exposure_type)
+
+            if self.units_exposure not in valid_exposure_units:
                 raise ValueError(f'Units incompatible with exposure in {type(self).__name__}. '
                                  f'\nExposure type: {exposure_type} '
                                  f'\nUnits provided: {self.units_exposure} '
