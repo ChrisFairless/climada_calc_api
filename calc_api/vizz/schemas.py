@@ -322,6 +322,7 @@ class PlaceSchema(Schema):
     location_poly: str = None
     geocoding: schemas_geocoding.GeocodePlace = None   # TODO make this private somehow?
 
+    # TODO move standardisation to a separate, ur-class
     def standardise(self):
         # We assume that if all these values are filled in, then they are correct. This is probably fine.
         if not all([self.location_name, self.location_scale, self.location_code, self.location_poly, self.geocoding]):
@@ -337,12 +338,9 @@ class PlaceSchema(Schema):
             if not self.location_poly:
                 self.location_poly = bbox_to_wkt(geocoded.bbox)
 
-        # Rename common units to our internally standard name (e.g. celsius -> degC, dollars -> USD)
-        schema_units = units.get_request_unit_parameters(self)
-        for unit_param in schema_units:
-            unit_name = self.__getattribute__(unit_param).lower()
-            if unit_name in units.UNIT_NAME_CORRECTIONS.keys():
-                self.__setattr__(unit_param, units.UNIT_NAME_CORRECTIONS[unit_name])
+        self.rename_units()
+
+        # TODO these methods are all a mess and are half or fully implemented elsewhere. Make consistent
 
         # Check hazard units make sense
         if hasattr(self, 'units_hazard'):
@@ -403,6 +401,14 @@ class PlaceSchema(Schema):
                 raise ValueError(f'Units incompatible with temperature in {type(self).__name__}. '
                                  f'\nUnits provided: {self.units_warming} '
                                  f'\nAllowed units: {allowed_units}')
+
+    def rename_units(self):
+        # Rename common units to our internally standard name (e.g. celsius -> degC, dollars -> USD)
+        schema_units = units.get_request_unit_parameters(self)
+        for unit_param in schema_units:
+            unit_name = self.__getattribute__(unit_param)
+            if unit_name and unit_name.lower() in units.UNIT_NAME_CORRECTIONS.keys():
+                self.__setattr__(unit_param, units.UNIT_NAME_CORRECTIONS[unit_name.lower()])
 
     def get_id(self):
         return util.get_hash(self)
@@ -759,10 +765,20 @@ class CreateMeasureSchema(ModelSchema):
         model_exclude = ['id', 'user_generated']
 
 
-# class MeasureRequestSchema(Schema):
-#     ids: List[uuid.UUID] = None
-#     include_defaults: bool = None
-#     hazard: str = None
+class MeasureRequestSchema(Schema):
+    measure_id: int = None
+    slug: str = None
+    hazard_type: str = None
+    exposure_type: str = None
+    units_hazard: str = None
+    units_currency: str = None
+    units_distance: str = None
+    units_temperature: str = None
+    units_speed: str = None
+
+    def standardise(self):
+        # TODO add check that measure ids exist and are consistent
+        PlaceSchema.rename_units(self)
 
 
 class CostBenefitRequest(ScenarioSchema):

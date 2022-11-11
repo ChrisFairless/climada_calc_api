@@ -9,7 +9,6 @@ ureg = UnitRegistry()
 
 # Units used in CLIMADA Data API products
 NATIVE_UNITS_CLIMADA = {
-    "economic_assets": "USD",
     "people": "people",
     "currency": "USD",
     "speed": "ms",
@@ -25,7 +24,9 @@ UNIT_NAME_CORRECTIONS = {
     "celsius": "degC",
     "fahrenheit": "degF",
     "dollars": "USD",
-    "euros": "EUR"
+    "dollar": "USD",
+    "euros": "EUR",
+    "euro": "EUR"
 }
 
 # Dictionary of units chosen by default in the API config, by unit type (e.g. 'speed': 'mph')
@@ -43,6 +44,7 @@ UNIT_TYPES = {unit_name: unit_type for unit_type, options_list in UNIT_OPTIONS.i
 HAZARD_UNIT_TYPES = {
     haz: enums.get_option_parameter(['data', 'filters', haz], parameter="unit_type") for haz in enums.HazardTypeEnum
 }
+
 
 def make_conversion_function(units_from, units_to):
     if units_from in UNIT_OPTIONS['currency']:
@@ -100,6 +102,6 @@ def get_valid_exposure_units(hazard_type=None, exposure_type=None):
                              f"\nExposure type: {exposure_type}")
         exposure_types_list = [exposure_type]
     exposure_units = set()
-    for unit_type in exposure_types_list:
-        exposure_units = exposure_units.union(set(UNIT_OPTIONS[unit_type]))
+    for exposure_type in exposure_types_list:
+        exposure_units = exposure_units.union(set(UNIT_OPTIONS[enums.EXPOSURE_TO_UNIT_TYPE[exposure_type]]))
     return list(exposure_units)

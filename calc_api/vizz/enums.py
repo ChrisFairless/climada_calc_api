@@ -69,6 +69,11 @@ IMPACT_TO_EXPOSURE = {
     'assets_affected': 'economic_assets'
 }
 
+EXPOSURE_TO_UNIT_TYPE = {
+    'people': 'people',
+    'economic_assets': 'currency'
+}
+
 HAZARD_TO_ABBREVIATION = {
     'tropical_cyclone': 'TC',
     'extreme_heat': 'EH'

@@ -318,7 +318,7 @@ def _generate_timeline_widget_frequency_intensity_change_text(
     else:
         raise ValueError(f'Could not process change in frequency: {frequency_change}')
 
-    # TODO think about whether to decscribe changing intensity rather than changing impacts
+    # TODO think about whether to describe changing intensity rather than changing impacts
     values.extend([
         schemas_widgets.TextVariable(
             key='intensity_change',
