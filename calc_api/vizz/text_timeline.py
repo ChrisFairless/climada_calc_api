@@ -291,7 +291,7 @@ def _generate_timeline_widget_frequency_intensity_change_text(
     event_description = event_description_from_hazard_type(hazard_type)
 
     text_freq_intense_change = Template(
-        'In $location $event_description $frequency_change_desc $intensity_change_desc by $future_year. $rp_text'
+        'In $location $event_description $frequency_change_desc $intensity_change_desc by $future_year.'
     )
     values = [
         schemas_widgets.TextVariable(
