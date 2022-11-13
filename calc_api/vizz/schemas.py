@@ -43,6 +43,11 @@ class JobSchema(Schema):
     code: int = None
     message: str = None
 
+    # TODO replace calls to from_task_id and from_joblog with calls to this
+    @classmethod
+    def from_request(cls, request):
+        return cls.from_task_id(request.get_id(), request.get_full_path())
+
     @classmethod
     def from_task_id(cls, task_id, location_root):
         if conf.DATABASE_MODE in ['read', 'update', 'fail_missing']:
@@ -91,7 +96,7 @@ class JobSchema(Schema):
 
     @classmethod
     # TODO refactor so that location_root is a class attribute
-    def from_asyncresult(cls, task: AsyncResult, request):
+    def from_asyncresult(cls, task: AsyncResult, location_root):
         # Note: we call the parameter 'task' here, but it's actually some task's AsyncResult
         # Sometimes all the results will be cached, so waiting a fraction of a second will let the workers assemble them
         sleep(1)
@@ -123,7 +128,7 @@ class JobSchema(Schema):
 
         output = cls(
             job_id=task.id,
-            location=request.get_full_path() + '/' + task.id,
+            location=location_root + '/' + task.id,
             status=task.status,
             request=request_dict,  # TODO work out where to get this from if the job didn't succeed
             completed_at=task.date_done,
@@ -218,10 +223,7 @@ class ResponseSchema(Schema):
 
     def get_unit_change_mapping(self, units_dict):
         # Find the Schema's unit attributes (e.g. units, unit_hazard, unit_intensity, unit_currency)
-        unit_attributes = [
-            att for att in self.dict().keys()
-            if att.startswith('unit')
-        ]
+        unit_attributes = self.unit_attributes.keys()
         mappings = {}
         for att in unit_attributes:
             from_unit = self.__getattribute__(att)
@@ -259,7 +261,6 @@ class ResponseSchema(Schema):
         else:
             raise ValueError(f"Expected either 'value' or 'values' attribute in class {str(type(self).__name__)}")
 
-
     def convert_to_climada_units(self):
         self.convert_units(units_dict=units.NATIVE_UNITS_CLIMADA)
 
@@ -270,6 +271,14 @@ class ResponseSchema(Schema):
             missing_types = {key: value for key, value in units.API_DEFAULT_UNITS if key not in units_dict.keys()}
             units_dict = units_dict.union(missing_types)
         self.convert_units(units_dict)
+
+    @property
+    def unit_attributes(self):
+        return {
+            att: unit_name for att, unit_name in self.dict().items()
+            if att.startswith('unit')
+        }
+
 
 
 class FileSchema(Schema):
@@ -739,6 +748,7 @@ class MeasureSchema(ModelSchema, ResponseSchema):
         haz_type = units.UNIT_TYPES[haz_from]
         haz_to = units_dict[haz_type]
         haz_scale_function = units.make_conversion_function(haz_from, haz_to)
+        # TODO write a one-line function that scales attributes. I was careless here and lost an hour to a bug
         self.__setattr__("hazard_cutoff", haz_scale_function(self.__getattribute__("hazard_cutoff")))
         self.__setattr__("hazard_change_constant", haz_scale_function(self.__getattribute__("hazard_change_constant")))
         haz_multiplier = self.__getattribute__("hazard_change_multiplier")
@@ -751,12 +761,15 @@ class MeasureSchema(ModelSchema, ResponseSchema):
         cost_to = units_dict["currency"]
         cost_scale_function = units.make_conversion_function(cost_from, cost_to)
         self.__setattr__("cost", cost_scale_function(self.__getattribute__("cost")))
-        self.__setattr__("cost", cost_scale_function(self.__getattribute__("annual_upkeep")))
+        self.__setattr__("annual_upkeep", cost_scale_function(self.__getattribute__("annual_upkeep")))
 
-        dist_from = self.__getattribute__("units_distance")
-        dist_to = units_dict["currency"]
-        dist_scale_function = units.make_conversion_function(dist_from, dist_to)
-        self.__setattr__("max_distance_from_coast", dist_scale_function(self.__getattribute__("max_distance_from_coast")))
+        if "distance" in units_dict.keys():
+            dist_from = self.__getattribute__("units_distance")
+            dist_to = units_dict["distance"]
+            dist_scale_function = units.make_conversion_function(dist_from, dist_to)
+            self.__setattr__("max_distance_from_coast", dist_scale_function(self.__getattribute__("max_distance_from_coast")))
+        else:
+            LOGGER.warning("No instructions for distance units in measure ")
 
 
 class CreateMeasureSchema(ModelSchema):
@@ -799,14 +812,14 @@ class CostBenefit(ResponseSchema):
     measure: List[MeasureSchema]
     cost: List[float]
     costbenefit: List[float]
-    combined_cost = float
-    combined_costbenefit = float
+    combined_cost: float = None
+    combined_costbenefit: float = None
     units_currency: str
     units_warming: str
     units_response: str
 
     def convert_units(self, units_dict):
-        response_type = units.UNIT_TYPES['units_response']
+        response_type = units.UNIT_TYPES[self.units_response]
         response_from_to = (self.units_response, units_dict[response_type])
         temperature_from_to = (self.units_warming, units_dict['temperature'])
 
@@ -817,8 +830,9 @@ class CostBenefit(ResponseSchema):
         _ = [bar.convert_breakdown_units(temperature_from_to, response_from_to) for bar in self.items]
         self.cost = [cost_conversion_fn(x) for x in self.cost]
         self.costbenefit = [costbenefit_conversion_factor * x for x in self.costbenefit]
-        self.combined_cost = cost_conversion_fn(self.combined_cost)
-        self.combined_costbenefit = costbenefit_conversion_factor * self.combined_costbenefit
+        if self.combined_cost:
+            self.combined_cost = cost_conversion_fn(self.combined_cost)
+            self.combined_costbenefit = costbenefit_conversion_factor * self.combined_costbenefit
         ResponseSchema.convert_units(self, units_dict)
 
 

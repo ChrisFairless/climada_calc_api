@@ -122,7 +122,7 @@ class TestEndpoints(unittest.TestCase):
             'units_hazard': units_hazard,
             'units_warming': 'degF',
             'units_exposure': units_exposure,
-            'units_area': 'square miles'
+            'units_distance': 'miles'
         }
 
         # req = dynamic_request_create(endpoint, calculation_endpoints[endpoint], request_settings)

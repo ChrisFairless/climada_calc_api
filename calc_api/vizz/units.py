@@ -11,7 +11,7 @@ ureg = UnitRegistry()
 NATIVE_UNITS_CLIMADA = {
     "people": "people",
     "currency": "USD",
-    "speed": "ms",
+    "speed": "m/s",
     "temperature": "degC",
     "distance": "kilometres",     # For centroids matching. (Arcseconds otherwise but we're not using those utils)
     # "units_area": "square_kilometres",
@@ -23,6 +23,7 @@ UNITS_NOT_TO_CONVERT = ['fraction', '%', 'percent', 'years', 'people']
 UNIT_NAME_CORRECTIONS = {
     "celsius": "degC",
     "fahrenheit": "degF",
+    "ms": "m/s",
     "dollars": "USD",
     "dollar": "USD",
     "euros": "EUR",
@@ -47,11 +48,18 @@ HAZARD_UNIT_TYPES = {
 
 
 def make_conversion_function(units_from, units_to):
+    # print(f"CONVERSION: {units_from} - {units_to}")
+    if units_from == units_to:
+        return lambda x: x
+
     if units_from in UNIT_OPTIONS['currency']:
+        if units_to not in UNIT_OPTIONS['currency']:
+            raise ValueError(f'Unable to convert currency to {units_to}.'
+                             f'Either this is not a currency or it is not listed in the API options')
         c = CurrencyRates()
         return lambda x: x * c.get_rate(units_from, units_to)
-    else:
-        return lambda x: ureg.Quantity(x, ureg(units_from)).to(ureg(units_to)).m
+
+    return lambda x: ureg.Quantity(x, ureg(units_from)).to(ureg(units_to)).m
 
 
 def get_request_unit_parameters(s):

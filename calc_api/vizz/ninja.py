@@ -488,7 +488,7 @@ def _api_widget_costbenefit_poll(request, job_id):
 def _api_widget_risk_timeline_submit(request, data: schemas_widgets.TimelineWidgetRequest):
     job = widget_timeline.widget_timeline(data)
     # TODO make all the widget endpoints either from_task_id or from_asyncresult, it doesn't seem to matter which
-    return schemas_widgets.TimelineWidgetJobSchema.from_asyncresult(job, request)
+    return schemas_widgets.TimelineWidgetJobSchema.from_asyncresult(job, 'rest/vizz/widgets/risk-timeline')
 
 @_api.get(
     "/widgets/risk-timeline/{uuid:job_id}",

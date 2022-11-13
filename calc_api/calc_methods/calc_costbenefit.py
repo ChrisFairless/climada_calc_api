@@ -9,8 +9,8 @@ from celery_singleton import Singleton
 
 import calc_api.vizz.schemas as schemas
 from calc_api.config import ClimadaCalcApiConfig
-from calc_api.vizz.enums import get_rp_options
-from calc_api.vizz.units import get_valid_exposure_units
+from calc_api.vizz.enums import get_rp_options, exposure_type_from_impact_type, EXPOSURE_TO_UNIT_TYPE
+from calc_api.vizz import units
 from calc_api.calc_methods.calc_impact import get_impact_event, get_impact_by_return_period
 from calc_api.job_management import standardise_schema
 from calc_api.job_management.job_management import database_job
@@ -48,8 +48,6 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
         'measures': None,
         'hazard_type': request.hazard_type,
         'impact_type': request.impact_type,
-        'units_exposure': request.units_exposure,
-        'units_warming': request.units_warming,
     }
     job_config_list.append(baseline_config)
 
@@ -73,10 +71,12 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
 
     if request.measures:
         for m in request.measures:
+            m = schemas.MeasureSchema(**m)
+            m.convert_to_climada_units()
             measure_config = copy.deepcopy(climate_config)
             measure_config.update({
-                'job_name': f'future climate with {m["name"]}',
-                'measures': [m],
+                'job_name': f'future climate with {m.name}',
+                'measures': [m.dict()],
             })
             job_config_list.append(measure_config)
         # # For now we won't do combined measures calculations
@@ -132,6 +132,7 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     future_year = max(df['exp_year'])
     haz_type = df['hazard_type'][0]
     rp = df['hazard_rp'][0]
+    exposure_type = exposure_type_from_impact_type(job_config_list[0]['impact_type'])
 
     # This could maybe be simpler, but I was having bugs with celery duplicating jobs so we're copying the timeline code
     # Come back and simplify this maybe, but not now.
@@ -165,11 +166,6 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     #     combined_measure_change = all_measure_impacts - climate_change
     # else:
     #     combined_measure_change = None
-
-    # TODO make units flexible. Check units cost consistent with units exposure when they're both monetary
-    units_currency = measures_list[0]['units_currency']
-    units_exposure = job_config_list[0]['units_exposure']
-    units_warming = job_config_list[0]['units_warming']
 
     costbenefit_breakdown = schemas.BreakdownBar(
         year_label=str(future_year),
@@ -227,9 +223,11 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
     #     schemas.CategoricalLegendItem(label="+ combined measures", slug="plus_combined_measures", value=example_value)
     # ]
 
+    climada_exposure_units = units.NATIVE_UNITS_CLIMADA[EXPOSURE_TO_UNIT_TYPE[exposure_type]]
+
     legend = schemas.CategoricalLegend(
         title=title,
-        units=units_exposure,
+        units=climada_exposure_units,
         items=legend_items
     )
 
@@ -245,10 +243,10 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
         cost=out_costs,
         costbenefit=out_costbenefits,
         combined_cost=None,
-        combined_benefit=None,
-        units_currency=units_currency,
-        units_warming=units_warming,
-        units_response=units_exposure
+        combined_costbenefit=None,
+        units_currency=units.NATIVE_UNITS_CLIMADA['currency'],
+        units_warming=units.NATIVE_UNITS_CLIMADA['temperature'],
+        units_response=climada_exposure_units
     )
 
     metadata = schemas.CostBenefitMetadata(

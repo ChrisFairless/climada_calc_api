@@ -87,19 +87,21 @@ def get_default_measures(
     return measures_list
 
 
-
 def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
     request_id = data.get_id()
     data_dict = data.dict()
     if not data.location_poly:
         data_dict['location_poly'] = util.bbox_to_wkt(data_dict['geocoding']['bbox'])
     data_dict['exposure_type'] = enums.exposure_type_from_impact_type(data.impact_type)
+
     if data.measure_ids and len(data.measure_ids) > 0:
+        # TODO We work in CLIMADA native units and convert at the end
         measures = [
             get_default_measures(
                 measure_id=m_id,
                 units_hazard=data.units_hazard,
-                units_currency=data.units_currency
+                units_currency=data.units_currency,
+                units_distance=units.NATIVE_UNITS_CLIMADA['distance'],
             ) for m_id in data.measure_ids]
     else:
         measures = []
@@ -110,7 +112,9 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
             hazard_type=data.hazard_type,
             exposure_type=data_dict['exposure_type'],
             units_hazard=data.units_hazard,
-            units_currency=data.units_currency
+            units_currency=data.units_currency,
+            units_speed=data.units_hazard,
+            units_distance=units.NATIVE_UNITS_CLIMADA['distance'],
         )
         raise ValueError(f'Valid measures not found for the cost-benefit calculation'
                          f'\nMeasure ids provided: {data.measure_ids}'
@@ -119,6 +123,12 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
                          f'\nValid IDs: {[m.id for m in valid_measures]}'
                          f'\nValid names: {[m.name for m in valid_measures]}'
                          )
+
+    units_dict = {
+        units.UNIT_TYPES[data.units_hazard]: data.units_hazard,
+        units.UNIT_TYPES[data.units_exposure]: data.units_exposure,
+        'currency': data.units_currency
+    }
 
     measures = [m[0].to_dict() for m in measures]
     data_dict.update({'measures': measures})

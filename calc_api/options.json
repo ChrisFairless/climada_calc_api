@@ -640,7 +640,7 @@
             "default": {
               "mph": 39,
               "kmh": 63,
-              "ms": 18,
+              "m/s": 18,
               "kn": 35
             },
             "choices": {
@@ -654,7 +654,7 @@
                 "maximum": 252,
                 "step": 1
               },
-              "ms": {
+              "m/s": {
                 "minimum": 18,
                 "maximum": 70,
                 "step": 1
@@ -693,7 +693,7 @@
             "default": {
               "mph": 0,
               "kmh": 0,
-              "ms": 0,
+              "m/s": 0,
               "kn": 0
             },
             "choices": {
@@ -707,7 +707,7 @@
                 "maximum": 0,
                 "step": 1
               },
-              "ms": {
+              "m/s": {
                 "minimum": -10,
                 "maximum": 0,
                 "step": 0.5
@@ -807,7 +807,7 @@
           },
           {
             "name": "meters per second",
-            "value": "ms"
+            "value": "m/s"
           },
           {
             "name": "knots",

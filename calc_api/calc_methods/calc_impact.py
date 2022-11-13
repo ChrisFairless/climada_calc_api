@@ -15,6 +15,7 @@ from calc_api.calc_methods.calc_hazard import get_hazard_from_api, subset_hazard
 from calc_api.calc_methods.calc_exposure import get_exposure_from_api, subset_exposure_extent
 from calc_api.vizz.enums import exposure_type_from_impact_type, HAZARD_TO_ABBREVIATION
 from calc_api.calc_methods.util import standardise_scenario
+from calc_api.vizz import units
 from calc_api.job_management.job_management import database_job
 
 conf = ClimadaCalcApiConfig()
@@ -180,13 +181,15 @@ def get_impact_by_return_period(
              "value": list(imp_by_rp),
              "total_freq": total_freq,
              "mean_imp": mean_imp,
-             "freq_curve": None if not save_frequency_curve else freq_curve_dict}
+             "freq_curve": None if not save_frequency_curve else freq_curve_dict
+             }
         ]
 
 
 
     # TODO should this be a separate celery job? with the (admittedly large) result above cached?
     # The code here hasn't been used operationally ... activate with care
+    LOGGER.warning("THIS CODE ISN'T READY YET: EDIT calc_impact.py")
     if any(return_periods_aai):
         imp_rp_aai = imp.eai_exp
     else:
