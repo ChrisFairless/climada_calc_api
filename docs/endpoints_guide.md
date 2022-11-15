@@ -270,6 +270,8 @@ Queries are made to the `/rest/vizz/widgets/social-vulnerability` POST endpoint 
 
 Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_social_vulnerability_submit.
 
+*Note: social vulnerability data is only available for lower and middle-income countries. In this case there will be no numeric data and the automatically generated text will be very brief.*
+
 #### Required parameters
 
 | Parameter | Type | Default | Description | Notes |
@@ -287,7 +289,7 @@ Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-
 
 #### Example request
 
-This is a request for social vulnerability showing the expected impacts from a 1-in-10 year tropical cyclone on economic assets in Havana in 2080 under the RCP 8.5 warming scenario and the SSP5 population growth scenario.
+This is a request for social vulnerability information for Jamaica.
 
 ```
 curl --location --request POST 'https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/widgets/social-vulnerability' \
@@ -314,3 +316,60 @@ The `ExposureBreakdownBar` has this structure:
 | `location_scale` | string | | Currently unused | 
 | `category_labels`	| list of strings | Vulnerability deciles, always in the range '1' to '10' | Bars with no data are currently missed out |
 | `values` | list of numbers | Each decile's proportional population in the area of interest (in the range 0 – 1) | |
+
+
+
+## Biodiversity
+
+The `biodiversity` endpoint gives information about landuse in the area of interest. It returns all the information needed to construct a bar or pie chart of land use types, plus descriptive text putting the information into an adaptation context.
+
+### Query structure
+
+Queries are made to the `/rest/vizz/widgets/biodiversity` POST endpoint available at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/widgets/biodiversity.
+
+Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_biodiversity_submit.
+
+#### Required parameters
+
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- |  ------- | ----------- |------ |
+| `location_name` |	string |  | Name of place of study | The list of precalculated locations are available through the `options` endpoint |
+| `hazard_type` | string | | The hazard type the measure applies to. | Currently one of `tropical_cyclone` or `extreme_heat`. Provided by the `options` endpoint. |
+
+
+#### Not required parameters
+| `location_scale` | string | | Information on the type of location. Determined automatically if not provided | No need to provide this |
+| `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
+| `location_poly` |	list of list of numbers | | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
+| `geocoding` | GeocodePlace schema | None | For internal use: ignore! I'll remove it later. | |
+
+
+#### Example request
+
+This is a request for biodiversity data for Jamaica.
+
+```
+curl --location --request POST 'https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/widgets/biodiversity' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "hazard_type": "tropical_cyclone",
+    "location_name": "Jamaica"
+}'
+```
+
+### Response
+
+The response is a `BiodiversityWidgetJobSchema` object, which you can see at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/docs#/widget/calc_api_vizz_ninja__api_widget_biodiversity_poll.
+
+The response is contained in its `response.data` properties, where the `text` property contains the generated text and the `chart` contains the data.
+
+The chart gives legend information and a bar/pie chart in its `items` property. Each is an `ExposureBreakdownBar` giving the fraction of (non-ocean) area taken up by each land-use type. It has this structure:
+
+| Property | Type | Description | Notes |
+| -------- | ---- | ----------- |------ |
+| `label` | string | The chart title | | 
+| `location_scale` | string | | Currently unused | 
+| `category_labels`	| list of strings | Land use types | Non-ocean only |
+| `values` | list of float | Each land-use types fractional contribution to the total area (in the range 0 – 1) | |
+
+The automatically generated text gives an introduction and a sentence for each land-use type.
