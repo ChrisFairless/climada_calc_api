@@ -65,13 +65,9 @@ def get_default_measures(
     units_dict['currency'] = request.units_currency
 
     if request.units_distance:
-        if request.units_distance != units.NATIVE_UNITS_CLIMADA['distance']:
-            raise ValueError("Can't yet convert distance units in measures. Implement!"
-                             f"\nRequested: {request.units_distance}"
-                             f"\nCLIMADA: {units.NATIVE_UNITS_CLIMADA['distance']}")
+        units_dict['distance'] = request.units_distance
     else:
-        request.units_distance = units.NATIVE_UNITS_CLIMADA['distance']
-    units_dict['distance'] = request.units_distance
+        units_dict['distance'] = units.NATIVE_UNITS_CLIMADA['distance']
 
     measures = models.Measure.objects.filter(user_generated=False)
     if request.measure_id:
@@ -83,6 +79,7 @@ def get_default_measures(
     if request.exposure_type:
         measures = measures.filter(exposure_type=request.exposure_type)
     measures_list = [schemas.MeasureSchema(**m.__dict__) for m in measures]
+    # TODO can we move this conversion into the wrangle_units decorator like all the others?
     _ = [measure.convert_units(units_dict) for measure in measures_list]
     return measures_list
 
