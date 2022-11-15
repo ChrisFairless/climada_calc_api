@@ -259,7 +259,7 @@
             "unit_type": "distance",
             "default": {
               "miles": 0,
-              "kilometers": 0
+              "km": 0
             },
             "choices": {
               "miles": {
@@ -267,7 +267,7 @@
                 "maximum": 60,
                 "step": 3
               },
-              "kilometers": {
+              "km": {
                 "minimum": 4,
                 "maximum": 60,
                 "step": 4
@@ -618,7 +618,7 @@
             "unit_type": "distance",
             "default": {
               "miles": 0,
-              "kilometers": 0
+              "km": 0
             },
             "choices": {
               "miles": {
@@ -626,7 +626,7 @@
                 "maximum": 60,
                 "step": 3
               },
-              "kilometers": {
+              "km": {
                 "minimum": 4,
                 "maximum": 60,
                 "step": 4
@@ -639,9 +639,9 @@
             "unit_type": "speed",
             "default": {
               "mph": 39,
-              "kmh": 63,
+              "km/h": 63,
               "m/s": 18,
-              "kn": 35
+              "knots": 35
             },
             "choices": {
               "mph": {
@@ -649,7 +649,7 @@
                 "maximum": 157,
                 "step": 1
               },
-              "kmh": {
+              "km/h": {
                 "minimum": 63,
                 "maximum": 252,
                 "step": 1
@@ -659,7 +659,7 @@
                 "maximum": 70,
                 "step": 1
               },
-              "kn": {
+              "knots": {
                 "minimum": 35,
                 "maximum": 137,
                 "step": 1
@@ -692,9 +692,9 @@
             "unit_type": "speed",
             "default": {
               "mph": 0,
-              "kmh": 0,
+              "km/h": 0,
               "m/s": 0,
-              "kn": 0
+              "knots": 0
             },
             "choices": {
               "mph": {
@@ -702,7 +702,7 @@
                 "maximum": 0,
                 "step": 1
               },
-              "kmh": {
+              "km/h": {
                 "minimum": -35,
                 "maximum": 0,
                 "step": 1
@@ -712,7 +712,7 @@
                 "maximum": 0,
                 "step": 0.5
               },
-              "kn": {
+              "knots": {
                 "minimum": -20,
                 "maximum": 0,
                 "step": 1
@@ -765,7 +765,7 @@
           },
           {
             "name": "kilometers",
-            "value": "kilometers"
+            "value": "km"
           }
         ]
       },
@@ -803,7 +803,7 @@
           },
           {
             "name": "kilometers per hour",
-            "value": "kmh"
+            "value": "km/h"
           },
           {
             "name": "meters per second",
@@ -811,7 +811,7 @@
           },
           {
             "name": "knots",
-            "value": "kn"
+            "value": "knots"
           }
         ]
       },
