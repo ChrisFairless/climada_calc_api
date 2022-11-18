@@ -126,7 +126,7 @@ Each parameter applies a filter to the queried measures. If no parameters are su
 This is a request for pre-defined adaptation measures for tropical cyclones affecting economic assets.
 
 ```
-curl --location --request GET 'https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/widgets/default-measures?hazard_type=tropical_cyclone&exposure_type=economic_assets&units_hazard=mph&units_currency=USD'
+curl --location --request GET 'https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/widgets/default-measures?hazard_type=tropical_cyclone&exposure_type=economic_assets&units_hazard=mph&units_currency=USD&units_distance='miles'
 ```
 
 ### Returned values
@@ -187,6 +187,7 @@ A query is structured using the `CostBenefitRequest` schema, documented below an
 | `measure_ids`	| list of integers | List of IDs of adaptation measures to be implemented. Measures are available through the `default_measures` endpoint (see above) | Currently either `2` or `4` |
 | `units_hazard` | string | Units the hazard is measured in | One of `m/s`, `mph`, `km/h`, `knots`' (tropical cyclones) or `degC` `degF` (heat). Provided by the `options` endpoint |
 | `units_exposure` | string | Units the exposure is measured in | One of `USD`, `EUR` (economic assets) or `people` (people) |
+| `units_currency` | string | Units to return currency information in | One of `USD`, `EUR`. Provided by the `options` endpoint |
 | `units_warming` |	string | Units the degree of warming is measured in | One of `degC`, `degF` |
 
 ### Not required parameters
