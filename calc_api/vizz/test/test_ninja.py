@@ -70,14 +70,26 @@ class TestEndpoints(unittest.TestCase):
 
     # For now, just tests all endpoints respond
 
-    def test_options_endpoint(self):
+    def test_options(self):
         LOGGER.debug("Testing options endpoint")
         url = server_address + 'rest/vizz/options'
         response = requests.request("GET", url, headers={}, data={})
         self.assertEqual(response.status_code, 200)
 
-    def test_geocode_endpoint(self):
-        LOGGER.debug("Testing geocoding endpoint")
+    def test_geocode_autocomplete(self):
+        LOGGER.debug("Testing geocoding by id")
+        url = server_address + 'rest/vizz/geocode/id/level05.26390023'
+        response = requests.request("GET", url, headers={}, data={})
+        self.assertEqual(response.status_code, 200)
+
+    def test_geocode_place(self):
+        LOGGER.debug("Testing geocoding endpoint: by id")
+        url = server_address + 'rest/vizz/geocode/autocomplete?query=level05.26390023'
+        response = requests.request("GET", url, headers={}, data={})
+        self.assertEqual(response.status_code, 200)
+
+    def test_geocode_place(self):
+        LOGGER.debug("Testing geocoding endpoint: by name")
         url = server_address + 'rest/vizz/geocode/autocomplete?query=Port-au-Prince'
         response = requests.request("GET", url, headers={}, data={})
         self.assertEqual(response.status_code, 200)

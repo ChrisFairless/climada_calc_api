@@ -409,6 +409,14 @@ def _api_geocode_autocomplete(request, query):
     return geocode.geocode_autocomplete(query)
 
 
+@_api.get("/geocode/id/{str:id}",
+          tags=["geocode"],
+          response=schemas_geocoding.GeocodePlace,
+          summary="Convert place name or ID into geocoded object")
+def _api_geocode_place(request, id):
+    return geocode.location_from_code(location_code=id)
+
+
 @_api.get("/geocode/reca_locations",
           tags=["geocode"],
           response=schemas_geocoding.GeocodePlaceList,

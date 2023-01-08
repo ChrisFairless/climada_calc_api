@@ -18,6 +18,7 @@ LOGGER.setLevel(getattr(logging, conf.LOG_LEVEL))
 
 PRECISION = 6   # Decimal places to round to for lat lon.
 
+
 def standardise_location(location_name=None, location_code=None, location_scale=None, location_poly=None):
     if not location_name and not location_code:
         raise ValueError('location data requires location_name or location_code to be properties')
@@ -43,9 +44,9 @@ def standardise_location(location_name=None, location_code=None, location_scale=
     elif location_scale:
         LOGGER.warning("For now geocoding can't handle location scales other than country: ignoring!")
 
-    if not location_code and re.search('[\d]{3}', location_name):
-        LOGGER.warning(f'Looks like location code was provided as location name. Using it as a code: {location_name}')
-        location_code = location_name
+    # if not location_code and re.search('[\d]{3}', location_name):
+    #     LOGGER.warning(f'Looks like location code was provided as location name. Using it as a code: {location_name}')
+    #     location_code = location_name
 
     if location_code:
         return location_from_code(location_code)
