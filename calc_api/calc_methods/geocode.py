@@ -1,15 +1,14 @@
 import requests
 import logging
 import re
-from shapely.geometry import Polygon
 
 from climada.util.coordinates import country_to_iso
 
 from climada_calc.settings import GEOCODE_URL, MAPTILER_KEY
 from calc_api.vizz.schemas_geocoding import GeocodePlaceList, GeocodePlace
+from calc_api.calc_methods.util import bbox_to_coords
 from calc_api.config import ClimadaCalcApiConfig
 from calc_api.vizz.models import Location
-from calc_api.vizz import schemas
 
 conf = ClimadaCalcApiConfig()
 
@@ -116,6 +115,7 @@ def location_from_name(location_name):
 
 def osmnames_to_schema(place):
     bbox = [round(x, PRECISION) for x in place['boundingbox']]
+    poly = bbox_to_coords(bbox)
     return GeocodePlace(
         name=place['display_name'],
         id=place['osm_id'],
@@ -125,7 +125,8 @@ def osmnames_to_schema(place):
         state=place['state'],
         country=place['country'],
         country_id=country_to_iso(place['country']),
-        bbox=bbox
+        bbox=bbox,
+        poly=poly
     )
 
 
@@ -135,6 +136,7 @@ def maptiler_to_schema(place):
 
     country, country_iso3 = _maptiler_establish_country_from_place(place)
     bbox = [round(x, PRECISION) for x in place['bbox']]
+    poly = bbox_to_coords(bbox)
 
     return GeocodePlace(
         name=place['place_name'],
@@ -145,7 +147,8 @@ def maptiler_to_schema(place):
         state=_get_place_context_type(place, 'state'),
         country=country,
         country_id=country_iso3,
-        bbox=bbox
+        bbox=bbox,
+        poly=poly
     )
 
 
