@@ -30,10 +30,24 @@ class GeocodePlace(ModelSchema):
             poly = util.poly_to_coords(wkt.loads(loc.bbox))
         else:
             poly = None
-        loc.bbox, loc.poly = None, None
-        loc = cls().from_orm(loc)
-        loc.bbox, loc.poly = bbox, poly
-        return loc
+        ## No idea why I can't use .from_orm here
+        # loc.bbox, loc.poly = None, None
+        # loc = cls().from_orm(loc)
+        # loc.bbox, loc.poly = bbox, poly
+        # return loc
+        return Location(
+            name=loc.name,
+            id=loc.id,
+            scale=loc.scale,
+            country=loc.country,
+            country_id=loc.country_id,
+            admin1=loc.admin1,
+            admin1_id=loc.admin1_id,
+            admin2=loc.admin2,
+            admin2_id=loc.admin2_id,
+            bbox=bbox,
+            poly=poly
+        )
 
     def to_location_model(self):
         loc_dict = self.dict()
