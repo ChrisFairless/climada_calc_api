@@ -58,8 +58,8 @@ def get_hazard_by_return_period(
     if return_period == "aai":
         raise ValueError("Can't calculate average annual statistics for hazard data")
     else:
-        return_period = float(return_period)
-        rp_intensity = haz.local_exceedance_inten([return_period])[[0]].flatten()
+        return_period = [float(rp) for rp in return_period] if isinstance(return_period, list) else [float(return_period)]
+        rp_intensity = haz.local_exceedance_inten(return_period)[[0]].flatten()
 
     return [
         {"lat": float(lat), "lon": float(lon), "intensity": float(intensity)}
@@ -149,6 +149,9 @@ def subset_hazard_extent(
 
     extent = (lonmin, lonmax, latmin, latmax)
 
-    return haz.select(extent=extent)
+    haz = haz.select(extent=extent)
+    if not haz:
+        raise ValueError('The hazard did not intersect with the requested polygon: no centroids matched')
+    return haz
 
 

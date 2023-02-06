@@ -50,10 +50,10 @@ def get_default_measures(
         unit_type = units.UNIT_TYPES[request.units_hazard]
         if unit_type == "temperature":
             if request.units_temperature:
-                assert units_hazard == request.units_temperature
+                assert request.units_hazard == request.units_temperature
         elif unit_type == "speed":
             if request.units_speed:
-                assert units_hazard == request.units_speed
+                assert request.units_hazard == request.units_speed
         else:
             raise ValueError(f'Unexpected hazard unit type. Units: {request.units_hazard}. Type: {unit_type}')
         units_dict[unit_type] = request.units_hazard
