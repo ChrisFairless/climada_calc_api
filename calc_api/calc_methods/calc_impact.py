@@ -153,8 +153,13 @@ def get_impact_by_return_period(
                 imp_by_rp[return_periods_int] = new_impact_by_return_period
 
                 # Reduce the amount of data in the frequency curve
-                ix_last_zero = [i - 1 for i, imp in enumerate(freq_curve.impact) if imp > 0][0]
-                ix_last_zero = max(0, ix_last_zero)
+                ix_nonzero = [i for i, imp in enumerate(freq_curve.impact) if imp != 0]
+                if len(ix_nonzero) == 0:
+                    LOGGER.warning('All calculated impacts are zero')
+                    ix_last_zero = 0
+                else:
+                    ix_last_zero = ix_nonzero[0] - 1
+                    ix_last_zero = max(0, ix_last_zero)
                 freq_curve.return_per = freq_curve.return_per[ix_last_zero:]
                 freq_curve.impact = freq_curve.impact[ix_last_zero:]
 
