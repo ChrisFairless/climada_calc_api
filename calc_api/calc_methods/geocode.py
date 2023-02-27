@@ -173,12 +173,19 @@ def _maptiler_establish_country_from_place(place):
         if country:
             try:
                 country_iso3 = country_to_iso(country)
-            except LookupError as e:
-                raise LookupError(f'Could not match the Maptiler returned country name to a country code. '
-                                  f'Country: {country}.'
-                                  f'\nError 1: \n{e}'
-                                  f'\nQuery result:'
-                                  f'\n{place}')
+            except LookupError as e1:
+                try:
+                    retry_country = country.replace("The ", "")
+                    if retry_country != country:
+                        country_iso3 = country_to_iso(retry_country)
+                    else:
+                        raise LookupError(e1)
+                except LookupError as e2:
+                    raise LookupError(f'Could not match the Maptiler returned country name to a country code. '
+                                      f'Country: {country}.'
+                                      f'\nError 1: \n{e2}'
+                                      f'\nQuery result:'
+                                      f'\n{place}')
 
     if not country:
         raise ValueError(f'No country could be established from this maptiler query:\n{place}')
