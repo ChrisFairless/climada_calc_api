@@ -132,8 +132,12 @@ def get_hazard_from_api(
         return haz
 
     LOGGER.debug(f'Requesting {status} {hazard_type} hazard from Data API. Request properties: {request_properties}')
-    return client.get_hazard(hazard_type, properties=request_properties, status=status, version=version)
-
+    try:
+        return client.get_hazard(hazard_type, properties=request_properties, status=status, version=version)
+    except Client.NoResult as e:
+        raise Client.NoResult(f'No result found for request {status} {hazard_type} hazard from Data API. '
+                              f'\nRequest properties: {request_properties}'
+                              f'\nError: {e}')
 
 def get_hazard_event(hazard_type,
                      country,
