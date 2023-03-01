@@ -1,6 +1,7 @@
 import requests
 import logging
 import re
+from pycountry import countries
 
 from climada.util.coordinates import country_to_iso
 
@@ -73,17 +74,11 @@ def location_from_code(location_code):
 
     # TODO see if maptiler responses are sorted by the 'relevance' property or if we need to do that
     elif conf.GEOCODER == 'maptiler':
-        url = f'https://api.maptiler.com/geocoding/{location_code}.json?key={MAPTILER_KEY}'
+        language = 'en'
+        url = f'https://api.maptiler.com/geocoding/{location_code}.json?language={language}&key={MAPTILER_KEY}'
         place = requests.get(url=url, headers={'Origin': 'reca-api.herokuapp.com'})  # TODO split this to a setting?
         place = place.json()['features'][0]
-
-        if 'country' in place:
-            return maptiler_to_schema(place)
-        else:
-            new_place = location_from_name(place['place_name'])  # TODO This isn't ideal - it adds a second query and sometimes will end up with a different result...
-            if new_place.id != place['id']:
-                raise ValueError("Geocoding couldn't determine the country for the request. This is stupid, but let's see how often it happens")
-            return new_place
+        return maptiler_to_schema(place)
 
     else:
         raise ValueError(f"No valid geocoder selected. Set in climada_calc-config.yaml. Possible values: osmnames, nominatim_web. Current value: {conf.GEOCODER}")
@@ -131,10 +126,17 @@ def osmnames_to_schema(place):
 
 
 def maptiler_to_schema(place):
+    try:
+        country, country_iso3 = _maptiler_establish_country_from_place(place)
+    except ValueError as e:
+        # Sometimes when querying by place ID instead of name, we don't get all the relevant information.
+        # This fills the gap
+        country_details = countries.get(alpha_2=place['properties']['country_code'])
+        country, country_iso3 = country_details.name, country_details.alpha_3
+
     if len(list(place['place_type'])) > 1:
         LOGGER.debug(f'Geocoder was given multiple place types: {place["place_type"]}')
 
-    country, country_iso3 = _maptiler_establish_country_from_place(place)
     bbox = [round(x, PRECISION) for x in place['bbox']]
     poly = bbox_to_coords(bbox)
 
@@ -227,20 +229,40 @@ def query_place(s):
 
 def get_one_place(s, exact=True):
     # TODO fix the location model so this works!!
+    # TODO use a Q object so this is one query
     db_location = Location.objects.filter(name=s)
     if len(db_location) == 1:
         return GeocodePlaceList(data=[GeocodePlace(**db_location[0].__dict__)])
+    db_location = Location.objects.filter(id=s)
+    if len(db_location) == 1:
+        return GeocodePlaceList(data=[GeocodePlace(**db_location[0].__dict__)])
+
     response = query_place(s)
     if len(response) == 0:
         raise ValueError(f'Could not identify a place corresponding to {s}')
 
-    exact_response = [r for r in response if r['display_name'] == s]
-    if exact_response:
-        return osmnames_to_schema(exact_response[0])
+    if hasattr(response[0], 'display_name'):
+        exact_response = [r for r in response if r['display_name'] == s]
+    elif hasattr(response[0], 'display_name_en'):
+        exact_response = [r for r in response if r['display_name_en'] == s]
+    elif hasattr(response[0], 'place_name'):
+        exact_response = [r for r in response if r['place_name'] == s]
+    else:
+        exact_response = [r for r in response if r['id'] == s]
+
+    if exact_response and len(exact_response) > 0:
+        answer_is = exact_response[0]
     elif not exact:
-        return osmnames_to_schema(response[0])
+        answer_is = response[0]
     else:
         raise ValueError(f'Could not exactly identify a place corresponding to {s}. Closest match: {response[0]["display_name"]}')
+
+    if conf.GEOCODER in ['osmnames', 'nominatim_web']:
+        return osmnames_to_schema(answer_is)
+    elif conf.GEOCODER == 'maptiler':
+        return maptiler_to_schema(answer_is)
+    else:
+        raise ValueError('The config variable GEOCODER must be one of osmnames, nominatim_web, maptiler.')
 
 
 # TODO make this more resilient to unexpected failures to match
@@ -260,9 +282,13 @@ def get_place_hierarchy(s, exact=True):
 # TODO there's no real reason to have this separate from query_place is there?
 def geocode_autocomplete(s):
     # TODO fix the location model so this works!!
-    #db_location = Location.objects.filter(name=s)
-    #if len(db_location) == 1:
-    #    return GeocodePlaceList(data=[GeocodePlace.from_location_model(db_location[0])])
+    db_location = Location.objects.filter(name=s)
+    if len(db_location) == 1:
+        return GeocodePlaceList(data=[GeocodePlace(**db_location[0].__dict__)])
+    db_location = Location.objects.filter(id=s)
+    if len(db_location) == 1:
+        return GeocodePlaceList(data=[GeocodePlace(**db_location[0].__dict__)])
+
     response = query_place(s)
     if not response:
         return GeocodePlaceList(data=[])
