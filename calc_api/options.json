@@ -58,10 +58,10 @@
                 "description": "middle of the road"
               },
               {
-                "name": "SSP5 8.5",
-                "value": "ssp585",
+                "name": "SSP5 6.0",
+                "value": "ssp560",
                 "ssp_value": "ssp5",
-                "rcp_value": "rcp85",
+                "rcp_value": "rcp60",
                 "description": "business as usual"
               }
             ]
@@ -347,7 +347,7 @@
         "name": "Tropical cyclone",
         "value": "tropical_cyclone",
         "unit_type": "speed",
-        "default": false,
+        "default": true,
         "location_options": [
           "Havana",
           "Saint Kitts and Nevis",
@@ -405,10 +405,10 @@
                 "description": "Middle of the road"
               },
               {
-                "name": "SSP5 8.5",
-                "value": "ssp585",
+                "name": "SSP5 6.0",
+                "value": "ssp560",
                 "ssp_value": "ssp5",
-                "rcp_value": "rcp85",
+                "rcp_value": "rcp60",
                 "description": "Business as usual"
               }
             ]

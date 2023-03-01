@@ -31,7 +31,7 @@ class ScenarioNameEnum(str, Enum):
     historical = 'historical'
     ssp126 = 'ssp126'
     ssp245 = 'ssp245'
-    ssp585 = 'ssp585'
+    ssp560 = 'ssp560'
 
 
 class ScenarioGrowthEnum(str, Enum):
@@ -48,7 +48,6 @@ class ScenarioClimateEnum(str, Enum):
     rcp26 = 'rcp26'
     rcp45 = 'rcp45'
     rcp60 = 'rcp60'
-    rcp85 = 'rcp85'
 
 
 def assert_in_enum(value, enum_class):
@@ -60,7 +59,7 @@ SCENARIO_LOOKUPS = {
     'historical': {'scenario_name': 'historical', 'scenario_growth': 'historical', 'scenario_climate': 'historical'},
     'ssp126': {'scenario_name': 'rcp126', 'scenario_growth': 'ssp1', 'scenario_climate': 'rcp26'},
     'ssp245': {'scenario_name': 'rcp245', 'scenario_growth': 'ssp2', 'scenario_climate': 'rcp45'},
-    'ssp585': {'scenario_name': 'rcp585', 'scenario_growth': 'ssp5', 'scenario_climate': 'rcp85'}
+    'ssp560': {'scenario_name': 'rcp560', 'scenario_growth': 'ssp5', 'scenario_climate': 'rcp60'}
 }
 
 IMPACT_TO_EXPOSURE = {
