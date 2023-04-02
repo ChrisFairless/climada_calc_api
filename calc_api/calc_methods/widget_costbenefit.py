@@ -133,9 +133,27 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
 
     request = schemas.CostBenefitRequest(**data_dict)
 
+    if len(measures) > 1:
+        raise ValueError('Sorry, this is a rush job and from this point onward we can only deal with one measure')
+
+    callback_config = {
+        'hazard_type': request.hazard_type,
+        'scenario_name': request.scenario_name,
+        'impact_type': request.impact_type,
+        'units_exposure': request.units_exposure,
+        'measure_name': measures[0]['name'],
+        'measure_description': measures[0]['description'],
+        'measure_cost': measures[0]['cost'],
+        'units_currency': request.units_currency
+    }
+
     # TODO make a costbenefit_calc class. Maybe it and timeline extend some calculations ur-class
     job_config_list, chord_header = calc_costbenefit.set_up_costbenefit_calculations(request)
-    callback = combine_impacts_to_costbenefit_widget.s(job_config_list=job_config_list)
+    callback = combine_impacts_to_costbenefit_widget.s(
+        job_config_list=job_config_list,
+        report_year=data.scenario_year,
+        config=callback_config
+    )
 
     # with transaction.atomic():
     res = chord(chord_header, task_id=str(request_id))(callback)
@@ -145,13 +163,32 @@ def widget_costbenefit(data: schemas_widgets.CostBenefitWidgetRequest):
 
 
 @shared_task()
-def combine_impacts_to_costbenefit_widget(impacts_list, job_config_list):
+def combine_impacts_to_costbenefit_widget(
+        impacts_list,
+        job_config_list,
+        report_year,
+        config
+):
     LOGGER.debug('Combining impacts to costbenefit widget')
     costbenefit_data = calc_costbenefit.combine_impacts_to_costbenefit_no_celery(
         impacts_list=impacts_list,
         job_config_list=job_config_list
     )
-    costbenefit_text = generate_costbenefit_widget_text()
+    costbenefit_text = generate_costbenefit_widget_text(
+        hazard_type=config['hazard_type'],
+        scenario=config['scenario_name'],
+        impact_type=config['impact_type'],
+        measure_name=config['measure_name'],
+        measure_description=config['measure_description'],
+        measure_cost=costbenefit_data.data.cost[0],
+        units_exposure=config['units_exposure'],
+        units_currency=config['units_currency'],
+        affected_present=costbenefit_data.data.items[0].current_climate,
+        affected_measure=costbenefit_data.data.items[0].measure_change[0],
+        affected_future=costbenefit_data.data.items[0].future_climate,
+        affected_future_measure=costbenefit_data.data.items[0].measure_climate[0],
+        future_year=report_year
+    )
 
     widget_data = schemas_widgets.CostBenefitWidgetData(
         text=costbenefit_text,

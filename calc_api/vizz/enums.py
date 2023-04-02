@@ -78,6 +78,11 @@ HAZARD_TO_ABBREVIATION = {
     'extreme_heat': 'EH'
 }
 
+HAZARD_TO_NAME = {
+    'tropical_cyclone': 'tropical cyclone',
+    'extreme_heat': 'extreme heat'
+}
+
 
 def exposure_type_from_impact_type(impact_type):
     if impact_type not in IMPACT_TO_EXPOSURE.keys():
@@ -117,7 +122,7 @@ def get_option_choices(options_path: List[str], get_value: str = None, parameter
         return [opt[get_value] for opt in options]
 
     if len(options) == 0:
-        raise ValueError(f'No valid options found. Path: {options_path}, value: {get_value}, parameters {None}')
+        raise ValueError(f'No valid options found. Path: {options_path}, value: {get_value}, parameters {str(parameters)}')
     return options
 
 
