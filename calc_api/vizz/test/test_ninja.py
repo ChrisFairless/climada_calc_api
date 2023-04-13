@@ -4,6 +4,7 @@ import unittest
 import logging
 import time
 import importlib
+import numpy as np
 
 # ---------------
 
@@ -25,19 +26,28 @@ LOGGER = logging.getLogger(__name__)
 
 server_address = 'http://0.0.0.0:8000/'
 #server_address = 'https://reca-api.herokuapp.com/'
-#server_address = 'https://reca-v1-app-pfvsg.ondigitalocean.app/'
+#server_address = 'https://reca-api-v1-at4us.ondigitalocean.app/'
 
-wait_between_requests = 0
-#measure_id_list = [143, 145]
-measure_id_list = [2, 4]
+wait_between_requests = 0.0
+# measure_id_list = [5]
+measure_id_list = [4]
 
 
 location_list = ['Jamaica', 'Saint Kitts and Nevis', 'Port-au-Prince', 'Havana, Cuba']
+# location_list = ['country.37', 'country.57', 'subregion.1024', 'region.942']
+#location_list = ['Havana, Cuba', 'region.942']
 #location_list = ['Toamasina', 'Mozambique', 'Manila, Philippines']
-# location_list = ['Jamaica']
+# location_list = ['Freetown, Sierra Leone']
+#location_list = ['place.3038559']
+# location_list = ['Freetown, Sierra Leone', 'place.3038559']
+
+hazards_list = ['tropical_cyclone']
+# hazards_list = ['extreme_heat']
+
+test_fast = False
 
 calculation_endpoints = {
-    # 'rest/vizz/map/hazard/climate': 'MapHazardClimateRequest',
+    # 'rest/vizz/map/hazard/climate': 'MapHazardClimateReqauest',
     #  'rest/vizz/map/hazard/event',
     # 'rest/vizz/map/exposure': 'MapExposureRequest',
     # 'rest/vizz/map/impact/climate': 'MapImpactClimateRequest',
@@ -48,11 +58,12 @@ calculation_endpoints = {
     'rest/vizz/widgets/cost-benefit': 'CostBenefitWidgetRequest',
     'rest/vizz/widgets/risk-timeline': 'TimelineWidgetRequest',
     'rest/vizz/widgets/social-vulnerability': 'SocialVulnerabilityWidgetRequest',
-    # 'rest/vizz/widgets/biodiversity': 'BiodiversityWidgetRequest',
+    'rest/vizz/widgets/biodiversity': 'BiodiversityWidgetRequest',
     # 'rest/vizz/exceedance/hazard': 'ExceedanceHazardRequest',
     # 'rest/vizz/exceedance/impact': 'ExceedanceImpactRequest',
 }
 # TODO add vtest endpoints
+
 
 def dynamic_request_create(endpoint, class_string, request_dict):
     if 'widgets' in endpoint:
@@ -70,14 +81,40 @@ class TestEndpoints(unittest.TestCase):
 
     # For now, just tests all endpoints respond
 
-    def test_options_endpoint(self):
+    def test_options(self):
         LOGGER.debug("Testing options endpoint")
         url = server_address + 'rest/vizz/options'
         response = requests.request("GET", url, headers={}, data={})
         self.assertEqual(response.status_code, 200)
 
-    def test_geocode_endpoint(self):
-        LOGGER.debug("Testing geocoding endpoint")
+        def check_defaults(l):
+            if isinstance(l, dict):
+                [check_defaults(item) for item in l.values()]
+            if isinstance(l, list):
+                has_defaults = np.sum([hasattr(item, 'default') for item in l])
+                if has_defaults > 0:
+                    n_default = np.sum([item['default'] for item in l if hasattr(item, 'default')])
+                    names = [item.name for item in l if hasattr(item, "name")]
+                    print(names)
+                    if n_default == 0:
+                        raise ValueError(f'Items have no default value set: {names}')
+                    if n_default > 1:
+                        raise ValueError(f'Items have too many defaults value set: {names}')
+                # print("nesting")
+                [check_defaults(item) for item in l]
+            return True
+
+        # TODO this isn't working yet
+        self.assertTrue(check_defaults(response.json()))
+
+    def test_geocode_id(self):
+        LOGGER.debug("Testing geocoding endpoint: by id")
+        url = server_address + 'rest/vizz/geocode/id/place.3038559'
+        response = requests.request("GET", url, headers={}, data={})
+        self.assertEqual(response.status_code, 200)
+
+    def test_geocode_autocomplete(self):
+        LOGGER.debug("Testing geocoding endpoint: by name")
         url = server_address + 'rest/vizz/geocode/autocomplete?query=Port-au-Prince'
         response = requests.request("GET", url, headers={}, data={})
         self.assertEqual(response.status_code, 200)
@@ -150,15 +187,16 @@ class TestEndpoints(unittest.TestCase):
                 else:
                     aggregation_scale = 'all'
                 for haz_name, haz_options in options.items():
+                    if haz_name not in hazards_list:
+                        print(f"Skipping {haz_name} for now. Update hazards_list to include")
+                        continue
                     if haz_name == "extreme_heat":
-                        LOGGER.warning("Skipping extreme heat for now")
+                        haz_unit = 'degF'
                         exposures = [{
                             'exposure_type': 'people',
                             'impact_type': 'people_affected',
                             'units': 'people'
                         }]
-                        haz_unit = 'degF'
-                        continue
                     elif haz_name == 'tropical_cyclone':
                         haz_unit = 'mph'
                         exposures = [
@@ -195,7 +233,9 @@ class TestEndpoints(unittest.TestCase):
                         # TODO when there are two hazards this will have to be smarter
                         if endpoint == 'rest/vizz/widgets/cost-benefit':
                             rp_options = ['aai']
-                            if exp['impact_type'] in ['assets_affected', 'economic_impact']:
+                            if haz_name == 'tropical_cyclone' and exp['impact_type'] in ['assets_affected', 'economic_impact']:
+                                measure_options = [[m_id] for m_id in measure_id_list]
+                            elif haz_name == 'extreme_heat' and exp['impact_type'] == 'people_affected':
                                 measure_options = [[m_id] for m_id in measure_id_list]
                             else:
                                 continue
@@ -252,15 +292,22 @@ class TestEndpoints(unittest.TestCase):
                                             time.sleep(wait_between_requests)
                                     # self.assertEqual(response.status_code, 200)
                                     # self.assertEqual(status, 'SUCCESS')
-            #                             break
-            #                         break
-            #                     break
-            #                 break
-            #             break
-            #         break
-            #     break
-            # break
-
+                                        if test_fast:
+                                            break
+                                    if test_fast:
+                                        break
+                                if test_fast:
+                                    break
+                            if test_fast:
+                                break
+                        if test_fast:
+                            break
+                    # if test_fast: # Comment out to test all hazards
+                    #     break
+                if test_fast:
+                    break
+            if test_fast:
+                break
 
 
         # Code to run through the results. Not used right now. Instead run the whole

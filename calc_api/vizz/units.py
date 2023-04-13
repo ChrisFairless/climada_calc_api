@@ -82,7 +82,7 @@ def get_request_unittype_to_unitname_mapping(s):
             raise ValueError(
                 f'Units clash. Conflicting units have been provided for unit type {unit_type}. '
                 f'\n Requested units: {requested_units[unit_type]} and {unit_name}. '
-                f'\n Full {type(s).__name__} request: {s.POST.dict()}'
+                f'\n Full {type(s).__name__} request: {s.dict()}'
             )
         requested_units[unit_type] = unit_name
     return requested_units

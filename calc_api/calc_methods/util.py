@@ -45,11 +45,23 @@ def convert_to_polygon(location_poly):
         LOGGER.warning("API doesn't handle non-bounding box polygons yet: converting to box")
     return location_poly
 
-def bbox_to_wkt(bbox):
+
+def bbox_to_poly(bbox):
     if len(bbox) != 4:
         raise ValueError('Expected bbox to have four points')
     # TODO use climada utils to standardise around 180 degrees longitude
     lat_list = [bbox[i] for i in [1, 3, 3, 1]]
     lon_list = [bbox[i] for i in [0, 0, 2, 2]]
-    polygon = Polygon([[lon, lat] for lat, lon in zip(lat_list, lon_list)])
-    return polygon.wkt
+    return Polygon([[lon, lat] for lat, lon in zip(lat_list, lon_list)])
+
+
+def poly_to_coords(poly):
+    return [list(coord) for coord in poly.exterior.coords]
+
+
+def bbox_to_coords(bbox):
+    return poly_to_coords(bbox_to_poly(bbox))
+
+
+def bbox_to_wkt(bbox):
+    return bbox_to_poly(bbox).wkt

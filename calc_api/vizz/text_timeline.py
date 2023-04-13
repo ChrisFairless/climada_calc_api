@@ -198,7 +198,7 @@ def _generate_timeline_widget_with_change_text(
         affected_description = 'loss'
     elif impact_type == 'assets_affected':
         exposure_description = 'economic assets'
-        affected_description = 'number of assets affected'
+        affected_description = 'assets affected'
     else:
         raise ValueError(f'{impact_type} is not in my list of pre-prepared impact types for text generation')
 

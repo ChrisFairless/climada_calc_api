@@ -13,7 +13,8 @@ LOCATIONS = [
     'St Kitts and Nevis',
     'Havana, Cuba',
     'Jamaica',
-    'Port-au-Prince, Haiti'
+    'Port-au-Prince, Haiti',
+    'Freetown, Sierra Leone'
 ]
 
 class Command(BaseCommand):

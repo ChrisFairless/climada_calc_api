@@ -5,7 +5,9 @@ In this document:
 - Adaptation measures
 - Cost-benefit
 - Social vulnerability
-
+- Geocoding
+    - Autocomplete
+    - By ID
 
 ## Risk Timeline
 
@@ -282,6 +284,8 @@ Parameters are documented below and on the OpenAPI/Swagger docs at https://reca-
 
 
 #### Not required parameters
+| Parameter | Type | Default | Description | Notes |
+| --------- | ---- |  ------- | ----------- |------ |
 | `location_scale` | string | | Information on the type of location. Determined automatically if not provided | No need to provide this |
 | `location_code` |	string | | Internal location ID. Alternative to `location_name`. Determined automatically if not provided | No need to provide this |
 | `location_poly` |	list of list of numbers | | A polygon given in `[lat, lon]` pairs. If provided, the calculation is clipped to this region | No need to use in the tool |
@@ -374,3 +378,99 @@ The chart gives legend information and a bar/pie chart in its `items` property. 
 | `values` | list of float | Each land-use types fractional contribution to the total area (in the range 0 – 1) | |
 
 The automatically generated text gives an introduction and a sentence for each land-use type.
+
+
+
+## Geocoding
+
+There are two geocoding endpoints, `rest/vizz/geocoding/autocomplete`, for querying locations by name, and `rest/vizz/geocoding/id/<id>` for querying locations when you already know the ID.
+
+## Geocoding: autocomplete
+
+The `geocoding/autocomplete` endpoint returns a list of the ten best matches for the queried location. Each list item contains metadata about the location, including the full name, id, bounding box and polygon.
+
+Note: since version 1 of the tool limits your geographic queries to a finite selection of locations, you should already know the name of the location you are autocompleting, and autocomplete's first result should always be an exact match. Future versions may change this!
+
+
+### Query structure
+
+Queries are made with `/rest/vizz/geocoding/autocomplete?query=<query>` GET endpoint available at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/geocoding/autocomplete. The `query` parameter is provided in the URL as a query parameter.
+
+
+#### Required parameters 
+
+| Parameter | Type | Description | Notes |
+| --------- | ---- | ----------- |------ |
+| `query` |	string | Name of place to autocomplete | The list of precalculated locations are available through the `options` endpoint |
+
+
+#### Example request
+
+This is a request for Port-au-Prince, Haiti.
+
+```
+curl --location --request GET 'https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/geocode/autocomplete?query=Port-au-Prince,Haiti.' \
+--header 'Content-Type: text/plain'
+'
+```
+
+### Response
+
+The response is an  `GeocodePlaceList` object, which you can see at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/docs#/geocode/calc_api_vizz_ninja__api_geocode_autocomplete.
+
+The response is contained in its `data` property, wihch is a list of `GeocodePlace` objects. Each has the following properties:
+
+| Property | Type | Description | Notes |
+| -------- | ---- | ----------- |------ |
+| `name` | string | Location name | | 
+| `id` | string | An ID for the location, taken from OpenStreetMap | | 
+| `scale`	| string | Geographic scale (e.g. city, province, country) | Currently unused |
+| `country` | string | Country name | |
+| `country_id` | string | 3-letter country ISO3 code | | 
+| `admin1` | string | Admin 1 name | Currently unused | 
+| `admin1_id` | string | Admin 1 code | Currently unused |
+| `admin2` | string | Admin 1 name | Currently unused | 
+| `admin2_id` | string | Admin 1 code | Currently unused |
+| `poly` | List[ | Lat-lon coordinates with the form `[[lon1, lat1], [lon2, lat2], ... [lonN, latN]]` | | 
+| `bbox` | string | Lat-lon coordinates of a bounding box for the location, with the form `[lon_min, lat_min, lon_max, lat_max]` | |
+
+
+## Geocoding: id
+
+The `geocoding/id` takes a known location ID as an input and returns data for that location.
+
+### Query structure
+
+Queries are made to `/rest/vizz/geocoding/autocomplete/id/<id>` GET endpoint available at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/geocoding/id.
+
+
+#### Example request
+
+This is a request for Port-au-Prince, Haiti, which has ID `level05.26390023`
+
+```
+curl --location --request GET 'https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/geocode/id/level05.26390023' \
+--header 'Content-Type: text/plain'
+'
+```
+
+### Response
+
+The response is an  `GeocodePlace` object, which you can see at https://reca-v1-app-pfvsg.ondigitalocean.app/rest/vizz/docs#/geocode/calc_api_vizz_ninja__api_geocode_place.
+
+The response has the following properties:
+
+| Property | Type | Description | Notes |
+| -------- | ---- | ----------- |------ |
+| `name` | string | Location name | | 
+| `id` | string | An ID for the location, taken from OpenStreetMap | | 
+| `scale`	| string | Geographic scale (e.g. city, province, country) | Currently unused |
+| `country` | string | Country name | |
+| `country_id` | string | 3-letter country ISO3 code | | 
+| `admin1` | string | Admin 1 name | Currently unused | 
+| `admin1_id` | string | Admin 1 code | Currently unused |
+| `admin2` | string | Admin 1 name | Currently unused | 
+| `admin2_id` | string | Admin 1 code | Currently unused |
+| `poly` | List[ | Lat-lon coordinates with the form `[[lon1, lat1], [lon2, lat2], ... [lonN, latN]]` | | 
+| `bbox` | string | Lat-lon coordinates of a bounding box for the location, with the form `[lon_min, lat_min, lon_max, lat_max]` | |
+

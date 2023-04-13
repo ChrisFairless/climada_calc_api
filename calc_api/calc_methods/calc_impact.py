@@ -153,8 +153,13 @@ def get_impact_by_return_period(
                 imp_by_rp[return_periods_int] = new_impact_by_return_period
 
                 # Reduce the amount of data in the frequency curve
-                ix_last_zero = [i - 1 for i, imp in enumerate(freq_curve.impact) if imp > 0][0]
-                ix_last_zero = max(0, ix_last_zero)
+                ix_nonzero = [i for i, imp in enumerate(freq_curve.impact) if imp != 0]
+                if len(ix_nonzero) == 0:
+                    LOGGER.warning('All calculated impacts are zero')
+                    ix_last_zero = 0
+                else:
+                    ix_last_zero = ix_nonzero[0] - 1
+                    ix_last_zero = max(0, ix_last_zero)
                 freq_curve.return_per = freq_curve.return_per[ix_last_zero:]
                 freq_curve.impact = freq_curve.impact[ix_last_zero:]
 
@@ -246,20 +251,24 @@ def infer_impactfuncset(
 
     # TODO make into another lookup
     if exposure_type == 'economic_assets':
-        if impact_type == 'economic_impact':
-            # TODO use Eberenz globally calibrated functions
-            impf = ImpfTropCyclone.from_emanuel_usa()
-        elif impact_type == 'assets_affected':
-            impf = ImpactFunc.from_step_impf(intensity=(0, 33, 500))  # Cat 1 storm in m/s
-            impf.haz_type = 'TC'
+        if hazard_type == 'tropical_cyclone':
+            if impact_type == 'economic_impact':
+                # TODO use Eberenz globally calibrated functions
+                impf = ImpfTropCyclone.from_emanuel_usa()
+            elif impact_type == 'assets_affected':
+                impf = ImpactFunc.from_step_impf(intensity=(0, 33, 500))  # Cat 1 storm in m/s
+                impf.haz_type = 'TC'
+            else:
+                raise ValueError(f'impact_type with economic_assets must be economic_impact or assets_affected. Type = {impact_type}')
         else:
-            raise ValueError(f'impact_type with economic_assets must be economic_impact or assets_affected. Type = {impact_type}')
+            raise ValueError("We can't handle economic impacts with non-tropical cyclone hazards yet.")
     elif exposure_type == 'people':
         if hazard_type == 'tropical_cyclone':
             impf = ImpactFunc.from_step_impf(intensity=(0, 33, 300))
             impf.haz_type = 'TC'
         elif hazard_type == 'extreme_heat':
-            impf = ImpactFunc.from_step_impf(intensity=(0, 1, 100))
+            impf = ImpactFunc.from_step_impf(intensity=(0, 35, 100))
+            LOGGER.warning('Using a fake impact function for heat')
             impf.haz_type = 'EH'
         else:
             raise ValueError("hazard_type must be either 'tropical_cyclone' or 'extreme_heat'")

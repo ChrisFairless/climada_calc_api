@@ -265,4 +265,4 @@ def check_valid_measures(measures_list, hazard_type, exposure_type):
         if measure.hazard_type != hazard_type:
             raise ValueError(f'Measure {measure.name} hazard type ({measure.hazard_type} does not match requested calculation ({hazard_type})')
         if measure.exposure_type != exposure_type:
-            raise ValueError(f'Measure {measure.name} exposure type ({measure.exposure_type} does not match requested calculation ({exposure_type})')
+            raise ValueError(f'Measure {measure.name} exposure type ({measure.exposure_type}) does not match requested calculation ({exposure_type})')

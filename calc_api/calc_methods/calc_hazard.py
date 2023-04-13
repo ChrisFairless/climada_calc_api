@@ -5,8 +5,10 @@ from celery import shared_task
 from celery_singleton import Singleton
 from shapely import wkt
 from typing import List
+from scipy import sparse
 
 from climada.util.api_client import Client
+from climada.hazard import Hazard, Centroids, Tag
 
 from calc_api.calc_methods.profile import profile
 from calc_api.config import ClimadaCalcApiConfig
@@ -58,8 +60,8 @@ def get_hazard_by_return_period(
     if return_period == "aai":
         raise ValueError("Can't calculate average annual statistics for hazard data")
     else:
-        return_period = float(return_period)
-        rp_intensity = haz.local_exceedance_inten([return_period])[[0]].flatten()
+        return_period = [float(rp) for rp in return_period] if isinstance(return_period, list) else [float(return_period)]
+        rp_intensity = haz.local_exceedance_inten(return_period)[[0]].flatten()
 
     return [
         {"lat": float(lat), "lon": float(lon), "intensity": float(intensity)}
@@ -110,9 +112,32 @@ def get_hazard_from_api(
     status = 'preliminary' if hazard_type == "extreme_heat" else "active"
     version = 'newest'
 
-    LOGGER.debug(f'Requesting {status} {hazard_type} hazard from Data API. Request properties: {request_properties}')
-    return client.get_hazard(hazard_type, properties=request_properties, status=status, version=version)
+    if hazard_type == "extreme_heat":
+        LOGGER.debug('Using dummy extreme heat data')
+        centroids = Centroids()
+        centroids.lat = np.array([8.48])
+        centroids.lon = np.array([-13.27])
 
+        modifier = 0 if scenario_climate == "historical" else 0.5
+        haz = Hazard()
+        haz.tag = Tag(haz_type="EH")
+        haz.units = "degC"
+        haz.centroids = centroids
+        haz.event_id = np.array(['EH_dummy_' + str(i) for i in range(100)])
+        haz.frequency = np.repeat(0.01, 100)
+        haz.event_name = ['EH_dummy_' + str(i) for i in range(100)]
+        haz.intensity = sparse.csr_matrix([np.random.normal(33 + modifier, 3, 1) for i in range(100)])
+        haz.fraction = sparse.csr_matrix([[1] for i in range(100)])
+        haz.check()
+        return haz
+
+    LOGGER.debug(f'Requesting {status} {hazard_type} hazard from Data API. Request properties: {request_properties}')
+    try:
+        return client.get_hazard(hazard_type, properties=request_properties, status=status, version=version)
+    except Client.NoResult as e:
+        raise Client.NoResult(f'No result found for request {status} {hazard_type} hazard from Data API. '
+                              f'\nRequest properties: {request_properties}'
+                              f'\nError: {e}')
 
 def get_hazard_event(hazard_type,
                      country,
@@ -149,6 +174,9 @@ def subset_hazard_extent(
 
     extent = (lonmin, lonmax, latmin, latmax)
 
-    return haz.select(extent=extent)
+    haz = haz.select(extent=extent)
+    if not haz:
+        raise ValueError('The hazard did not intersect with the requested polygon: no centroids matched')
+    return haz
 
 
