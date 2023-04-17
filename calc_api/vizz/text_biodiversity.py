@@ -81,13 +81,15 @@ def _generate_biodiversity_distribution_text(habitat_description_lvl1, location_
     if 'Forest' in categories:
         text = 'Forests cover {{forest_pct}} of the land. These may be wild or managed and ' \
                'are important to maintaining biodiversity in the region. They also store water ' \
-               'following heavy rain, reduce the local temperature through evapotranspiration and' \
+               'following heavy rain, r educe the local temperature through evapotranspiration and ' \
                'store significant amounts of carbon. '
         text = generate_landuse_text('forest', text)
         text_list.append(text)
 
     if 'Artificial - Terrestrial' in categories:
-        text = 'Settlements and agriculture cover {{artificial_-_terrestrial_pct}} of the area. [[PLACEHOLDER_TEXT]]'
+        text = 'Settlements and agriculture cover {{artificial_-_terrestrial_pct}} of the area. The land ' \
+        'is highly managed. Many adaptation measures will focus here, through urban infrastructure, land management ' \
+        'and initiatives with the population.'
         text = generate_landuse_text('artificial_-_terrestrial', text)
         text_list.append(text)
 
