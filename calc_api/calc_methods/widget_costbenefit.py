@@ -184,9 +184,9 @@ def combine_impacts_to_costbenefit_widget(
         units_exposure=config['units_exposure'],
         units_currency=config['units_currency'],
         affected_present=costbenefit_data.data.items[0].current_climate,
-        affected_measure=costbenefit_data.data.items[0].measure_change[0],
+        affected_measure=costbenefit_data.data.benefit_current[0],
         affected_future=costbenefit_data.data.items[0].future_climate,
-        affected_future_measure=costbenefit_data.data.items[0].measure_climate[0],
+        affected_future_measure=costbenefit_data.data.benefit_future[0],
         future_year=report_year
     )
 

@@ -73,12 +73,18 @@ def set_up_costbenefit_calculations(request: schemas.CostBenefitRequest):
         for m in request.measures:
             m = schemas.MeasureSchema(**m)
             m.convert_to_climada_units()
-            measure_config = copy.deepcopy(climate_config)
+            measure_config = copy.deepcopy(baseline_config)
             measure_config.update({
-                'job_name': f'future climate with {m.name}',
+                'job_name': f'current climate with {m.name}',
                 'measures': [m.dict()],
             })
             job_config_list.append(measure_config)
+            measure_config_climate = copy.deepcopy(climate_config)
+            measure_config_climate.update({
+                'job_name': f'future climate with {m.name}',
+                'measures': [m.dict()],
+            })
+            job_config_list.append(measure_config_climate)
         # # For now we won't do combined measures calculations
         # if len(request.measures) > 1:
         #     all_measures = copy.deepcopy(climate_config)
@@ -151,19 +157,25 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
 
     if any(ix_single_measures):
         measures_list = [m[0] for m in df.loc[ix_single_measures]['measures']]
-        measure_names = [m['name'] for m in measures_list]
-        measure_impacts = pd.Series(df.loc[ix_single_measures]['impact'])
-        measure_change = [m - climate_change for m in measure_impacts]
+        measure_names = list(np.unique([m['name'] for m in measures_list]))
+        ix_current_single_measures = ix_single_measures & (df['haz_year'] == 2020) & (df['exp_year'] == 2020)
+        ix_future_single_measures = ix_single_measures & (df['haz_year'] == future_year) & (df['exp_year'] == future_year)
+        measure_current_climate = pd.Series(df.loc[ix_current_single_measures]['impact'])
+        measure_future_climate = pd.Series(df.loc[ix_future_single_measures]['impact'])
+        measure_current_change = [m - current_climate for m in measure_current_climate]
+        measure_future_change = [m - future_climate for m in measure_future_climate]
     else:
         measures_list = None
-        measure_impacts = None
         measure_names = None
-        measure_change = None
+        measure_current_climate = None
+        measure_future_climate = None
+        measure_current_change = None
+        measure_future_change = None
 
     # # For now we won't do all measures
     # if any(ix_all_measures):
-    #     all_measure_impacts = np.array(df.iloc[ix_all_measures]['impact'])
-    #     combined_measure_change = all_measure_impacts - climate_change
+    #     all_measure_climate = np.array(df.iloc[ix_all_measures]['impact'])
+    #     combined_measure_change = all_measure_climate - climate_change
     # else:
     #     combined_measure_change = None
 
@@ -176,8 +188,8 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
         climate_change=float(climate_change),
         future_climate=float(future_climate),
         measure_names=measure_names,
-        measure_change=measure_change,
-        measure_climate=list(measure_impacts),
+        measure_change=list(measure_future_change),
+        measure_climate=list(measure_future_climate),
         combined_measure_change=None,
         combined_measure_climate=None
     )
@@ -214,9 +226,9 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
         legend_items = legend_items + [
             schemas.CategoricalLegendItem(
                 label=f"change from adaptation measure: {name}",
-                slug="adaptation_{i}",
-                value=impact)
-            for name, impact in zip(measure_names, measure_impacts)
+                slug=f"adaptation_{i}",
+                value=change)
+            for i, (name, change) in enumerate(zip(measure_names, measure_future_change))
         ]
     # TODO add combined measures
     # legend_items = legend_items + [
@@ -233,17 +245,24 @@ def combine_impacts_to_costbenefit_no_celery(impacts_list, job_config_list):
 
     out_measures = [schemas.MeasureSchema(**m) for m in measures_list]
     out_costs = [m['cost'] for m in measures_list]
-    out_benefits = [-imp for imp in costbenefit_breakdown.measure_change]
-    out_costbenefits = [benefit/cost for cost, benefit in zip(out_costs, out_benefits)]
+    n_years = future_year - 2020 + 1
+    # TODO apply discount rates
+    benefit_total_discounted = list(0.5 * (-np.array(measure_current_change) - np.array(measure_future_change)) * n_years)
+    out_costbenefits = [benefit/cost for cost, benefit in zip(out_costs, benefit_total_discounted)]
 
     out_costbenefit = schemas.CostBenefit(
         items=[costbenefit_breakdown],
         legend=legend,
         measure=out_measures,
         cost=out_costs,
+        benefit_current=[-m for m in measure_current_change],
+        benefit_future=[-m for m in measure_future_change],
+        benefit_total_discounted=benefit_total_discounted,
         costbenefit=out_costbenefits,
         combined_cost=None,
-        combined_costbenefit=None,
+        combined_benefit_current=None,
+        combined_benefit_future=None,
+        combined_costbenefit_total_discounted=None,
         units_currency=units.NATIVE_UNITS_CLIMADA['currency'],
         units_warming=units.NATIVE_UNITS_CLIMADA['temperature'],
         units_response=climada_exposure_units

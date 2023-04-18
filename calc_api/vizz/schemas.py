@@ -811,9 +811,14 @@ class CostBenefit(ResponseSchema):
     legend: CategoricalLegend
     measure: List[MeasureSchema]
     cost: List[float]
+    benefit_current: List[float]
+    benefit_future: List[float]
+    benefit_total_discounted: List[float]
     costbenefit: List[float]
     combined_cost: float = None
-    combined_costbenefit: float = None
+    combined_benefit_current: float = None
+    combined_benefit_future: float = None
+    combined_costbenefit_total_discounted: float = None
     units_currency: str
     units_warming: str
     units_response: str
