@@ -752,9 +752,11 @@ class MeasureSchema(ModelSchema, ResponseSchema):
         self.__setattr__("hazard_cutoff", haz_scale_function(self.__getattribute__("hazard_cutoff")))
         self.__setattr__("hazard_change_constant", haz_scale_function(self.__getattribute__("hazard_change_constant")))
         haz_multiplier = self.__getattribute__("hazard_change_multiplier")
-        if haz_type == "temperature" and haz_multiplier and haz_multiplier != 1:
-            raise ValueError("You shouldn't be using linear scaling with temperature-based hazards!")
-        self.__setattr__("hazard_change_multiplier", haz_scale_function(haz_multiplier))
+        if haz_type == "temperature":
+            if haz_multiplier and haz_multiplier != 1:
+                raise ValueError("You shouldn't be using linear scaling with temperature-based hazards!")
+        else:
+            self.__setattr__("hazard_change_multiplier", haz_scale_function(haz_multiplier))
         self.__setattr__("units_hazard", haz_to)
 
         cost_from = self.__getattribute__("units_currency")
