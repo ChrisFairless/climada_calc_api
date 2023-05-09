@@ -1,4 +1,4 @@
-FROM crease/climada
+FROM crease/climada:v3.2.0
 
 ENV PYTHONUNBUFFERED 1
 ENV DOCKER_CONTAINER 1
