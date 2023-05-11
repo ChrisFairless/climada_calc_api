@@ -602,3 +602,48 @@ The response has the following properties:
 | `poly` | List[ | Lat-lon coordinates with the form `[[lon1, lat1], [lon2, lat2], ... [lonN, latN]]` | | 
 | `bbox` | string | Lat-lon coordinates of a bounding box for the location, with the form `[lon_min, lat_min, lon_max, lat_max]` | |
 
+
+## Working on the code
+
+The repository is a bit of a mess. We started building the tool without a deep understanding of API design, or how to separate the calculations from the job management overhead. Some things we did ok, a lots need refactoring, some would benefit from a total rewrite by someone with more experience.
+
+In this section I'll go over some of the details of the configuration and the structure of the codebase.
+
+### Configuration
+
+There are a few key configuration files that affect how the tool runs.
+
+#### .env
+
+The .env file in the project root sets variables relevant to the machine you are running on. A template for the file is in the file `env_template`.
+
+The first time you run the container locally you will need to copy `env_template` to `.env`. After you provide a value to `MAPTILER_KEY` variable it should run with the other default settings.
+
+Running on the cloud will require you to provide these values to the cloud platform (which varies by platform), and they will likely need modifying for the service you use.
+
+- `SECRET_KEY`: The Django secret key. Part of the Django's security. This should never be published in a public location. It can be set to anything when running on your local machine, and should be a long string of random characters.
+- `DEBUG`: Activate debug mode which gives helpful messages when things go wrong. It's a security risk, so turn this off before deployment.
+- `ALLOWED_HOSTS`: IP addresses that are permitted to connect to the running Django app. The default value is 0.0.0.0, which allows anything to connect. This must be changed during cloud deployment using details from the platform you're deploying on.
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST`, `POSTGRES_PORT`: These are parameters for connecting to the postgres database. No need to change them when running locally, but they will need to be set according to the cloud architecture when running in a hosted environment. Alternately provide a `POSTGRES_URL` environment variable with the full database connection string.
+- `REDIS_URL`: Address of the Redis database to use as a job queue.
+- `GEOCODE_URL`: If you're using a self-hosted geocoding container, such as OSMNames, its address.
+- `MAPTILER_KEY`: If you're using the Maptiler geocoding service (recommended), your access key. Do not publish this. Set up an account and get your key from the [Maptiler Cloud API](https://docs.maptiler.com/cloud/api).
+- `CELERY_BROKER_URL`: Address of the Celery Broker.
+- `CELERY_RESULT_BACKEND`: Currently not used.
+
+### climada_calc-config.yml
+
+This file is a bit of a mess, and contains a lot of unused or half-implemented variables.
+
+Some of the more important ones are:
+- `geocoder`: one of 'maptiler', 'osmnames', 'nominatim_web'.
+   - **maptiler**: this is the recommended option, and has been tested and works reliably. When chosen, geocoding queries are directed to the Maptiler API service, returning location data. To use this you need get a Maptiler key – see the setup instructions above – and set the `MAPTILER_KEY` environment variable. The Maptiler free tier limits you to 100k queries per month, which is more than enough for development purposes
+   - **osmnames**: this uses the OpenStreetMap OSMNames geocoding service which is downloaded and hosted in a container locally. You will need to build the service from the docker-compose file at `docker_files/docker-compose-local_geocoding.yml`. From experience, the service is not always reliable at understanding the location you're looking for, which is why I implemented the Maptiler service. It has not been tested with the changes made to the repository in the last few months, so may fail unexpectedly.
+   - **nomiatim_web**: this provides access to a web-hosted version of the OSMNames geocoding service. There is no need to host a geocoder locally, but it has the same accuracy issues as the osmnames service. It has not been tested with the changes made to the repository in the last few months, so may fail unexpectedly.
+- `defaults`: sets a number of the default units and scenarios that the tool will use when nothing is provided. This isn't used much, because I've been writing most API methods to fail when they don't have this information.
+- `database_mode`: one of 'off' 'read' 'create' 'update' 'fail_missing':
+   - **off**: Don't use a results database at all. On receiving a request submit a Celery job and wait it to finish before returning. Currently not working.
+   - **read**: Treat the results database as read-only. Results are not already stored in the database will set off a calculation but won't be saved. Designed for use with a database of precalculated results that will not be expanded.
+   - **create**: If a result is already present in the database, use it. Otherwise set off a calculation to be added to the database on completion. Good for development use. Designed for use with a database that stores all its results and discards the least frequently used ones to save space (not yet implemented).
+   - **update**: All requests set off a new calculation, regardless of whether results are in the database or not. Existing results are overwritten. Designed to allow administrators to recalculate parts of the database after updates to data or methods.
+   - **fail_missing**: Treat the results database as read-only. Jobs will fail if results pre-calculated results are not already stored. Currently used in the cloud-hosted service on Digital Ocean.
